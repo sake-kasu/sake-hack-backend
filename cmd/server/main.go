@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// ロガー初期化
-	if err := logger.Init(cfg.Logging.Level, cfg.Logging.Format); err != nil {
+	if err := logger.Init(cfg.Logger.Level, cfg.Logger.Format); err != nil {
 		log.Fatalf("ロガーの初期化に失敗しました: %v", err)
 	}
 	defer logger.Sync()
@@ -47,16 +47,16 @@ func main() {
 
 	// Valkey接続
 	valkeyClient, err := database.NewValkeyClient(database.ValkeyConfig{
-		Host:         cfg.Valkey.Host,
-		Port:         cfg.Valkey.Port,
-		Password:     cfg.Valkey.Password,
-		Database:     cfg.Valkey.Database,
-		PoolSize:     cfg.Valkey.PoolSize,
-		MinIdleConns: cfg.Valkey.MinIdleConns,
-		MaxRetries:   cfg.Valkey.MaxRetries,
-		DialTimeout:  cfg.Valkey.DialTimeout,
-		ReadTimeout:  cfg.Valkey.ReadTimeout,
-		WriteTimeout: cfg.Valkey.WriteTimeout,
+		Host:         cfg.Cache.Host,
+		Port:         cfg.Cache.Port,
+		Password:     cfg.Cache.Password,
+		Database:     cfg.Cache.Database,
+		PoolSize:     cfg.Cache.PoolSize,
+		MinIdleConns: cfg.Cache.MinIdleConns,
+		MaxRetries:   cfg.Cache.MaxRetries,
+		DialTimeout:  cfg.Cache.DialTimeout,
+		ReadTimeout:  cfg.Cache.ReadTimeout,
+		WriteTimeout: cfg.Cache.WriteTimeout,
 	})
 	if err != nil {
 		logger.Get().Fatal("Valkeyへの接続に失敗しました", zap.Error(err))

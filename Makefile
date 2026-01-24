@@ -1,11 +1,23 @@
-.PHONY: help build run dev clean test test-unit test-integration cover lint deps api-validate api-generate api-bundle api-gendoc db-migrate-up db-migrate-down db-migrate-create sqlc-generate
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps api-validate api-generate api-bundle api-gendoc migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
+
+# .env fileが存在すれば読み込み
+-include .env
+export
 
 # 変数定義
 BINARY_NAME=sake-hack-server
+MIGRATE_VERSION=v4.18.1
 MAIN_PATH=./cmd/server
 BUILD_DIR=./bin
-POSTGRES_DSN=postgresql://postgres:sakehacksakehack@localhost:5432/sake_hack_app?sslmode=disable
-MYSQL_DSN=mysql://root:sakehacksakehack@localhost:3306/sake_hack_pts
+
+# DB_URLを環境変数から動的生成
+DB_HOST ?= localhost
+DB_PORT ?= 5432
+DB_USER ?= postgres
+DB_PASSWORD ?= sakehacksakehack
+DB_NAME ?= sake_hack_app
+DB_SSL_MODE ?= disable
+DB_URL=postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSL_MODE)
 
 help: ## このヘルプメッセージを表示
 	@echo 'Usage: make [target]'
@@ -22,7 +34,11 @@ run: ## アプリケーションを実行
 	@echo "🚀 $(BINARY_NAME)を実行しています..."
 	@go run $(MAIN_PATH)/main.go
 
-dev: ## ホットリロードで開発サーバーを起動(Air使用)
+air-install: ## airのインストール
+	@echo "Installing air..."
+	@go install github.com/air-verse/air@latest
+
+dev: air-install ## ホットリロードで開発サーバーを起動(Air使用)
 	@echo "🔥 開発サーバーを起動しています(ホットリロード有効)..."
 	@air
 
@@ -131,18 +147,42 @@ api-gendoc: ## APIドキュメントを生成
 	@echo "📚 APIドキュメントを生成しています..."
 	@npx @redocly/cli build-docs api/openapi.yaml -o api/docs/index.html
 
-# データベースマイグレーション
-db-migrate-up: ## データベースマイグレーションを実行(up)
-	@echo "⬆️  マイグレーションを実行しています(up)..."
-	@migrate -path db/migrations -database "$(POSTGRES_DSN)" up
+migrate-install: ## golang-migrateのインストール
+	@echo "golang-migrate をインストールしています..."
+	@go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@$(MIGRATE_VERSION)
 
-db-migrate-down: ## データベースマイグレーションをロールバック(down)
-	@echo "⬇️  マイグレーションをロールバックしています(down)..."
-	@migrate -path db/migrations -database "$(POSTGRES_DSN)" down
-
-db-migrate-create: ## 新規マイグレーションを作成(使用例: make db-migrate-create NAME=create_users)
+migrate-create: ## 新規マイグレーション作成 (NAME=xxx)
+	@if [ -z "$(NAME)" ]; then echo "Error: NAME is required. Usage: make migrate-create NAME=xxx"; exit 1; fi
 	@echo "✨ マイグレーションを作成しています: $(NAME)"
 	@migrate create -ext sql -dir db/migrations -seq $(NAME)
+
+migrate-up: ## 全マイグレーション適用
+	@echo "⬆️  マイグレーションを実行しています(up)..."
+	@migrate -path db/migrations -database "$(DB_URL)" up
+
+migrate-up-one: ## 1つ次のマイグレーション適用
+	@echo "⬆️  マイグレーションを実行しています(up-one)..."
+	@migrate -path db/migrations -database "$(DB_URL)" up 1
+
+migrate-down: ## 1つ前にロールバック
+	@echo "⬇️  マイグレーションをロールバックしています(down)..."
+	@migrate -path db/migrations -database "$(DB_URL)" down 1
+
+migrate-down-all: ## 全ロールバック(注意: データ損失)
+	@echo "⬇️  マイグレーションをロールバックしています(down-all)..."
+	@migrate -path db/migrations -database "$(DB_URL)" down -all
+
+migrate-force: ## バージョン強制設定 (VERSION=xxx) ※障害復旧用
+	@if [ -z "$(VERSION)" ]; then echo "Error: VERSION is required. Usage: make migrate-force VERSION=xxx"; exit 1; fi
+	@echo "Forcing version: $(VERSION)..."
+	@migrate -path db/migrations -database "$(DB_URL)" force $(VERSION)
+
+migrate-version: ## 現在のバージョン確認
+	@migrate -path db/migrations -database "$(DB_URL)" version
+
+migrate-status: ## マイグレーション状態確認
+	@echo "Migration status:"
+	@migrate -path db/migrations -database "$(DB_URL)" version 2>&1 || true
 
 # sqlc
 sqlc-generate: ## SQLからGoコードを生成

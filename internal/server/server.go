@@ -142,8 +142,11 @@ func (s *Server) setupRoutes() {
 	// Presentation
 	sakeServer := sakePresentation.NewSakeServerImpl(listSakesUC)
 
+	// APIグループを作成(/apiプレフィックス)
+	apiGroup := s.router.Group("/api")
+
 	// OpenAPI ServerInterfaceをGinに登録
-	generated.RegisterHandlers(s.router, sakeServer)
+	generated.RegisterHandlers(apiGroup, sakeServer)
 }
 
 // handleHealth はヘルスチェックハンドラ
