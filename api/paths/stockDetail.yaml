@@ -1,0 +1,114 @@
+get:
+  tags:
+    - Stock
+  summary: 酒詳細取得
+  description: 酒の詳細情報を取得します
+  operationId: getStockDetail
+  parameters:
+      - name: 酒ID
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+        description: 詳細情報を取得したい酒id
+  responses:
+    "200":
+      description: 酒詳細の取得に成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/sake.yaml#/SakeDetail"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
+
+post:
+  tags:
+    - Stock
+  summary: 酒情報登録
+  description: 新しい酒情報を登録します
+  operationId: createStock
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/sake.yaml#/SakeDetail"
+  responses:
+    "201":
+      description: 酒情報の登録に成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/sake.yaml#/SakeDetail"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
+
+put:
+  tags:
+    - Stock
+  summary: 酒情報更新
+  description: 既存の酒情報を更新します
+  operationId: updateStock
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            category:
+              $ref: "../components/schemas/sake.yaml#/SakeCategory"
+            kind:
+              $ref: "../components/schemas/sake.yaml#/SakeKind"
+            brewery:
+              $ref: "../components/schemas/sake.yaml#/Brewery"
+            name:
+              $ref: "../components/schemas/sake.yaml#/SakeName"
+            abv:
+              type: number
+              format: float
+              description: アルコール度数(%)
+              example: 16.0
+            tasteNotes:
+              type: string
+              description: 味の特徴
+              example: フルーティーで華やかな香り
+            memo:
+              type: string
+              nullable: true
+              description: 感想
+            drinkStyles:
+              type: array
+              items:
+                $ref: "../components/schemas/sake.yaml#/DrinkStyle"
+              description: おすすめの飲み方
+  responses:
+    "200":
+      description: 酒情報の更新に成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/sake.yaml#/SakeDetail"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
+
+delete:
+  tags:
+    - Stock
+  summary: 酒情報削除
+  description: 指定された酒情報を削除します
+  operationId: deleteStock
+  responses:
+    "204":
+      description: 酒情報の削除に成功
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
