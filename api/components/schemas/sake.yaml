@@ -126,8 +126,11 @@ SakeDetail:
     - brewery
     - name
     - abv
-    - tasteNotes
+    - purchaseVolume
+    - RemainingVolume
+    - memo 
     - drinkStyles
+    - price
     - createdAt
     - updatedAt
   properties:
@@ -148,10 +151,14 @@ SakeDetail:
       format: float
       description: アルコール度数(%)
       example: 16.0
-    tasteNotes:
-      type: string
-      description: 味の特徴
-      example: フルーティーで華やかな香り
+    purchaseVolume:
+      type: number
+      format: float
+      description: 購入時容量
+    remainingVolume:
+      type: number
+      format: float
+      description: 残容量
     memo:
       type: string
       nullable: true
@@ -161,6 +168,13 @@ SakeDetail:
       items:
         $ref: "#/DrinkStyle"
       description: おすすめの飲み方
+    price: 
+      type: integer
+      format: int32
+      description: 購入時価格
+    imageUrl:
+      type: string
+      description: 表示用の画像URL
     createdAt:
       type: string
       format: date-time
