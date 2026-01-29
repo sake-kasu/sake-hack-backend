@@ -26,40 +26,6 @@ get:
     "500":
       $ref: "../components/responses/common.yaml#/InternalServerError"
 
-post:
-  tags:
-    - Stock
-  summary: 酒情報登録
-  description: 新しい酒情報を登録します
-  operationId: createStock
-  parameters:
-    - name: id
-      in: path
-      required: true
-      schema:
-        type: integer
-        format: int32
-      description: 酒ID
-  requestBody:
-    required: true
-    content:
-      application/json:
-        schema:
-          $ref: "../components/schemas/sake.yaml#/CreateSakeRequest"
-  responses:
-    "201":
-      description: 酒情報の登録に成功
-      content:
-        application/json:
-          schema:
-            $ref: "../components/schemas/sake.yaml#/SakeDetail"
-    "400":
-      $ref: "../components/responses/common.yaml#/BadRequest"
-    "404":
-      $ref: "../components/responses/common.yaml#/NotFound"
-    "500":
-      $ref: "../components/responses/common.yaml#/InternalServerError"
-
 put:
   tags:
     - Stock

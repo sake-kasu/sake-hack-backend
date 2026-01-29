@@ -59,3 +59,37 @@ get:
       $ref: "../components/responses/common.yaml#/BadRequest"
     "500":
       $ref: "../components/responses/common.yaml#/InternalServerError"
+
+post:
+  tags:
+    - Sakes
+  summary: 酒を登録
+  description: 新しい酒を登録します
+  operationId: createSake
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/sake.yaml#/CreateSakeRequest"
+        example:
+          typeId: 3
+          breweryId: 1
+          name: "獺祭 純米大吟醸 磨き二割三分"
+          abv: 16.0
+          tasteNotes: "フルーティーで華やかな香り"
+          memo: "特別な日に飲みたい"
+          drinkStyleIds: [1, 2]
+  responses:
+    "201":
+      description: 酒の登録に成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/sake.yaml#/CreateSakeResponse"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "404":
+      $ref: "../components/responses/common.yaml#/NotFound"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
