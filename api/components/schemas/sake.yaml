@@ -157,3 +157,175 @@ ListSakesResponse:
       type: array
       items:
         $ref: "./common.yaml#/APIError"
+
+CreateSakeRequest:
+  type: object
+  required:
+    - typeId
+    - breweryId
+    - name
+    - abv
+    - tasteNotes
+    - drinkStyleIds
+  properties:
+    typeId:
+      type: integer
+      format: int32
+      description: 酒の種類ID（sake_types.id）
+      minimum: 1
+      example: 1
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1"
+    breweryId:
+      type: integer
+      format: int32
+      description: 酒造ID（breweries.id）
+      minimum: 1
+      example: 1
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1"
+    name:
+      type: string
+      description: 酒名
+      minLength: 1
+      maxLength: 255
+      example: "獺祭 純米大吟醸 磨き二割三分"
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1,max=255"
+    abv:
+      type: number
+      format: float
+      description: アルコール度数(%)
+      minimum: 0
+      maximum: 99.99
+      example: 16.0
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=0,max=99.99"
+    tasteNotes:
+      type: string
+      description: 味の特徴
+      minLength: 1
+      maxLength: 1000
+      example: "フルーティーで華やかな香り"
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1,max=1000"
+    memo:
+      type: string
+      nullable: true
+      description: 感想（任意）
+      maxLength: 1000
+      example: "特別な日に飲みたい"
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,max=2000"
+    drinkStyleIds:
+      type: array
+      items:
+        type: integer
+        format: int32
+        minimum: 1
+      description: おすすめの飲み方IDリスト（drink_styles.id）
+      minItems: 1
+      example: [1, 2]
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1,dive,min=1"
+
+CreateSakeResponse:
+  type: object
+  properties:
+    data:
+      $ref: "#/Sake"
+    errors:
+      type: array
+      items:
+        $ref: "./common.yaml#/APIError"
+
+GetSakeResponse:
+  type: object
+  properties:
+    data:
+      $ref: "#/Sake"
+    errors:
+      type: array
+      items:
+        $ref: "./common.yaml#/APIError"
+
+UpdateSakeRequest:
+  type: object
+  required:
+    - typeId
+    - breweryId
+    - name
+    - abv
+    - tasteNotes
+    - drinkStyleIds
+  properties:
+    typeId:
+      type: integer
+      format: int32
+      description: 酒の種類ID（sake_types.id）
+      minimum: 1
+      example: 1
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1"
+    breweryId:
+      type: integer
+      format: int32
+      description: 酒造ID（breweries.id）
+      minimum: 1
+      example: 1
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1"
+    name:
+      type: string
+      description: 酒名
+      minLength: 1
+      maxLength: 255
+      example: "獺祭 純米大吟醸 磨き二割三分"
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1,max=255"
+    abv:
+      type: number
+      format: float
+      description: アルコール度数(%)
+      minimum: 0
+      maximum: 99.99
+      example: 16.0
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=0,max=99.99"
+    tasteNotes:
+      type: string
+      description: 味の特徴
+      minLength: 1
+      maxLength: 1000
+      example: "フルーティーで華やかな香り"
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1,max=1000"
+    memo:
+      type: string
+      nullable: true
+      description: 感想（任意）
+      maxLength: 1000
+      example: "特別な日に飲みたい"
+      x-oapi-codegen-extra-tags:
+        validate: "omitempty,max=2000"
+    drinkStyleIds:
+      type: array
+      items:
+        type: integer
+        format: int32
+        minimum: 1
+      description: おすすめの飲み方IDリスト（drink_styles.id）
+      minItems: 1
+      example: [1, 2]
+      x-oapi-codegen-extra-tags:
+        validate: "required,min=1,dive,min=1"
+
+UpdateSakeResponse:
+  type: object
+  properties:
+    data:
+      $ref: "#/Sake"
+    errors:
+      type: array
+      items:
+        $ref: "./common.yaml#/APIError"
