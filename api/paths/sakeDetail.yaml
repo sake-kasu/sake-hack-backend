@@ -5,7 +5,7 @@ get:
   description: 酒の詳細情報を取得します
   operationId: listSakes
   parameters:
-      - name: 酒ID
+      - name: id
         in: path
         required: true
         schema:
