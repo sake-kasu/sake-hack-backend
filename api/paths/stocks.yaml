@@ -1,0 +1,95 @@
+get:
+  tags:
+    - Stocks
+  summary: 酒一覧取得
+  description: 酒の一覧をページネーション付きで取得します
+  operationId: listStocks
+  parameters:
+    - name: offset
+      in: query
+      description: スキップする件数
+      required: false
+      schema:
+        type: integer
+        format: int32
+        default: 0
+        minimum: 0
+        x-oapi-codegen-extra-tags:
+          validate: "omitempty,min=0"
+    - name: limit
+      in: query
+      description: 取得する件数
+      required: false
+      schema:
+        type: integer
+        format: int32
+        default: 20
+        minimum: 1
+        maximum: 100
+        x-oapi-codegen-extra-tags:
+          validate: "omitempty,min=1,max=100"
+    - name: typeId
+      in: query
+      description: 酒の種類IDでフィルタ
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        x-oapi-codegen-extra-tags:
+          validate: "omitempty,min=1"
+    - name: breweryId
+      in: query
+      description: 酒造IDでフィルタ
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        x-oapi-codegen-extra-tags:
+          validate: "omitempty,min=1"
+  responses:
+    "200":
+      description: 酒一覧の取得に成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/sake.yaml#/ListSakesResponse"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
+
+post:
+  tags:
+    - Sakes
+  summary: 酒を登録
+  description: 新しい酒を登録します
+  operationId: createSake
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/sake.yaml#/CreateSakeRequest"
+        example:
+          typeId: 3
+          breweryId: 1
+          name: "獺祭 純米大吟醸 磨き二割三分"
+          abv: 16.0
+          tasteNotes: "フルーティーで華やかな香り"
+          memo: "特別な日に飲みたい"
+          drinkStyleIds: [1, 2]
+  responses:
+    "201":
+      description: 酒の登録に成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/sake.yaml#/CreateSakeResponse"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "404":
+      $ref: "../components/responses/common.yaml#/NotFound"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"

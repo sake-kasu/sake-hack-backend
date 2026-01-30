@@ -1,4 +1,4 @@
-SakeType:
+SakeKind:
   type: object
   required:
     - id
@@ -7,11 +7,37 @@ SakeType:
     id:
       type: integer
       format: int32
-      description: 酒の種類ID
+      description: 酒の小分類ID
     name:
       type: string
-      description: 酒の種類の名前
-      example: 日本酒
+      description: 酒の小分類の名前
+      example: 大吟醸
+
+SakeCategory:
+  type: string
+  enum:
+    - JAPANESE_SAKE
+    - WHISKY
+    - WINE
+    - BEER
+    - SHOCHU
+    - AWAMORI
+    - RIQUEUR
+    - SPIRITS
+    - OTHER
+
+SakeName:
+  type: object
+  required:
+    - name
+    - phonetic
+  properties:
+    name:
+      type: string
+      description: 漢字・英名の名前
+    phonetic: 
+      type: string
+      description: 読み方
 
 Brewery:
   type: object
@@ -72,12 +98,39 @@ Sake:
   type: object
   required:
     - id
-    - type
+    - category
+    - name
+    - imagePreview
+  properties:
+    id:
+      type: integer
+      format: int32
+      description: 酒ID
+    category:
+      type: 
+        $ref: "#/SakeCategory"
+      description: 酒の大分類
+    name:
+      type: string
+      description: 酒名
+    imagePreview:
+      type: string
+      description: 画像URL formatは実装次第
+
+SakeDetail:
+  type: object
+  required:
+    - id
+    - category
+    - kind
     - brewery
     - name
     - abv
-    - tasteNotes
+    - purchaseVolume
+    - RemainingVolume
+    - memo 
     - drinkStyles
+    - price
     - createdAt
     - updatedAt
   properties:
@@ -85,23 +138,27 @@ Sake:
       type: integer
       format: int32
       description: 酒ID
-    type:
-      $ref: "#/SakeType"
+    category:
+      $ref: "#/SakeCategory"
+    kind:
+      $ref: "#/SakeKind"
     brewery:
       $ref: "#/Brewery"
     name:
-      type: string
-      description: 酒名
-      example: 獺祭 純米大吟醸 磨き二割三分
+      $ref: "#/SakeName"
     abv:
       type: number
       format: float
       description: アルコール度数(%)
       example: 16.0
-    tasteNotes:
-      type: string
-      description: 味の特徴
-      example: フルーティーで華やかな香り
+    purchaseVolume:
+      type: number
+      format: float
+      description: 購入時容量
+    remainingVolume:
+      type: number
+      format: float
+      description: 残容量
     memo:
       type: string
       nullable: true
@@ -111,6 +168,13 @@ Sake:
       items:
         $ref: "#/DrinkStyle"
       description: おすすめの飲み方
+    price: 
+      type: integer
+      format: int32
+      description: 購入時価格
+    imageUrl:
+      type: string
+      description: 表示用の画像URL
     createdAt:
       type: string
       format: date-time
@@ -153,6 +217,140 @@ ListSakesResponse:
       description: 酒のリスト
     meta:
       $ref: "#/SakeListMeta"
+    errors:
+      type: array
+      items:
+        $ref: "./common.yaml#/APIError"
+
+CreateSakeRequest:
+  type: object
+  required:
+    - category
+    - kind
+    - brewery
+    - name
+    - abv
+    - purchaseVolume
+    - remainingVolume
+    - memo
+    - drinkStyles
+    - price
+  properties:
+    category:
+      $ref: "#/SakeCategory"
+    kind:
+      $ref: "#/SakeKind"
+    brewery:
+      $ref: "#/Brewery"
+    name:
+      $ref: "#/SakeName"
+    abv:
+      type: number
+      format: float
+      description: アルコール度数(%)
+      example: 16.0
+    purchaseVolume:
+      type: number
+      format: float
+      description: 購入時容量
+    remainingVolume:
+      type: number
+      format: float
+      description: 残容量
+    memo:
+      type: string
+      nullable: true
+      description: 感想
+    drinkStyles:
+      type: array
+      items:
+        $ref: "#/DrinkStyle"
+      description: おすすめの飲み方
+    price: 
+      type: integer
+      format: int32
+      description: 購入時価格
+    imageUrl:
+      type: string
+      description: 表示用の画像URL
+
+CreateSakeResponse:
+  type: object
+  properties:
+    data:
+      $ref: "#/Sake"
+    errors:
+      type: array
+      items:
+        $ref: "./common.yaml#/APIError"
+
+GetSakeResponse:
+  type: object
+  properties:
+    data:
+      $ref: "#/Sake"
+    errors:
+      type: array
+      items:
+        $ref: "./common.yaml#/APIError"
+
+UpdateSakeRequest:
+  type: object
+  required:
+    - category
+    - kind
+    - brewery
+    - name
+    - abv
+    - purchaseVolume
+    - remainingVolume
+    - memo
+    - drinkStyles
+    - price
+  properties:
+    category:
+      $ref: "#/SakeCategory"
+    kind:
+      $ref: "#/SakeKind"
+    brewery:
+      $ref: "#/Brewery"
+    name:
+      $ref: "#/SakeName"
+    abv:
+      type: number
+      format: float
+      description: アルコール度数(%)
+      example: 16.0
+    purchaseVolume:
+      type: number
+      format: float
+      description: 購入時容量
+    remainingVolume:
+      type: number
+      format: float
+      description: 残容量
+    memo:
+      type: string
+      nullable: true
+      description: 感想
+    drinkStyles:
+      type: array
+      items:
+        $ref: "#/DrinkStyle"
+      description: おすすめの飲み方
+    price: 
+      type: integer
+      format: int32
+      description: 購入時価格
+    imageUrl:
+      type: string
+      description: 表示用の画像URL
+
+UpdateSakeResponse:
+  type: object
+  properties:
+    data:
+      $ref: "#/Sake"
     errors:
       type: array
       items:
