@@ -18,8 +18,8 @@ paths:
 
 components:
   schemas:
-    APIError:
-      $ref: "./components/schemas/common.yaml#/APIError"
+    ErrorCode:
+      $ref: "./components/schemas/common.yaml#/ErrorCode"
     ErrorResponse:
       $ref: "./components/schemas/common.yaml#/ErrorResponse"
     PaginationMeta:

@@ -26,59 +26,35 @@ HealthResponse:
           type: string
           example: ok
 
-APIError:
-  type: object
-  required:
-    - code
-    - message
-  properties:
-    code:
-      type: string
-      description: エラーコード
-      example: FUNC-001_001
-    message:
-      type: string
-      description: エラーメッセージ
-      example: サンプルエラーメッセージ
+ErrorCode:
+  type: string
+  description: |
+    エラーコードまたはワーニングコード
+    - E0001: 認証エラー
+    - E0002: データベース実行エラー
+    - W0001: バリデーションエラー
+    - E9000: その他エラー
+  enum:
+    - E0001
+    - E0002
+    - W0001
+    - E9000
+  example: E0001
 
 ErrorResponse:
   type: object
-  properties:
-    data:
-      type: object
-      nullable: true
-      description: レスポンスデータ
-    errors:
-      type: array
-      items:
-        $ref: "#/APIError"
-      description: エラー情報の配列
-
-PaginationMeta:
-  type: object
   required:
-    - total
-    - page
-    - perPage
-    - totalPages
+    - error_code
+    - message
   properties:
-    total:
-      type: integer
-      format: int64
-      description: 総件数
-      example: 100
-    page:
-      type: integer
-      format: int32
-      description: 現在のページ番号
-      example: 1
-    perPage:
-      type: integer
-      format: int32
-      description: 1ページあたりの件数
-      example: 20
-    totalPages:
-      type: integer
-      format: int32
-      description: 総ページ数
-      example: 5
+    error_code:
+      $ref: "#/ErrorCode"
+    message:
+      type: string
+      description: エラーメッセージ
+      example: 認証に失敗しました。有効なトークンを提供してください。
+    reason:
+      type: string
+      nullable: true
+      description: エラーの詳細な理由（オプション）
+      example: トークンの有効期限が切れています
