@@ -60,5 +60,5 @@ components:
       $ref: "./components/securitySchemes/auth.yaml#/BearerAuth"
 
 tags:
-  - name: Sakes
-    description: 酒関連
+  - name: Sake
+    description: 酒関連API

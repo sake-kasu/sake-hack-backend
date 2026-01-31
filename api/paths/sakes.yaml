@@ -1,53 +1,30 @@
 get:
   tags:
-    - Sakes
+    - Sake
   summary: 酒一覧取得
-  description: 酒の一覧をページネーション付きで取得します
-  operationId: listSakes
+  description: 酒の一覧を取得します
+  operationId: getSakes
   parameters:
-    - name: offset
+    - $ref: "../components/parameters/offset.yaml#/Offset"
+    - $ref: "../components/parameters/limit.yaml#/Limit"
+    - name: category
       in: query
-      description: スキップする件数
+      description: 酒カテゴリ名
       required: false
       schema:
-        type: integer
-        format: int32
-        default: 0
-        minimum: 0
+        type: string
+        nullable: true
+        enum:
+          - BEER
+          - JAPANESE_SAKE
+          - WINE
+          - WHISKEY
+          - SHOCHU
+          - COCKTAIL
+          - OTHER
         x-oapi-codegen-extra-tags:
-          validate: "omitempty,min=0"
-    - name: limit
-      in: query
-      description: 取得する件数
-      required: false
-      schema:
-        type: integer
-        format: int32
-        default: 20
-        minimum: 1
-        maximum: 100
-        x-oapi-codegen-extra-tags:
-          validate: "omitempty,min=1,max=100"
-    - name: typeId
-      in: query
-      description: 酒の種類IDでフィルタ
-      required: false
-      schema:
-        type: integer
-        format: int32
-        minimum: 1
-        x-oapi-codegen-extra-tags:
-          validate: "omitempty,min=1"
-    - name: breweryId
-      in: query
-      description: 酒造IDでフィルタ
-      required: false
-      schema:
-        type: integer
-        format: int32
-        minimum: 1
-        x-oapi-codegen-extra-tags:
-          validate: "omitempty,min=1"
+          validate: "omitempty,oneof=BEER JAPANESE_SAKE WINE WHISKEY SHOCHU COCKTAIL OTHER"
+    - $ref: "../components/parameters/q.yaml#/Q"
   responses:
     "200":
       description: 酒一覧の取得に成功

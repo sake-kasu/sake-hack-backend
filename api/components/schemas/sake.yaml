@@ -1,134 +1,104 @@
-SakeKind:
-  type: object
-  required:
-    - id
-    - name
-  properties:
-    id:
-      type: integer
-      format: int32
-      description: 酒の小分類ID
-    name:
-      type: string
-      description: 酒の小分類の名前
-      example: 大吟醸
-
-SakeCategory:
+Category:
   type: string
   enum:
-    - JAPANESE_SAKE
-    - WHISKY
-    - WINE
     - BEER
+    - JAPANESE_SAKE
+    - WINE
+    - WHISKEY
     - SHOCHU
-    - AWAMORI
-    - RIQUEUR
-    - SPIRITS
+    - COCKTAIL
     - OTHER
+# Brewery:
+#   type: object
+#   required:
+#     - id
+#     - name
+#     - originCountry
+#   properties:
+#     id:
+#       type: integer
+#       format: int32
+#       description: 酒造ID
+#     name:
+#       type: string
+#       description: 酒造名
+#       example: 獺祭
+#     originCountry:
+#       type: string
+#       description: 所在国
+#       example: 日本
+#     originRegion:
+#       type: string
+#       nullable: true
+#       description: 所在地域
+#       example: 山口県
+#     latitude:
+#       type: number
+#       format: double
+#       nullable: true
+#       description: 緯度
+#     longitude:
+#       type: number
+#       format: double
+#       nullable: true
+#       description: 経度
 
-SakeName:
-  type: object
-  required:
-    - name
-    - phonetic
-  properties:
-    name:
-      type: string
-      description: 漢字・英名の名前
-    phonetic: 
-      type: string
-      description: 読み方
-
-Brewery:
-  type: object
-  required:
-    - id
-    - name
-    - originCountry
-  properties:
-    id:
-      type: integer
-      format: int32
-      description: 酒造ID
-    name:
-      type: string
-      description: 酒造名
-      example: 獺祭
-    originCountry:
-      type: string
-      description: 所在国
-      example: 日本
-    originRegion:
-      type: string
-      nullable: true
-      description: 所在地域
-      example: 山口県
-    latitude:
-      type: number
-      format: double
-      nullable: true
-      description: 緯度
-    longitude:
-      type: number
-      format: double
-      nullable: true
-      description: 経度
-
-DrinkStyle:
-  type: object
-  required:
-    - id
-    - name
-  properties:
-    id:
-      type: integer
-      format: int32
-      description: 飲み方ID
-    name:
-      type: string
-      description: 飲み方の名前
-      example: ストレート
-    description:
-      type: string
-      nullable: true
-      description: 詳細説明
-      example: お酒そのままの味を楽しむ飲み方
+# DrinkStyle:
+#   type: object
+#   required:
+#     - id
+#     - name
+#   properties:
+#     id:
+#       type: integer
+#       format: int32
+#       description: 飲み方ID
+#     name:
+#       type: string
+#       description: 飲み方の名前
+#       example: ストレート
+#     description:
+#       type: string
+#       nullable: true
+#       description: 詳細説明
+#       example: お酒そのままの味を楽しむ飲み方
 
 Sake:
   type: object
   required:
     - id
-    - category
     - name
+    - category
     - imagePreview
   properties:
     id:
       type: integer
       format: int32
       description: 酒ID
-    category:
-      type: 
-        $ref: "#/SakeCategory"
-      description: 酒の大分類
     name:
       type: string
       description: 酒名
+    category:
+      type:
+        $ref: "#/Category"
+      description: 酒カテゴリ
     imagePreview:
       type: string
+      nullable: true
       description: 画像URL formatは実装次第
 
 SakeDetail:
   type: object
   required:
     - id
+    - name
     - category
     - kind
     - brewery
-    - name
     - abv
     - purchaseVolume
-    - RemainingVolume
-    - memo 
+    - remainingVolume
+    - memo
     - drinkStyles
     - price
     - createdAt
@@ -168,7 +138,7 @@ SakeDetail:
       items:
         $ref: "#/DrinkStyle"
       description: おすすめの飲み方
-    price: 
+    price:
       type: integer
       format: int32
       description: 購入時価格
@@ -184,43 +154,20 @@ SakeDetail:
       format: date-time
       description: 更新日時
 
-SakeListMeta:
+ListSakesResponse:
   type: object
   required:
     - total
-    - offset
-    - limit
+    - sakes
   properties:
     total:
       type: integer
-      format: int64
-      description: 総件数
-      example: 100
-    offset:
-      type: integer
-      format: int32
-      description: スキップした件数
-      example: 0
-    limit:
-      type: integer
-      format: int32
-      description: 取得した件数
-      example: 20
-
-ListSakesResponse:
-  type: object
-  properties:
-    data:
+      description: 酒の総数
+    sakes:
       type: array
       items:
         $ref: "#/Sake"
-      description: 酒のリスト
-    meta:
-      $ref: "#/SakeListMeta"
-    errors:
-      type: array
-      items:
-        $ref: "./common.yaml#/APIError"
+      description: 酒リスト
 
 CreateSakeRequest:
   type: object
@@ -266,7 +213,7 @@ CreateSakeRequest:
       items:
         $ref: "#/DrinkStyle"
       description: おすすめの飲み方
-    price: 
+    price:
       type: integer
       format: int32
       description: 購入時価格
@@ -338,7 +285,7 @@ UpdateSakeRequest:
       items:
         $ref: "#/DrinkStyle"
       description: おすすめの飲み方
-    price: 
+    price:
       type: integer
       format: int32
       description: 購入時価格
