@@ -15,10 +15,6 @@ paths:
     $ref: "./paths/sakes.yaml"
   /sakes/{id}:
     $ref: "./paths/sakeDetail.yaml"
-  /stocks:
-    $ref: "./paths/stocks.yaml"
-  /stocks/{id}:
-    $ref: "./paths/stockDetail.yaml"
 
 components:
   schemas:

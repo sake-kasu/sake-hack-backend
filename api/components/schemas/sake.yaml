@@ -1,17 +1,23 @@
+# Shared primitive and small reusable schemas
 SakeID:
   type: string
   format: uuid
   description: 酒ID
   example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
 SakeName:
   type: string
   description: 酒名
   example: 獺祭
+  maxLength: 50
+
 Furigana:
   type: string
   description: 酒名のフリガナ
   example: たんざい
   nullable: true
+  maxLength: 100
+
 SakeCategory:
   type: string
   enum:
@@ -24,67 +30,86 @@ SakeCategory:
     - OTHER
   description: 酒カテゴリ
   example: JAPANESE_SAKE
+
 ImageURL:
   type: string
   nullable: true
   description: 画像URL
+  example: https://example.com/images/sake.jpg
+
+SubCategory:
+  type: object
+  format: json
+  nullable: true
+  description: 酒サブカテゴリ
+  example: { "type": "純米大吟醸", "brand": "獺祭" }
+
 AlcoholPercentage:
   type: number
   format: float
   description: アルコール度数(%)
   example: 16.0
   nullable: true
-Capacity:
+
+Volume:
   type: number
   format: float
   description: 容量(ml)
   example: 720.0
   nullable: true
+
 RemainingAmount:
   type: number
   format: float
   description: 残容量
   example: 360.0
   nullable: true
+
 ProductionArea:
   type: string
   nullable: true
   description: 生産地
   example: 山口県
+
 Price:
   type: integer
   format: int32
   description: 金額(円)
   nullable: true
   example: 1500
+
 Memo:
   type: string
   nullable: true
   maxLength: 500
   description: メモ
   example: フルーティーで飲みやすい
+
 QrCode:
   type: string
   description: QRコード識別子
   example: QR1234567890
-CreatedAt:
-  type: string
-  format: date-time
-  description: 作成日時
-UpdatedAt:
-  type: string
-  format: date-time
-  description: 更新日時
 
-Sake:
+# Compound schemas for reuse
+SakeDetail:
   type: object
+  description: 酒詳細情報
   required:
     - id
     - name
     - furigana
-    - category
     - image_url
-  description: 酒
+    - category
+    - sub_category
+    - alcohol_percentage
+    - capacity
+    - remaining_amount
+    - production_area
+    - price
+    - memo
+    - qr_code
+    - created_at
+    - updated_at
   properties:
     id:
       $ref: "#/SakeID"
@@ -92,11 +117,36 @@ Sake:
       $ref: "#/SakeName"
     furigana:
       $ref: "#/Furigana"
-    category:
-      $ref: "#/SakeCategory"
     image_url:
       $ref: "#/ImageURL"
+    category:
+      $ref: "#/SakeCategory"
+    sub_category:
+      $ref: "#/SubCategory"
+    alcohol_percentage:
+      $ref: "#/AlcoholPercentage"
+    capacity:
+      $ref: "#/Volume"
+    remaining_amount:
+      $ref: "#/RemainingAmount"
+    production_area:
+      $ref: "#/ProductionArea"
+    price:
+      $ref: "#/Price"
+    memo:
+      $ref: "#/Memo"
+    qr_code:
+      $ref: "#/QrCode"
+    created_at:
+      type: string
+      format: date-time
+      description: 作成日時
+    updated_at:
+      type: string
+      format: date-time
+      description: 更新日時
 
+# Request/response schemas
 ListSakesResponse:
   type: object
   required:
@@ -109,15 +159,15 @@ ListSakesResponse:
     sakes:
       type: array
       items:
-        $ref: "#/Sake"
+        $ref: "#/SakeDetail"
       description: 酒リスト
 
-SakeDetail:
+SakeInput:
   type: object
   required:
-    - id
     - name
     - furigana
+    - image_url
     - category
     - sub_category
     - alcohol_percentage
@@ -126,28 +176,21 @@ SakeDetail:
     - production_area
     - price
     - memo
-    - qr_code
-    - created_at
-    - updated_at
-  description: 酒詳細情報
   properties:
-    id:
-      $ref: "#/SakeID"
     name:
       $ref: "#/SakeName"
     furigana:
       $ref: "#/Furigana"
+    image_url:
+      $ref: "#/ImageURL"
     category:
       $ref: "#/SakeCategory"
     sub_category:
-      type: object
-      format: json
-      nullable: true
-      description: 酒サブカテゴリ
+      $ref: "#/SubCategory"
     alcohol_percentage:
       $ref: "#/AlcoholPercentage"
     capacity:
-      $ref: "#/Capacity"
+      $ref: "#/Volume"
     remaining_amount:
       $ref: "#/RemainingAmount"
     production_area:
@@ -156,124 +199,9 @@ SakeDetail:
       $ref: "#/Price"
     memo:
       $ref: "#/Memo"
-    qr_code:
-      $ref: "#/QrCode"
-    created_at:
-      $ref: "#/CreatedAt"
-    updated_at:
-      $ref: "#/UpdatedAt"
 
 CreateSakeRequest:
-  type: object
-  required:
-    - name
-    - furigana
-    - category
-    - sub_category
-    - alcohol_percentage
-    - capacity
-    - remaining_amount
-    - production_area
-    - price
-    - memo
-  description: 酒詳細情報
-  properties:
-    name:
-      $ref: "#/SakeName"
-    furigana:
-      $ref: "#/Furigana"
-    category:
-      $ref: "#/SakeCategory"
-    sub_category:
-      type: object
-      format: json
-      nullable: true
-      description: 酒サブカテゴリ
-    alcohol_percentage:
-      $ref: "#/AlcoholPercentage"
-    capacity:
-      $ref: "#/Capacity"
-    remaining_amount:
-      $ref: "#/RemainingAmount"
-    production_area:
-      $ref: "#/ProductionArea"
-    price:
-      $ref: "#/Price"
-    memo:
-      $ref: "#/Memo"
+  $ref: "#/SakeInput"
 
 UpdateSakeRequest:
-  $ref: "#/CreateSakeRequest"
-
-# Type definitions
-SakeType:
-  type: object
-  required:
-    - id
-    - name
-  description: 酒の種類
-  properties:
-    id:
-      type: integer
-      format: int32
-      description: 種類ID
-    name:
-      type: string
-      description: 種類名
-
-Brewery:
-  type: object
-  required:
-    - id
-    - name
-  description: 酒造/醸造所
-  properties:
-    id:
-      type: integer
-      format: int32
-      description: 酒造ID
-    name:
-      type: string
-      description: 酒造名
-
-DrinkStyle:
-  type: object
-  required:
-    - id
-    - name
-  description: 飲み方/スタイル
-  properties:
-    id:
-      type: integer
-      format: int32
-      description: スタイルID
-    name:
-      type: string
-      description: スタイル名
-
-SakeListMeta:
-  type: object
-  required:
-    - total
-    - limit
-    - offset
-  description: 酒リストのメタデータ
-  properties:
-    total:
-      type: integer
-      description: 総件数
-    limit:
-      type: integer
-      description: 取得件数
-    offset:
-      type: integer
-      description: オフセット
-
-CreateSakeResponse:
-  type: object
-  required:
-    - id
-  description: 酒作成レスポンス
-  properties:
-    id:
-      $ref: "#/SakeID"
+  $ref: "#/SakeInput"

@@ -134,6 +134,7 @@ make api-validate       # OpenAPI仕様検証
 make api-generate       # コード生成
 make api-bundle         # OpenAPI仕様バンドル
 make api-gendoc         # APIドキュメント生成
+make api-watch          # APIドキュメント生成（リアルタイム反映）
 ```
 
 ### データベース
