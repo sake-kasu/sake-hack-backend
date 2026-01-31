@@ -23,3 +23,55 @@ get:
       $ref: "../components/responses/common.yaml#/BadRequest"
     "500":
       $ref: "../components/responses/common.yaml#/InternalServerError"
+patch:
+  tags:
+    - Sake
+  summary: 酒情報更新
+  description: 酒情報を更新します
+  operationId: updateSake
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: 酒ID
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/sake.yaml#/UpdateSakeRequest"
+  responses:
+    "200":
+      description: 酒情報更新成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/sake.yaml#/SakeDetail"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
+delete:
+  tags:
+    - Sake
+  summary: 酒情報削除
+  description: 指定された酒情報を削除します
+  operationId: deleteSake
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: 酒ID
+  responses:
+    "204":
+      description: 酒情報削除成功
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"

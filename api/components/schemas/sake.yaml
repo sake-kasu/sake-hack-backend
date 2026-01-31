@@ -201,3 +201,6 @@ CreateSakeRequest:
       $ref: "#/Price"
     memo:
       $ref: "#/Memo"
+
+UpdateSakeRequest:
+  $ref: "#/CreateSakeRequest"
