@@ -1,4 +1,18 @@
-Category:
+SakeID:
+  type: string
+  format: uuid
+  description: 酒ID
+  example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+SakeName:
+  type: string
+  description: 酒名
+  example: 獺祭
+Furigana:
+  type: string
+  description: 酒名のフリガナ
+  example: たんざい
+  nullable: true
+SakeCategory:
   type: string
   enum:
     - BEER
@@ -8,51 +22,80 @@ Category:
     - SHOCHU
     - COCKTAIL
     - OTHER
+  description: 酒カテゴリ
   example: JAPANESE_SAKE
-
-# DrinkStyle:
-#   type: object
-#   required:
-#     - id
-#     - name
-#   properties:
-#     id:
-#       type: integer
-#       format: int32
-#       description: 飲み方ID
-#     name:
-#       type: string
-#       description: 飲み方の名前
-#       example: ストレート
-#     description:
-#       type: string
-#       nullable: true
-#       description: 詳細説明
-#       example: お酒そのままの味を楽しむ飲み方
+ImageURL:
+  type: string
+  nullable: true
+  description: 画像URL
+AlcoholPercentage:
+  type: number
+  format: float
+  description: アルコール度数(%)
+  example: 16.0
+  nullable: true
+Capacity:
+  type: number
+  format: float
+  description: 容量(ml)
+  example: 720.0
+  nullable: true
+RemainingAmount:
+  type: number
+  format: float
+  description: 残容量
+  example: 360.0
+  nullable: true
+ProductionArea:
+  type: string
+  nullable: true
+  description: 生産地
+  example: 山口県
+Price:
+  type: integer
+  format: int32
+  description: 金額(円)
+  nullable: true
+  example: 1500
+Memo:
+  type: string
+  nullable: true
+  maxLength: 500
+  description: メモ
+  example: フルーティーで飲みやすい
+QrCode:
+  type: string
+  description: QRコード識別子
+  example: QR1234567890
+CreatedAt:
+  type: string
+  format: date-time
+  description: 作成日時
+UpdatedAt:
+  type: string
+  format: date-time
+  description: 更新日時
 
 Sake:
   type: object
   required:
     - id
     - name
+    - furigana
     - category
-    - imagePreview
+    - image_url
+  description: 酒
   properties:
     id:
-      type: integer
-      format: int32
-      description: 酒ID
+      $ref: "#/SakeID"
     name:
-      type: string
-      description: 酒名
+      $ref: "#/SakeName"
+    furigana:
+      $ref: "#/Furigana"
     category:
-      type:
-        $ref: "#/Category"
-      description: 酒カテゴリ
-    imagePreview:
-      type: string
-      nullable: true
-      description: 画像URL formatは実装次第
+      $ref: "#/SakeCategory"
+    image_url:
+      $ref: "#/ImageURL"
 
 ListSakesResponse:
   type: object
@@ -74,205 +117,87 @@ SakeDetail:
   required:
     - id
     - name
+    - furigana
     - category
-    - subCategory
-    - alcoholPercentage
-    - capasity
-    - remainingVolume
-    - memo
-    - drinkStyles
+    - sub_category
+    - alcohol_percentage
+    - capacity
+    - remaining_amount
+    - production_area
     - price
-    - createdAt
-    - updatedAt
+    - memo
+    - qr_code
+    - created_at
+    - updated_at
+  description: 酒詳細情報
   properties:
     id:
-      type: string
-      format: uuid
-      description: 酒ID
-      example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      $ref: "#/SakeID"
     name:
-      type: string
-      description: 酒名
-      example: 獺祭
+      $ref: "#/SakeName"
+    furigana:
+      $ref: "#/Furigana"
     category:
-      $ref: "#/Category"
-    subCategory:
-      type: json
+      $ref: "#/SakeCategory"
+    sub_category:
+      type: object
+      format: json
       nullable: true
       description: 酒サブカテゴリ
     alcohol_percentage:
-      type: number
-      format: float
-      description: アルコール度数(%)
-      example: 16.0
-    capasity:
-      type: number
-      format: float
-      description: 容量(ml)
-      nullable: true
-    remainingVolume:
-      type: number
-      format: float
-      description: 残容量
-      nullable: true
+      $ref: "#/AlcoholPercentage"
+    capacity:
+      $ref: "#/Capacity"
+    remaining_amount:
+      $ref: "#/RemainingAmount"
     production_area:
-      type: string
-      nullable: true
-      description: 生産地
+      $ref: "#/ProductionArea"
     price:
-      type: integer
-      format: int32
-      description: 金額(円)
-      nullable: true
+      $ref: "#/Price"
     memo:
-      type: string
-      nullable: true
-      maxLength: 500
-      description: メモ
-    drinkStyles:
-      type: array
-      items:
-        $ref: "#/DrinkStyle"
-      description: おすすめの飲み方
+      $ref: "#/Memo"
     qr_code:
-      type: string
-      nullable: true
-      description: QRコード識別子
-    imageUrl:
-      type: string
-      description: 表示用の画像URL
-    createdAt:
-      type: string
-      format: date-time
-      description: 作成日時
-    updatedAt:
-      type: string
-      format: date-time
-      description: 更新日時
+      $ref: "#/QrCode"
+    created_at:
+      $ref: "#/CreatedAt"
+    updated_at:
+      $ref: "#/UpdatedAt"
 
 CreateSakeRequest:
   type: object
   required:
     - name
+    - furigana
     - category
+    - sub_category
     - alcohol_percentage
-    - capasity
-    - remainingVolume
-    - memo
+    - capacity
+    - remaining_amount
+    - production_area
     - price
+    - memo
+  description: 酒詳細情報
   properties:
-    category:
-      $ref: "#/SakeCategory"
-    kind:
-      $ref: "#/SakeKind"
-    brewery:
-      $ref: "#/Brewery"
     name:
       $ref: "#/SakeName"
-    alcohol_percentage:
-      type: number
-      format: float
-      description: アルコール度数(%)
-      example: 16.0
-    purchaseVolume:
-      type: number
-      format: float
-      description: 購入時容量
-    remainingVolume:
-      type: number
-      format: float
-      description: 残容量
-    memo:
-      type: string
-      nullable: true
-      description: メモ
-      nullable: true
-    price:
-      type: integer
-      format: int32
-      description: 金額（円）
-    imageUrl:
-      type: string
-      description: 表示用の画像URL
-
-CreateSakeResponse:
-  type: object
-  properties:
-    data:
-      $ref: "#/Sake"
-    errors:
-      type: array
-      items:
-        $ref: "./common.yaml#/APIError"
-
-GetSakeResponse:
-  type: object
-  properties:
-    data:
-      $ref: "#/Sake"
-    errors:
-      type: array
-      items:
-        $ref: "./common.yaml#/APIError"
-
-UpdateSakeRequest:
-  type: object
-  required:
-    - category
-    - kind
-    - brewery
-    - name
-    - alcohol_percentage
-    - purchaseVolume
-    - remainingVolume
-    - memo
-    - drinkStyles
-    - price
-  properties:
+    furigana:
+      $ref: "#/Furigana"
     category:
       $ref: "#/SakeCategory"
-    kind:
-      $ref: "#/SakeKind"
-    brewery:
-      $ref: "#/Brewery"
-    name:
-      $ref: "#/SakeName"
-    alcohol_percentage:
-      type: number
-      format: float
-      description: アルコール度数(%)
-      example: 16.0
-    purchaseVolume:
-      type: number
-      format: float
-      description: 購入時容量
-    remainingVolume:
-      type: number
-      format: float
-      description: 残容量
-    memo:
-      type: string
+    sub_category:
+      type: object
+      format: json
       nullable: true
-      description: 感想
-    drinkStyles:
-      type: array
-      items:
-        $ref: "#/DrinkStyle"
-      description: おすすめの飲み方
+      description: 酒サブカテゴリ
+    alcohol_percentage:
+      $ref: "#/AlcoholPercentage"
+    capacity:
+      $ref: "#/Capacity"
+    remaining_amount:
+      $ref: "#/RemainingAmount"
+    production_area:
+      $ref: "#/ProductionArea"
     price:
-      type: integer
-      format: int32
-      description: 購入時価格
-    imageUrl:
-      type: string
-      description: 表示用の画像URL
-
-UpdateSakeResponse:
-  type: object
-  properties:
-    data:
-      $ref: "#/Sake"
-    errors:
-      type: array
-      items:
-        $ref: "./common.yaml#/APIError"
+      $ref: "#/Price"
+    memo:
+      $ref: "#/Memo"
