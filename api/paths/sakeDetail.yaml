@@ -9,12 +9,12 @@ get:
       in: path
       required: true
       schema:
-        type: integer
-        format: int32
-      description: 詳細情報を取得したい酒id
+        type: string
+        format: uuid
+      description: 酒ID
   responses:
     "200":
-      description: 酒一覧の取得に成功
+      description: 酒詳細取得成功
       content:
         application/json:
           schema:

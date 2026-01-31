@@ -8,40 +8,7 @@ Category:
     - SHOCHU
     - COCKTAIL
     - OTHER
-# Brewery:
-#   type: object
-#   required:
-#     - id
-#     - name
-#     - originCountry
-#   properties:
-#     id:
-#       type: integer
-#       format: int32
-#       description: 酒造ID
-#     name:
-#       type: string
-#       description: 酒造名
-#       example: 獺祭
-#     originCountry:
-#       type: string
-#       description: 所在国
-#       example: 日本
-#     originRegion:
-#       type: string
-#       nullable: true
-#       description: 所在地域
-#       example: 山口県
-#     latitude:
-#       type: number
-#       format: double
-#       nullable: true
-#       description: 緯度
-#     longitude:
-#       type: number
-#       format: double
-#       nullable: true
-#       description: 経度
+  example: JAPANESE_SAKE
 
 # DrinkStyle:
 #   type: object
@@ -87,73 +54,6 @@ Sake:
       nullable: true
       description: 画像URL formatは実装次第
 
-SakeDetail:
-  type: object
-  required:
-    - id
-    - name
-    - category
-    - kind
-    - brewery
-    - abv
-    - purchaseVolume
-    - remainingVolume
-    - memo
-    - drinkStyles
-    - price
-    - createdAt
-    - updatedAt
-  properties:
-    id:
-      type: integer
-      format: int32
-      description: 酒ID
-    category:
-      $ref: "#/SakeCategory"
-    kind:
-      $ref: "#/SakeKind"
-    brewery:
-      $ref: "#/Brewery"
-    name:
-      $ref: "#/SakeName"
-    abv:
-      type: number
-      format: float
-      description: アルコール度数(%)
-      example: 16.0
-    purchaseVolume:
-      type: number
-      format: float
-      description: 購入時容量
-    remainingVolume:
-      type: number
-      format: float
-      description: 残容量
-    memo:
-      type: string
-      nullable: true
-      description: 感想
-    drinkStyles:
-      type: array
-      items:
-        $ref: "#/DrinkStyle"
-      description: おすすめの飲み方
-    price:
-      type: integer
-      format: int32
-      description: 購入時価格
-    imageUrl:
-      type: string
-      description: 表示用の画像URL
-    createdAt:
-      type: string
-      format: date-time
-      description: 作成日時
-    updatedAt:
-      type: string
-      format: date-time
-      description: 更新日時
-
 ListSakesResponse:
   type: object
   required:
@@ -168,6 +68,87 @@ ListSakesResponse:
       items:
         $ref: "#/Sake"
       description: 酒リスト
+
+SakeDetail:
+  type: object
+  required:
+    - id
+    - name
+    - category
+    - subCategory
+    - alcoholPercentage
+    - capasity
+    - remainingVolume
+    - memo
+    - drinkStyles
+    - price
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: 酒ID
+      example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    name:
+      type: string
+      description: 酒名
+      example: 獺祭
+    category:
+      $ref: "#/Category"
+    subCategory:
+      type: json
+      nullable: true
+      description: 酒サブカテゴリ
+    alcoholPercentage:
+      type: number
+      format: float
+      description: アルコール度数(%)
+      example: 16.0
+    capasity:
+      type: number
+      format: float
+      description: 容量(ml)
+      nullable: true
+    remainingVolume:
+      type: number
+      format: float
+      description: 残容量
+      nullable: true
+    production_area:
+      type: string
+      nullable: true
+      description: 生産地
+    price:
+      type: integer
+      format: int32
+      description: 金額(円)
+      nullable: true
+    memo:
+      type: string
+      nullable: true
+      maxLength: 500
+      description: メモ
+    drinkStyles:
+      type: array
+      items:
+        $ref: "#/DrinkStyle"
+      description: おすすめの飲み方
+    qr_code:
+      type: string
+      nullable: true
+      description: QRコード識別子
+    imageUrl:
+      type: string
+      description: 表示用の画像URL
+    createdAt:
+      type: string
+      format: date-time
+      description: 作成日時
+    updatedAt:
+      type: string
+      format: date-time
+      description: 更新日時
 
 CreateSakeRequest:
   type: object
