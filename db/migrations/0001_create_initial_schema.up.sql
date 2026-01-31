@@ -1,7 +1,9 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TYPE sake_category AS ENUM ('BEER', 'JAPANESE_SAKE', 'WINE', 'WHISKEY', 'SHOCHU', 'COCKTAIL', 'OTHER');
 
 CREATE TABLE sakes (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL,
     category sake_category NOT NULL,
     subcategory VARCHAR,
@@ -23,8 +25,8 @@ COMMENT ON TABLE sakes IS '酒の基本情報を管理するテーブル';
 
 COMMENT ON COLUMN sakes.id IS '酒の一意識別子';
 COMMENT ON COLUMN sakes.name IS '酒の商品名';
-COMMENT ON COLUMN sakes.category IS '大分類(酒のカテゴリ、例)ビール、日本酒、ワイン)';
-COMMENT ON COLUMN sakes.subcategory IS '小分類(酒のサブカテゴリ(例：IPA、純米大吟醸等)';
+COMMENT ON COLUMN sakes.category IS '大分類(酒のカテゴリ、(例: ビール、日本酒、ワイン))';
+COMMENT ON COLUMN sakes.subcategory IS '小分類(酒のサブカテゴリ(例：IPA、純米大吟醸等))';
 COMMENT ON COLUMN sakes.alcohol_percentage IS 'アルコール度数(%)';
 COMMENT ON COLUMN sakes.volume IS '容量(mL)';
 COMMENT ON COLUMN sakes.origin IS '産地';
