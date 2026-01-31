@@ -27,9 +27,13 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Bundle OpenAPI spec
+        run: |
+          npx @redocly/cli bundle api/openapi.yaml -o openapi.bundled.yaml
+
       - name: Generate API Documentation
         run: |
-          npx @redocly/cli build-docs api/openapi.yaml -o public/index.html
+          npx @redocly/cli build-docs openapi.bundled.yaml -o public/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
