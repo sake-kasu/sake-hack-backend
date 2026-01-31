@@ -14,8 +14,14 @@ SakeName:
 ImageURL:
   type: string
   nullable: true
-  description: 画像URL
+  description: 画像URL（S3）
   example: https://example.com/images/sake.jpg
+
+ImageData:
+  type: string
+  format: byte
+  nullable: true
+  description: 画像データ（Base64エンコード）
 
 SakeCategory:
   type: string
@@ -30,12 +36,12 @@ SakeCategory:
   description: 酒カテゴリ
   example: JAPANESE_SAKE
 
-Subcategory:
+CategoryDescription:
   type: string
   nullable: true
-  description: 酒サブカテゴリ
+  description: 酒カテゴリ詳細
   example: 純米大吟醸
-  maxLength: 500
+  maxLength: 100
 
 AlcoholPercentage:
   type: number
@@ -43,19 +49,27 @@ AlcoholPercentage:
   description: アルコール度数(%)
   example: 16.0
   multipleOf: 0.1
-  minimum: 0
-  maximum: 100
+  minimum: 0.0
+  maximum: 100.0
   nullable: true
 
-Volume:
+VolumeMax:
   type: integer
-  description: 容量(ml)
+  description: 最大容量(ml)
   example: 720
   nullable: true
 
-Origin:
+VolumeRemain:
+  type: integer
+  description: 残量(%)
+  example: 75
+  nullable: true
+  maximum: 100
+  minimum: 0
+
+Region:
   type: string
-  description: 生産地
+  description: 産地
   example: 山口県
   nullable: true
 
@@ -65,16 +79,12 @@ Price:
   example: 1500
   nullable: true
 
-Stock:
-  type: integer
-  description: 在庫数
-  example: 10
-  nullable: true
-
-QrCode:
+Memo:
   type: string
-  description: QRコード識別子
-  example: QR1234567890
+  description: メモ
+  example: 美味しい
+  nullable: true
+  maxLength: 500
 
 # Compound schemas for reuse
 SakeDetail:
@@ -85,13 +95,13 @@ SakeDetail:
     - name
     - image_url
     - category
-    - subcategory
+    - description
     - alcohol_percentage
-    - volume
-    - origin
+    - volume_max
+    - volume_remain
+    - region
     - price
-    - stock
-    - qr_code
+    - memo
     - created_at
     - updated_at
   properties:
@@ -103,20 +113,20 @@ SakeDetail:
       $ref: "#/ImageURL"
     category:
       $ref: "#/SakeCategory"
-    subcategory:
-      $ref: "#/Subcategory"
+    description:
+      $ref: "#/CategoryDescription"
     alcohol_percentage:
       $ref: "#/AlcoholPercentage"
-    volume:
-      $ref: "#/Volume"
-    origin:
-      $ref: "#/Origin"
+    volume_max:
+      $ref: "#/VolumeMax"
+    volume_remain:
+      $ref: "#/VolumeRemain"
+    region:
+      $ref: "#/Region"
     price:
       $ref: "#/Price"
-    stock:
-      $ref: "#/Stock"
-    qr_code:
-      $ref: "#/QrCode"
+    memo:
+      $ref: "#/Memo"
     created_at:
       type: string
       format: date-time
@@ -142,39 +152,66 @@ ListSakesResponse:
         $ref: "#/SakeDetail"
       description: 酒リスト
 
-SakeInput:
+CreateSakeRequest:
   type: object
   required:
     - name
-    - image_url
+    - image_data
     - category
-    - subcategory
+    - description
     - alcohol_percentage
-    - volume
-    - origin
+    - volume_max
+    - volume_remain
+    - region
     - price
-    - stock
+    - memo
   properties:
     name:
       $ref: "#/SakeName"
-    image_url:
-      $ref: "#/ImageURL"
+    image_data:
+      $ref: "#/ImageData"
     category:
       $ref: "#/SakeCategory"
-    subcategory:
-      $ref: "#/Subcategory"
+    description:
+      $ref: "#/CategoryDescription"
     alcohol_percentage:
       $ref: "#/AlcoholPercentage"
-    volume:
-      $ref: "#/Volume"
-    origin:
-      $ref: "#/Origin"
+    volume_max:
+      $ref: "#/VolumeMax"
+    volume_remain:
+      $ref: "#/VolumeRemain"
+    region:
+      $ref: "#/Region"
     price:
       $ref: "#/Price"
-    stock:
-      $ref: "#/Stock"
-CreateSakeRequest:
-  $ref: "#/SakeInput"
+    memo:
+      $ref: "#/Memo"
 
 UpdateSakeRequest:
-  $ref: "#/SakeInput"
+  type: object
+  description: 更新リクエスト。フィールドを省略すると変更なし、nullを指定すると明示的にnullに更新
+  properties:
+    name:
+      allOf:
+        - $ref: "#/SakeName"
+      nullable: true
+    image_data:
+      $ref: "#/ImageData"
+    category:
+      allOf:
+        - $ref: "#/SakeCategory"
+      nullable: true
+    description:
+      $ref: "#/CategoryDescription"
+    alcohol_percentage:
+      $ref: "#/AlcoholPercentage"
+    volume_max:
+      $ref: "#/VolumeMax"
+    volume_remain:
+      $ref: "#/VolumeRemain"
+    region:
+      $ref: "#/Region"
+    price:
+      $ref: "#/Price"
+    memo:
+      $ref: "#/Memo"
