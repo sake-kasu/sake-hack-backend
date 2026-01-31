@@ -204,3 +204,76 @@ CreateSakeRequest:
 
 UpdateSakeRequest:
   $ref: "#/CreateSakeRequest"
+
+# Type definitions
+SakeType:
+  type: object
+  required:
+    - id
+    - name
+  description: 酒の種類
+  properties:
+    id:
+      type: integer
+      format: int32
+      description: 種類ID
+    name:
+      type: string
+      description: 種類名
+
+Brewery:
+  type: object
+  required:
+    - id
+    - name
+  description: 酒造/醸造所
+  properties:
+    id:
+      type: integer
+      format: int32
+      description: 酒造ID
+    name:
+      type: string
+      description: 酒造名
+
+DrinkStyle:
+  type: object
+  required:
+    - id
+    - name
+  description: 飲み方/スタイル
+  properties:
+    id:
+      type: integer
+      format: int32
+      description: スタイルID
+    name:
+      type: string
+      description: スタイル名
+
+SakeListMeta:
+  type: object
+  required:
+    - total
+    - limit
+    - offset
+  description: 酒リストのメタデータ
+  properties:
+    total:
+      type: integer
+      description: 総件数
+    limit:
+      type: integer
+      description: 取得件数
+    offset:
+      type: integer
+      description: オフセット
+
+CreateSakeResponse:
+  type: object
+  required:
+    - id
+  description: 酒作成レスポンス
+  properties:
+    id:
+      $ref: "#/SakeID"

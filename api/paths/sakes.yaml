@@ -5,8 +5,8 @@ get:
   description: 酒の一覧を取得します
   operationId: getSakes
   parameters:
-    - $ref: "../components/parameters/offset.yaml#/Offset"
-    - $ref: "../components/parameters/limit.yaml#/Limit"
+    - $ref: "../components/parameters/common.yaml#/Offset"
+    - $ref: "../components/parameters/common.yaml#/Limit"
     - name: category
       in: query
       description: 酒カテゴリ名
@@ -24,7 +24,7 @@ get:
           - OTHER
         x-oapi-codegen-extra-tags:
           validate: "omitempty,oneof=BEER JAPANESE_SAKE WINE WHISKEY SHOCHU COCKTAIL OTHER"
-    - $ref: "../components/parameters/q.yaml#/Q"
+    - $ref: "../components/parameters/common.yaml#/Q"
   responses:
     "200":
       description: 酒一覧の取得に成功
