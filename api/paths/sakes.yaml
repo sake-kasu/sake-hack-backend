@@ -9,7 +9,7 @@ get:
     - $ref: "../components/parameters/common.yaml#/Limit"
     - name: category
       in: query
-      description: 酒カテゴリ名
+      description: 酒カテゴリ絞り込み
       required: false
       schema:
         type: string
@@ -24,7 +24,14 @@ get:
           - OTHER
         x-oapi-codegen-extra-tags:
           validate: "omitempty,oneof=BEER JAPANESE_SAKE WINE WHISKEY SHOCHU COCKTAIL OTHER"
-    - $ref: "../components/parameters/common.yaml#/Q"
+    - name: q
+      in: query
+      description: 酒名検索
+      required: false
+      schema:
+        type: string
+        x-oapi-codegen-extra-tags:
+          validate: "omitempty"
   responses:
     "200":
       description: 酒一覧の取得に成功

@@ -23,12 +23,3 @@ Offset:
     minimum: 0
     x-oapi-codegen-extra-tags:
       validate: "omitempty,min=0"
-Q:
-  name: q
-  in: query
-  description: フリーワード検索
-  required: false
-  schema:
-    type: string
-    x-oapi-codegen-extra-tags:
-      validate: "omitempty"

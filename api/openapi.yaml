@@ -16,45 +16,6 @@ paths:
   /sakes/{id}:
     $ref: "./paths/sakeDetail.yaml"
 
-components:
-  schemas:
-    ErrorCode:
-      $ref: "./components/schemas/common.yaml#/ErrorCode"
-    ErrorResponse:
-      $ref: "./components/schemas/common.yaml#/ErrorResponse"
-    PaginationMeta:
-      $ref: "./components/schemas/common.yaml#/PaginationMeta"
-    SakeType:
-      $ref: "./components/schemas/sake.yaml#/SakeType"
-    Brewery:
-      $ref: "./components/schemas/sake.yaml#/Brewery"
-    DrinkStyle:
-      $ref: "./components/schemas/sake.yaml#/DrinkStyle"
-    Sake:
-      $ref: "./components/schemas/sake.yaml#/Sake"
-    SakeListMeta:
-      $ref: "./components/schemas/sake.yaml#/SakeListMeta"
-    ListSakesResponse:
-      $ref: "./components/schemas/sake.yaml#/ListSakesResponse"
-
-  responses:
-    BadRequest:
-      $ref: "./components/responses/common.yaml#/BadRequest"
-    Unauthorized:
-      $ref: "./components/responses/common.yaml#/Unauthorized"
-    Forbidden:
-      $ref: "./components/responses/common.yaml#/Forbidden"
-    NotFound:
-      $ref: "./components/responses/common.yaml#/NotFound"
-    Conflict:
-      $ref: "./components/responses/common.yaml#/Conflict"
-    InternalServerError:
-      $ref: "./components/responses/common.yaml#/InternalServerError"
-
-  securitySchemes:
-    BearerAuth:
-      $ref: "./components/securitySchemes/auth.yaml#/BearerAuth"
-
 tags:
   - name: Sake
     description: 酒関連API
