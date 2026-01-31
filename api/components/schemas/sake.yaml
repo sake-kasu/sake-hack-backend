@@ -100,7 +100,7 @@ SakeDetail:
       type: json
       nullable: true
       description: 酒サブカテゴリ
-    alcoholPercentage:
+    alcohol_percentage:
       type: number
       format: float
       description: アルコール度数(%)
@@ -153,15 +153,12 @@ SakeDetail:
 CreateSakeRequest:
   type: object
   required:
-    - category
-    - kind
-    - brewery
     - name
-    - abv
-    - purchaseVolume
+    - category
+    - alcohol_percentage
+    - capasity
     - remainingVolume
     - memo
-    - drinkStyles
     - price
   properties:
     category:
@@ -172,7 +169,7 @@ CreateSakeRequest:
       $ref: "#/Brewery"
     name:
       $ref: "#/SakeName"
-    abv:
+    alcohol_percentage:
       type: number
       format: float
       description: アルコール度数(%)
@@ -188,16 +185,12 @@ CreateSakeRequest:
     memo:
       type: string
       nullable: true
-      description: 感想
-    drinkStyles:
-      type: array
-      items:
-        $ref: "#/DrinkStyle"
-      description: おすすめの飲み方
+      description: メモ
+      nullable: true
     price:
       type: integer
       format: int32
-      description: 購入時価格
+      description: 金額（円）
     imageUrl:
       type: string
       description: 表示用の画像URL
@@ -229,7 +222,7 @@ UpdateSakeRequest:
     - kind
     - brewery
     - name
-    - abv
+    - alcohol_percentage
     - purchaseVolume
     - remainingVolume
     - memo
@@ -244,7 +237,7 @@ UpdateSakeRequest:
       $ref: "#/Brewery"
     name:
       $ref: "#/SakeName"
-    abv:
+    alcohol_percentage:
       type: number
       format: float
       description: アルコール度数(%)
