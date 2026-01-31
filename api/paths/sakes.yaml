@@ -36,3 +36,26 @@ get:
       $ref: "../components/responses/common.yaml#/BadRequest"
     "500":
       $ref: "../components/responses/common.yaml#/InternalServerError"
+post:
+  tags:
+    - Sake
+  summary: 酒情報登録
+  description: 酒情報を登録します
+  operationId: createSake
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/sake.yaml#/CreateSakeRequest"
+  responses:
+    "200":
+      description: 酒情報登録成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/sake.yaml#/SakeDetail"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
