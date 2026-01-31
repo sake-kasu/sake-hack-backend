@@ -53,6 +53,42 @@ const (
 // AlcoholPercentage アルコール度数(%)
 type AlcoholPercentage = float32
 
+// CategoryDescription 酒カテゴリ詳細
+type CategoryDescription = string
+
+// CreateSakeRequest defines model for CreateSakeRequest.
+type CreateSakeRequest struct {
+	// AlcoholPercentage アルコール度数(%)
+	AlcoholPercentage *AlcoholPercentage `json:"alcohol_percentage"`
+
+	// Category 酒カテゴリ
+	Category SakeCategory `json:"category"`
+
+	// Description 酒カテゴリ詳細
+	Description *CategoryDescription `json:"description"`
+
+	// ImageData 画像データ（Base64エンコード）
+	ImageData *ImageData `json:"image_data"`
+
+	// Memo メモ
+	Memo *Memo `json:"memo"`
+
+	// Name 酒名
+	Name SakeName `json:"name"`
+
+	// Price 金額(円)
+	Price *Price `json:"price"`
+
+	// Region 産地
+	Region *Region `json:"region"`
+
+	// VolumeMax 最大容量(ml)
+	VolumeMax *VolumeMax `json:"volume_max"`
+
+	// VolumeRemain 残量(%)
+	VolumeRemain *VolumeRemain `json:"volume_remain"`
+}
+
 // ErrorCode エラーコードまたはワーニングコード
 // - E0001: 認証エラー
 // - E0002: データベース実行エラー
@@ -76,7 +112,10 @@ type ErrorResponse struct {
 	Reason *string `json:"reason"`
 }
 
-// ImageURL 画像URL
+// ImageData 画像データ（Base64エンコード）
+type ImageData = []byte
+
+// ImageURL 画像URL（S3）
 type ImageURL = string
 
 // ListSakesResponse defines model for ListSakesResponse.
@@ -88,14 +127,14 @@ type ListSakesResponse struct {
 	Total int `json:"total"`
 }
 
-// Origin 生産地
-type Origin = string
+// Memo メモ
+type Memo = string
 
 // Price 金額(円)
 type Price = int
 
-// QrCode QRコード識別子
-type QrCode = string
+// Region 産地
+type Region = string
 
 // SakeCategory 酒カテゴリ
 type SakeCategory string
@@ -111,81 +150,77 @@ type SakeDetail struct {
 	// CreatedAt 作成日時
 	CreatedAt time.Time `json:"created_at"`
 
+	// Description 酒カテゴリ詳細
+	Description *CategoryDescription `json:"description"`
+
 	// Id 酒ID
 	Id SakeID `json:"id"`
 
-	// ImageUrl 画像URL
+	// ImageUrl 画像URL（S3）
 	ImageUrl *ImageURL `json:"image_url"`
+
+	// Memo メモ
+	Memo *Memo `json:"memo"`
 
 	// Name 酒名
 	Name SakeName `json:"name"`
 
-	// Origin 生産地
-	Origin *Origin `json:"origin"`
-
 	// Price 金額(円)
 	Price *Price `json:"price"`
 
-	// QrCode QRコード識別子
-	QrCode QrCode `json:"qr_code"`
-
-	// Stock 在庫数
-	Stock *Stock `json:"stock"`
-
-	// Subcategory 酒サブカテゴリ
-	Subcategory *Subcategory `json:"subcategory"`
+	// Region 産地
+	Region *Region `json:"region"`
 
 	// UpdatedAt 更新日時
 	UpdatedAt time.Time `json:"updated_at"`
 
-	// Volume 容量(ml)
-	Volume *Volume `json:"volume"`
+	// VolumeMax 最大容量(ml)
+	VolumeMax *VolumeMax `json:"volume_max"`
+
+	// VolumeRemain 残量(%)
+	VolumeRemain *VolumeRemain `json:"volume_remain"`
 }
 
 // SakeID 酒ID
 type SakeID = openapi_types.UUID
 
-// SakeInput defines model for SakeInput.
-type SakeInput struct {
+// SakeName 酒名
+type SakeName = string
+
+// UpdateSakeRequest 更新リクエスト。フィールドを省略すると変更なし、nullを指定すると明示的にnullに更新
+type UpdateSakeRequest struct {
 	// AlcoholPercentage アルコール度数(%)
 	AlcoholPercentage *AlcoholPercentage `json:"alcohol_percentage"`
+	Category          *SakeCategory      `json:"category"`
 
-	// Category 酒カテゴリ
-	Category SakeCategory `json:"category"`
+	// Description 酒カテゴリ詳細
+	Description *CategoryDescription `json:"description"`
 
-	// ImageUrl 画像URL
-	ImageUrl *ImageURL `json:"image_url"`
+	// ImageData 画像データ（Base64エンコード）
+	ImageData *ImageData `json:"image_data"`
 
-	// Name 酒名
-	Name SakeName `json:"name"`
-
-	// Origin 生産地
-	Origin *Origin `json:"origin"`
+	// Memo メモ
+	Memo *Memo     `json:"memo"`
+	Name *SakeName `json:"name"`
 
 	// Price 金額(円)
 	Price *Price `json:"price"`
 
-	// Stock 在庫数
-	Stock *Stock `json:"stock"`
+	// Region 産地
+	Region *Region `json:"region"`
 
-	// Subcategory 酒サブカテゴリ
-	Subcategory *Subcategory `json:"subcategory"`
+	// VolumeMax 最大容量(ml)
+	VolumeMax *VolumeMax `json:"volume_max"`
 
-	// Volume 容量(ml)
-	Volume *Volume `json:"volume"`
+	// VolumeRemain 残量(%)
+	VolumeRemain *VolumeRemain `json:"volume_remain"`
 }
 
-// SakeName 酒名
-type SakeName = string
+// VolumeMax 最大容量(ml)
+type VolumeMax = int
 
-// Stock 在庫数
-type Stock = int
-
-// Subcategory 酒サブカテゴリ
-type Subcategory = string
-
-// Volume 容量(ml)
-type Volume = int
+// VolumeRemain 残量(%)
+type VolumeRemain = int
 
 // Limit defines model for Limit.
 type Limit = int32
@@ -218,10 +253,10 @@ type GetSakesParams struct {
 type GetSakesParamsCategory string
 
 // CreateSakeJSONRequestBody defines body for CreateSake for application/json ContentType.
-type CreateSakeJSONRequestBody = SakeInput
+type CreateSakeJSONRequestBody = CreateSakeRequest
 
 // UpdateSakeJSONRequestBody defines body for UpdateSake for application/json ContentType.
-type UpdateSakeJSONRequestBody = SakeInput
+type UpdateSakeJSONRequestBody = UpdateSakeRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -423,41 +458,44 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+RY/08byRX/V6xpK12lNV4gkMRSfiAEFRoUEkjuVKUIDeux2bDf2B1HoGilrPcCJEcE",
-	"RQFKj5bL9xwoBBrSC4Hm/phhbfzT/QvVzK7Xu2aM3V4uRe1PeNk3s5/3eZ/33sy7AyRdNXQNadgC6TvA",
-	"gCZUEUYme+qXVRnTHxlkSaZsYFnXQBp488vexxXirJLCN4f7/ygubQMByPTNRB6ZU0AAGlQRSAOFrReA",
-	"JY0hFfobZWFewSDdJgogq5sqxCANZA23twEBqHBSVvMqSLeKogBUWQueBICnDOQbohwygQAmkzo05KSk",
-	"Z1AOaUk0iU2YxDDHcN+GipyBmK7QVRkj1cBTgiprF1oFFU5eaBVFYNu2AAayWQtxHCSFPVJ4TVyXuM24",
-	"qfvbcP3kullxTPxkjjGHbAGYyDJ0zULM+iLMDKKJPLKYi5KuYaSxn9AwFFmC1NvULYu6fCeC/dcmyoI0",
-	"+FWqKo2U/9ZK9Zimbg4GH/FJrKHOXSDuBnFniHtACj8Q9yVx35LCK+J+T9wDYAugT8PI1KAyhMzbyGQb",
-	"fkZ4hXcUGAV54E3fK7uvItjsSgQZe12KpI/pylVkSkjDMId4OnlC3E1SeMv23PQ+vCgubX/xm98CAaBJ",
-	"qBoKAunWzogCsooOcX2h0995BcuGggayIC22tApAyysKHKU7YTOPQsFoeXUUmZRP5nO3nuHiC3yrQLxP",
-	"nI/EWSfOG+K+Yf/5hoVnOzT4o5ZM9Iii2JpOHG08PHp1EO5RedOWTlTC+yNxV9mPPW9r/ejxXMz2K3+X",
-	"kwXBNj0vimI6QZy/EmfrcH858pISqVFmbgIGCgjsL02iryrPdDUYjjAemgZUWdiUtVxIVSgPWu5M3UAm",
-	"lv18QfT1iBRQ2VBnjHNbACqyrDryqNDvPqbFpLDPOHgflQcIWHY2vWc7xaUV4qywGK3QMN0tFNfuew/2",
-	"iLNB3Fm2+A1jb7E4v3D48Vtm9oI488T5jjhLxPma3C3wHDcRDPKoHkJn6+j7t6XdbeJslBamS492fjqY",
-	"JYUNWgArQfvp4H4MeQySs+VDLa6tl1cXiDPnzc6QwhyD9zXzaBXUFXMFKEM6kZdNlKEhj8SjyvJwuEof",
-	"vYUkzEqKCnPoxmD/cQdLj/Y9d56+iiIfw9iw0qlU8J8WSVdTMt3DSllwHLXcMnKNwQqgX7bwEBxHVn1J",
-	"0e2s47DK9xZpUhT2iDtLmwpGqtVIc/RLlxCGskK/HYCBpgmn2LOOocL/kLNV+mHe71413aaWcH8TIUDN",
-	"Y3rAlHOyxuN5vfToqbe2HePZ29nx5p+W1uaaYfOqKUucJCrP/Kn8+OEX3vR0vKx20MpZZ9PQPwFcq1Ma",
-	"rw2GJe/o9Z+92efe64UY9muDrW3tZzo6z547L/JSioajG2KU080pPu+FTeJOk8IucTcidexiT88gEMDv",
-	"u652XekZ6hkZ6rrcQ8tZ3xX2p7dv6HLPH4AAhnoHuntvAAF0D3Rfvt7VRxU8cL23ZzBe62r34eIMZMND",
-	"6Wd90b3nfbcDhBr1Qr8FjhixHniSSI83TVsAUoSmRgoPKaXrTAQxyoxAzhHt8J9rxdmF4srz4iqteGGH",
-	"paejJJZVxONCzjQDoe8Ss6X1YCRvKo2WhMXHrhwIG3/iCrWzBaCH6XTSiiDpbBqeIEdOMvcTyRbARHPN",
-	"7FrYySysS+MN8TMjap0fbTqyEVNbAHkjUzewxW93i8vb/2Zgb+tKvjHzX/pWtVVPzlSO8tGoR2Qbd1Xg",
-	"pUUIIYxpJVgVVqvhiAk7Rgav4gaK5OVu36VYxWrPwnMd2c4zyY6zrWeTZzo625Kj7Vkp2Sad72zPdnbC",
-	"LOyMMprPM8+5FaNPM/L4eDv7LxeE/4Gc/Fwp9rMy4hdPhnpCvxLE6pjUvYWHMa2XHn4oPX/t36T6kZbD",
-	"YyDdIfLEXOG7ZoSx9sr7sOkfiqpniqZOFEPxmHD6/jviLtd2/yry3Uelnbfes5fewnp5+n2tC2ITJ6Uv",
-	"w9jWOLW1V56Z/0JVYiels21NuEUVIGtZvXIThxLL/mDAQUOT6IXSeOI6gio4dquuvr8IpXGkZRJdV/vY",
-	"7Q3LWEH1LKhQkGn5e7S2iC0iyz8DadCQaUFrEVvaqXYgHmPlJxUep3O8sY1/2D18f/foxUtSWKyMqVbC",
-	"6wctZWys0JcBafA75J/e2ReqY6+b/JSpmqSCsZEtNLT0B2jU8MTjYend30jhwdHHA+L8WGfGFM2/cBTy",
-	"Sc+UJ8vuPxlM6RrSsxcouEQMWoICSwSwEj6oRAVSwgdEFcmvA8Vna6XdJ3Vomojx87NdoDCGa6ZqbaL4",
-	"yeZVx2+QnJlV+d5ioGlnq6LpzeLsgvdgnebLGR8P7zMh7lRkFGgLoKOZJbw5HRuR5VUV0tpXBeajounO",
-	"uLzJ0h0M0+aoW/xE9W8cpLBYWt0vz/29fpZ2s7MS29BvUsjCF/XM1CeLQfW4Y8f7IE0D+xcMfvRCz426",
-	"z5FP0CmJdxTS8XjbQlCiU3fkjO3HXUGY06qKczPe1l+Is8RmROtRQXj3H5RXn9UXxCW2ZSCImsLNPyKz",
-	"QkGbSLVOsJNvPNTRwtHgjMypCWdOULnv0amKoA+Jl7EndNborKD5/hpI/BTF6jOmsE+Zz9QpEUAUErdk",
-	"QyyNnVyz/Tt6/cjfYFfaU5Ci/3/dIhifnKZa40PidAtqzpbzlNGvS1BJZNBtpOiGijSc8G2BANgAgA3x",
-	"06mUQu3GdAunz4nnREDjHnyHo7Xy8pPy3af+1SNytwH2sP2vAAAA//+cvNn7Ch8AAA==",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
