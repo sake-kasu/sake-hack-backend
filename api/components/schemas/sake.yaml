@@ -14,24 +14,26 @@ SakeName:
 ImageURL:
   type: string
   nullable: true
-  description: 画像URL（S3）
+  description: 画像URL(S3)
   example: https://example.com/images/sake.jpg
 
 ImageData:
   type: string
   format: byte
   nullable: true
-  description: 画像データ（Base64エンコード）
+  description: 画像データ(Base64エンコード)
 
 SakeCategory:
   type: string
   enum:
-    - BEER
-    - JAPANESE_SAKE
-    - WINE
-    - WHISKEY
-    - SHOCHU
-    - COCKTAIL
+    - JAPANESE_SAKE #清酒
+    - SHOCHU #焼酎
+    - AWAMORI #泡盛
+    - BEER #ビール
+    - WINE #ワイン
+    - FRUIT_SAKE #果実酒
+    - LIQUOR #洋酒
+    - NON_ALCOHOL #ノンアルコール
     - OTHER
   description: 酒カテゴリ
   example: JAPANESE_SAKE

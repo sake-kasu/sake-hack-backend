@@ -12,18 +12,9 @@ get:
       description: 酒カテゴリ絞り込み
       required: false
       schema:
-        type: string
-        nullable: true
-        enum:
-          - BEER
-          - JAPANESE_SAKE
-          - WINE
-          - WHISKEY
-          - SHOCHU
-          - COCKTAIL
-          - OTHER
+        $ref: "../components/schemas/sake.yaml#/SakeCategory"
         x-oapi-codegen-extra-tags:
-          validate: "omitempty,oneof=BEER JAPANESE_SAKE WINE WHISKEY SHOCHU COCKTAIL OTHER"
+          validate: "omitempty,oneof=JAPANESE_SAKE SHOCHU AWAMORI BEER WINE FRUIT_SAKE LIQUOR NON_ALCOHOL OTHER"
     - name: q
       in: query
       description: 酒名検索
