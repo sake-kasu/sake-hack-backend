@@ -5,55 +5,287 @@
 package sqlc
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// 酒造
-type Brewery struct {
-	ID int32 `db:"id" json:"id"`
-	// 酒造名
-	Name string `db:"name" json:"name"`
-	// 所在国
-	OriginCountry string `db:"origin_country" json:"origin_country"`
-	// 所在地域
-	OriginRegion *string `db:"origin_region" json:"origin_region"`
-	// 座標(任意)
-	Position interface{} `db:"position" json:"position"`
+// マッチングリクエストのステータスを定義するENUM
+type MatchStatus string
+
+const (
+	MatchStatusPENDING  MatchStatus = "PENDING"
+	MatchStatusACCEPTED MatchStatus = "ACCEPTED"
+	MatchStatusREJECTED MatchStatus = "REJECTED"
+)
+
+func (e *MatchStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = MatchStatus(s)
+	case string:
+		*e = MatchStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for MatchStatus: %T", src)
+	}
+	return nil
+}
+
+type NullMatchStatus struct {
+	MatchStatus MatchStatus `json:"match_status"`
+	Valid       bool        `json:"valid"` // Valid is true if MatchStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullMatchStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.MatchStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.MatchStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullMatchStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.MatchStatus), nil
+}
+
+func (e MatchStatus) Valid() bool {
+	switch e {
+	case MatchStatusPENDING,
+		MatchStatusACCEPTED,
+		MatchStatusREJECTED:
+		return true
+	}
+	return false
+}
+
+func AllMatchStatusValues() []MatchStatus {
+	return []MatchStatus{
+		MatchStatusPENDING,
+		MatchStatusACCEPTED,
+		MatchStatusREJECTED,
+	}
+}
+
+// 大分類(酒のカテゴリを定義するENUM)
+type SakeCategory string
+
+const (
+	SakeCategoryBEER         SakeCategory = "BEER"
+	SakeCategoryJAPANESESAKE SakeCategory = "JAPANESE_SAKE"
+	SakeCategoryWINE         SakeCategory = "WINE"
+	SakeCategoryWHISKEY      SakeCategory = "WHISKEY"
+	SakeCategorySHOCHU       SakeCategory = "SHOCHU"
+	SakeCategoryCOCKTAIL     SakeCategory = "COCKTAIL"
+	SakeCategoryOTHER        SakeCategory = "OTHER"
+)
+
+func (e *SakeCategory) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = SakeCategory(s)
+	case string:
+		*e = SakeCategory(s)
+	default:
+		return fmt.Errorf("unsupported scan type for SakeCategory: %T", src)
+	}
+	return nil
+}
+
+type NullSakeCategory struct {
+	SakeCategory SakeCategory `json:"sake_category"`
+	Valid        bool         `json:"valid"` // Valid is true if SakeCategory is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullSakeCategory) Scan(value interface{}) error {
+	if value == nil {
+		ns.SakeCategory, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.SakeCategory.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullSakeCategory) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.SakeCategory), nil
+}
+
+func (e SakeCategory) Valid() bool {
+	switch e {
+	case SakeCategoryBEER,
+		SakeCategoryJAPANESESAKE,
+		SakeCategoryWINE,
+		SakeCategoryWHISKEY,
+		SakeCategorySHOCHU,
+		SakeCategoryCOCKTAIL,
+		SakeCategoryOTHER:
+		return true
+	}
+	return false
+}
+
+func AllSakeCategoryValues() []SakeCategory {
+	return []SakeCategory{
+		SakeCategoryBEER,
+		SakeCategoryJAPANESESAKE,
+		SakeCategoryWINE,
+		SakeCategoryWHISKEY,
+		SakeCategorySHOCHU,
+		SakeCategoryCOCKTAIL,
+		SakeCategoryOTHER,
+	}
+}
+
+// ユーザーロールを定義するENUM
+type UserRole string
+
+const (
+	UserRoleSHOP UserRole = "SHOP"
+	UserRoleUSER UserRole = "USER"
+)
+
+func (e *UserRole) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = UserRole(s)
+	case string:
+		*e = UserRole(s)
+	default:
+		return fmt.Errorf("unsupported scan type for UserRole: %T", src)
+	}
+	return nil
+}
+
+type NullUserRole struct {
+	UserRole UserRole `json:"user_role"`
+	Valid    bool     `json:"valid"` // Valid is true if UserRole is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullUserRole) Scan(value interface{}) error {
+	if value == nil {
+		ns.UserRole, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.UserRole.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullUserRole) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.UserRole), nil
+}
+
+func (e UserRole) Valid() bool {
+	switch e {
+	case UserRoleSHOP,
+		UserRoleUSER:
+		return true
+	}
+	return false
+}
+
+func AllUserRoleValues() []UserRole {
+	return []UserRole{
+		UserRoleSHOP,
+		UserRoleUSER,
+	}
+}
+
+// ユーザーのブックマークを管理するテーブル
+type Bookmark struct {
+	// ブックマークの一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// ユーザーID
+	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	// 酒ID
+	SakeID pgtype.UUID `db:"sake_id" json:"sake_id"`
+	// 作成日時
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+}
+
+// ユーザーの飲酒記録を管理するテーブル
+type DrinkLog struct {
+	// 飲酒記録の一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// ユーザーID
+	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	// 酒ID
+	SakeID pgtype.UUID `db:"sake_id" json:"sake_id"`
+	// 飲んだ日時
+	DrankAt time.Time `db:"drank_at" json:"drank_at"`
+	// 作成日時
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+}
+
+// 酒へのいいねを管理するテーブル
+type Like struct {
+	// いいねの一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// 酒ID
+	SakeID pgtype.UUID `db:"sake_id" json:"sake_id"`
+	// ユーザーを識別するトークン
+	Token string `db:"token" json:"token"`
+	// 作成日時
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+}
+
+// ユーザー間のマッチングリクエストを管理するテーブル
+type MatchRequest struct {
+	// マッチングリクエストの一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// リクエスト送信者ID
+	FromUserID pgtype.UUID `db:"from_user_id" json:"from_user_id"`
+	// リクエスト受信者ID
+	ToUserID pgtype.UUID `db:"to_user_id" json:"to_user_id"`
+	// マッチングリクエストのステータス(PENDING: 保留中, ACCEPTED: 承認済み, REJECTED: 拒否)
+	Status MatchStatus `db:"status" json:"status"`
 	// 作成日時
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 	// 更新日時
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// 飲み方(マスター)
-type DrinkStyle struct {
-	ID int32 `db:"id" json:"id"`
-	// 酒の飲み方
-	Name string `db:"name" json:"name"`
-	// 詳細説明
-	Description *string `db:"description" json:"description"`
-	// 作成日時
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	// 更新日時
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
-}
-
-// 酒
+// 酒の基本情報を管理するテーブル
 type Sake struct {
-	ID int32 `db:"id" json:"id"`
-	// 酒の種類id
-	TypeID int32 `db:"type_id" json:"type_id"`
-	// 酒造id
-	BreweryID int32 `db:"brewery_id" json:"brewery_id"`
-	// 酒名
+	// 酒の一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// 酒の商品名
 	Name string `db:"name" json:"name"`
+	// ふりがな
+	Phonetic *string `db:"phonetic" json:"phonetic"`
+	// 画像ID
+	ImageID pgtype.UUID `db:"image_id" json:"image_id"`
+	// 大分類(酒のカテゴリ、(例: ビール、日本酒、ワイン))
+	Category SakeCategory `db:"category" json:"category"`
+	// 酒の詳細情報
+	Description *string `db:"description" json:"description"`
 	// アルコール度数(%)
-	Abv pgtype.Numeric `db:"abv" json:"abv"`
-	// 味の特徴
-	TasteNotes string `db:"taste_notes" json:"taste_notes"`
-	// 感想
+	AlcoholPercentage pgtype.Numeric `db:"alcohol_percentage" json:"alcohol_percentage"`
+	// 最大容量(mL)
+	VolumeMax *int32 `db:"volume_max" json:"volume_max"`
+	// 残り容量(%)
+	VolumeRemain *int32 `db:"volume_remain" json:"volume_remain"`
+	// 産地
+	Region *string `db:"region" json:"region"`
+	// 価格(円)
+	Price *int32 `db:"price" json:"price"`
+	// メモ
 	Memo *string `db:"memo" json:"memo"`
 	// 作成日時
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
@@ -61,21 +293,28 @@ type Sake struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// 酒-飲み方(中間テーブル)
-type SakeDrinkStyle struct {
-	// 酒id
-	SakeID int32 `db:"sake_id" json:"sake_id"`
-	// 酒の飲み方id
-	DrinkStyleID int32 `db:"drink_style_id" json:"drink_style_id"`
-}
-
-// 酒の種類
-type SakeType struct {
-	ID int32 `db:"id" json:"id"`
-	// 酒の種類の名前
-	Name string `db:"name" json:"name"`
+// 酒の画像を管理するテーブル
+type SakeImage struct {
+	// 画像の一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// 画像のURL
+	ImageUrl string `db:"image_url" json:"image_url"`
 	// 作成日時
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	// 更新日時
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+}
+
+// ユーザー情報を管理するテーブル
+type User struct {
+	// ユーザーの一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// メールアドレス
+	Email string `db:"email" json:"email"`
+	// ハッシュ化されたパスワード
+	PasswordHash string `db:"password_hash" json:"password_hash"`
+	// 表示名
+	DisplayName *string `db:"display_name" json:"display_name"`
+	// ユーザーロール(SHOP: 店舗, USER: 一般ユーザー)
+	Role UserRole `db:"role" json:"role"`
+	// 作成日時
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
 }

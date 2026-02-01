@@ -6,14 +6,17 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
-	CountSakes(ctx context.Context, arg CountSakesParams) (int64, error)
-	GetBrewery(ctx context.Context, id int32) (Brewery, error)
-	GetDrinkStylesBySakeID(ctx context.Context, sakeID int32) ([]DrinkStyle, error)
-	GetSakeType(ctx context.Context, id int32) (SakeType, error)
+	CountSakes(ctx context.Context, category NullSakeCategory) (int64, error)
+	CreateSake(ctx context.Context, arg CreateSakeParams) (CreateSakeRow, error)
+	DeleteSake(ctx context.Context, id pgtype.UUID) error
+	GetSakeByID(ctx context.Context, id pgtype.UUID) (Sake, error)
 	ListSakes(ctx context.Context, arg ListSakesParams) ([]Sake, error)
+	UpdateSake(ctx context.Context, arg UpdateSakeParams) error
 }
 
 var _ Querier = (*Queries)(nil)
