@@ -10,3 +10,14 @@ CREATE TABLE users (
 );
 
 CREATE INDEX idx_users_email ON users(email);
+
+COMMENT ON TYPE user_role IS 'ユーザーロールを定義するENUM';
+
+COMMENT ON TABLE users IS 'ユーザー情報を管理するテーブル';
+
+COMMENT ON COLUMN users.id IS 'ユーザーの一意識別子';
+COMMENT ON COLUMN users.email IS 'メールアドレス';
+COMMENT ON COLUMN users.password_hash IS 'ハッシュ化されたパスワード';
+COMMENT ON COLUMN users.display_name IS '表示名';
+COMMENT ON COLUMN users.role IS 'ユーザーロール(SHOP: 店舗, USER: 一般ユーザー)';
+COMMENT ON COLUMN users.created_at IS '作成日時';
