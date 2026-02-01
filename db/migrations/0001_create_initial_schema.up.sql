@@ -9,7 +9,7 @@ CREATE TABLE sake (
     image_id UUID,
     category sake_category NOT NULL,
     description VARCHAR(100),
-    alcohol_percentage NUMERIC(4, 1) NOT NULL CHECK (alcohol_percentage >= 0 AND alcohol_percentage <= 100),
+    alcohol_percentage NUMERIC(4, 1) CHECK (alcohol_percentage >= 0 AND alcohol_percentage <= 100),
     volume_max INTEGER CHECK (volume_max > 0),
     volume_remain INTEGER CHECK (volume_remain >= 0 AND volume_remain <= 100),
     region VARCHAR(100),
@@ -40,4 +40,3 @@ COMMENT ON COLUMN sake.price IS '価格(円)';
 COMMENT ON COLUMN sake.memo IS 'メモ';
 COMMENT ON COLUMN sake.created_at IS '作成日時';
 COMMENT ON COLUMN sake.updated_at IS '更新日時';
-
