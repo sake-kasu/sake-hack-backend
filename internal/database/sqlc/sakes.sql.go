@@ -7,100 +7,101 @@ package sqlc
 
 import (
 	"context"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countSakes = `-- name: CountSakes :one
 SELECT COUNT(*) AS total
-FROM sakes s
+FROM sakes
 WHERE
-    ($1::INTEGER IS NULL OR s.type_id = $1)
-    AND ($2::INTEGER IS NULL OR s.brewery_id = $2)
+    ($1::sake_category IS NULL OR category = $1)
 `
 
-type CountSakesParams struct {
-	TypeID    *int32 `db:"type_id" json:"type_id"`
-	BreweryID *int32 `db:"brewery_id" json:"brewery_id"`
-}
-
-func (q *Queries) CountSakes(ctx context.Context, arg CountSakesParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countSakes, arg.TypeID, arg.BreweryID)
+func (q *Queries) CountSakes(ctx context.Context, category NullSakeCategory) (int64, error) {
+	row := q.db.QueryRow(ctx, countSakes, category)
 	var total int64
 	err := row.Scan(&total)
 	return total, err
 }
 
-const getBrewery = `-- name: GetBrewery :one
-SELECT id, name, origin_country, origin_region, position, created_at, updated_at
-FROM breweries
-WHERE id = $1
+const createSake = `-- name: CreateSake :one
+INSERT INTO sakes (name, phonetic, image_id, category, description, alcohol_percentage, volume_max, volume_remain, region, price, memo)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+RETURNING id, created_at, updated_at
 `
 
-func (q *Queries) GetBrewery(ctx context.Context, id int32) (Brewery, error) {
-	row := q.db.QueryRow(ctx, getBrewery, id)
-	var i Brewery
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.OriginCountry,
-		&i.OriginRegion,
-		&i.Position,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+type CreateSakeParams struct {
+	Name              string         `db:"name" json:"name"`
+	Phonetic          *string        `db:"phonetic" json:"phonetic"`
+	ImageID           pgtype.UUID    `db:"image_id" json:"image_id"`
+	Category          SakeCategory   `db:"category" json:"category"`
+	Description       *string        `db:"description" json:"description"`
+	AlcoholPercentage pgtype.Numeric `db:"alcohol_percentage" json:"alcohol_percentage"`
+	VolumeMax         *int32         `db:"volume_max" json:"volume_max"`
+	VolumeRemain      *int32         `db:"volume_remain" json:"volume_remain"`
+	Region            *string        `db:"region" json:"region"`
+	Price             *int32         `db:"price" json:"price"`
+	Memo              *string        `db:"memo" json:"memo"`
+}
+
+type CreateSakeRow struct {
+	ID        pgtype.UUID `db:"id" json:"id"`
+	CreatedAt time.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time   `db:"updated_at" json:"updated_at"`
+}
+
+func (q *Queries) CreateSake(ctx context.Context, arg CreateSakeParams) (CreateSakeRow, error) {
+	row := q.db.QueryRow(ctx, createSake,
+		arg.Name,
+		arg.Phonetic,
+		arg.ImageID,
+		arg.Category,
+		arg.Description,
+		arg.AlcoholPercentage,
+		arg.VolumeMax,
+		arg.VolumeRemain,
+		arg.Region,
+		arg.Price,
+		arg.Memo,
 	)
+	var i CreateSakeRow
+	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
 	return i, err
 }
 
-const getDrinkStylesBySakeID = `-- name: GetDrinkStylesBySakeID :many
-SELECT
-    ds.id,
-    ds.name,
-    ds.description,
-    ds.created_at,
-    ds.updated_at
-FROM drink_styles ds
-INNER JOIN sake_drink_styles sds ON ds.id = sds.drink_style_id
-WHERE sds.sake_id = $1
-ORDER BY ds.id
+const deleteSake = `-- name: DeleteSake :exec
+DELETE FROM sakes WHERE id = $1
 `
 
-func (q *Queries) GetDrinkStylesBySakeID(ctx context.Context, sakeID int32) ([]DrinkStyle, error) {
-	rows, err := q.db.Query(ctx, getDrinkStylesBySakeID, sakeID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []DrinkStyle
-	for rows.Next() {
-		var i DrinkStyle
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) DeleteSake(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteSake, id)
+	return err
 }
 
-const getSakeType = `-- name: GetSakeType :one
-SELECT id, name, created_at, updated_at
-FROM sake_types
+const getSakeByID = `-- name: GetSakeByID :one
+SELECT id, name, phonetic, image_id, category, description, alcohol_percentage, volume_max, volume_remain, region, price, memo, created_at, updated_at
+FROM sakes
 WHERE id = $1
 `
 
-func (q *Queries) GetSakeType(ctx context.Context, id int32) (SakeType, error) {
-	row := q.db.QueryRow(ctx, getSakeType, id)
-	var i SakeType
+func (q *Queries) GetSakeByID(ctx context.Context, id pgtype.UUID) (Sake, error) {
+	row := q.db.QueryRow(ctx, getSakeByID, id)
+	var i Sake
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Phonetic,
+		&i.ImageID,
+		&i.Category,
+		&i.Description,
+		&i.AlcoholPercentage,
+		&i.VolumeMax,
+		&i.VolumeRemain,
+		&i.Region,
+		&i.Price,
+		&i.Memo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -108,38 +109,22 @@ func (q *Queries) GetSakeType(ctx context.Context, id int32) (SakeType, error) {
 }
 
 const listSakes = `-- name: ListSakes :many
-SELECT
-    s.id,
-    s.type_id,
-    s.brewery_id,
-    s.name,
-    s.abv,
-    s.taste_notes,
-    s.memo,
-    s.created_at,
-    s.updated_at
-FROM sakes s
+SELECT id, name, phonetic, image_id, category, description, alcohol_percentage, volume_max, volume_remain, region, price, memo, created_at, updated_at
+FROM sakes
 WHERE
-    ($3::INTEGER IS NULL OR s.type_id = $3)
-    AND ($4::INTEGER IS NULL OR s.brewery_id = $4)
-ORDER BY s.created_at DESC
+    ($3::sake_category IS NULL OR category = $3)
+ORDER BY created_at DESC
 LIMIT $1 OFFSET $2
 `
 
 type ListSakesParams struct {
-	Limit     int32  `db:"limit" json:"limit"`
-	Offset    int32  `db:"offset" json:"offset"`
-	TypeID    *int32 `db:"type_id" json:"type_id"`
-	BreweryID *int32 `db:"brewery_id" json:"brewery_id"`
+	Limit    int32            `db:"limit" json:"limit"`
+	Offset   int32            `db:"offset" json:"offset"`
+	Category NullSakeCategory `db:"category" json:"category"`
 }
 
 func (q *Queries) ListSakes(ctx context.Context, arg ListSakesParams) ([]Sake, error) {
-	rows, err := q.db.Query(ctx, listSakes,
-		arg.Limit,
-		arg.Offset,
-		arg.TypeID,
-		arg.BreweryID,
-	)
+	rows, err := q.db.Query(ctx, listSakes, arg.Limit, arg.Offset, arg.Category)
 	if err != nil {
 		return nil, err
 	}
@@ -149,11 +134,16 @@ func (q *Queries) ListSakes(ctx context.Context, arg ListSakesParams) ([]Sake, e
 		var i Sake
 		if err := rows.Scan(
 			&i.ID,
-			&i.TypeID,
-			&i.BreweryID,
 			&i.Name,
-			&i.Abv,
-			&i.TasteNotes,
+			&i.Phonetic,
+			&i.ImageID,
+			&i.Category,
+			&i.Description,
+			&i.AlcoholPercentage,
+			&i.VolumeMax,
+			&i.VolumeRemain,
+			&i.Region,
+			&i.Price,
 			&i.Memo,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -166,4 +156,43 @@ func (q *Queries) ListSakes(ctx context.Context, arg ListSakesParams) ([]Sake, e
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateSake = `-- name: UpdateSake :exec
+UPDATE sakes
+SET name = $2, phonetic = $3, image_id = $4, category = $5, description = $6, alcohol_percentage = $7, volume_max = $8, volume_remain = $9, region = $10, price = $11, memo = $12, updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+`
+
+type UpdateSakeParams struct {
+	ID                pgtype.UUID    `db:"id" json:"id"`
+	Name              string         `db:"name" json:"name"`
+	Phonetic          *string        `db:"phonetic" json:"phonetic"`
+	ImageID           pgtype.UUID    `db:"image_id" json:"image_id"`
+	Category          SakeCategory   `db:"category" json:"category"`
+	Description       *string        `db:"description" json:"description"`
+	AlcoholPercentage pgtype.Numeric `db:"alcohol_percentage" json:"alcohol_percentage"`
+	VolumeMax         *int32         `db:"volume_max" json:"volume_max"`
+	VolumeRemain      *int32         `db:"volume_remain" json:"volume_remain"`
+	Region            *string        `db:"region" json:"region"`
+	Price             *int32         `db:"price" json:"price"`
+	Memo              *string        `db:"memo" json:"memo"`
+}
+
+func (q *Queries) UpdateSake(ctx context.Context, arg UpdateSakeParams) error {
+	_, err := q.db.Exec(ctx, updateSake,
+		arg.ID,
+		arg.Name,
+		arg.Phonetic,
+		arg.ImageID,
+		arg.Category,
+		arg.Description,
+		arg.AlcoholPercentage,
+		arg.VolumeMax,
+		arg.VolumeRemain,
+		arg.Region,
+		arg.Price,
+		arg.Memo,
+	)
+	return err
 }
