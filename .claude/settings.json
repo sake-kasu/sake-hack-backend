@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\\\.go$\"",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'FILE=\"$(echo $CLAUDE_TOOL_INPUT | jq -r .file_path)\"; if [ -f \"$FILE\" ]; then goimports -w \"$FILE\" 2>/dev/null || gofmt -w \"$FILE\"; fi'"
+          }
+        ]
+      },
+      {
+        "matcher": "tool == \"Write\" && tool_input.file_path matches \"\\\\.go$\"",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'FILE=\"$(echo $CLAUDE_TOOL_INPUT | jq -r .file_path)\"; if [ -f \"$FILE\" ]; then goimports -w \"$FILE\" 2>/dev/null || gofmt -w \"$FILE\"; fi'"
+          }
+        ]
+      },
+      {
+        "matcher": "(tool == \"Edit\" || tool == \"Write\") && tool_input.file_path matches \"\\\\.go$\"",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'go vet ./... 2>&1 | head -20'",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "(tool == \"Edit\" || tool == \"Write\") && tool_input.file_path matches \"\\\\.go$\"",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'staticcheck ./... 2>&1 | head -20 || true'",
+            "timeout": 30,
+            "async": true
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
