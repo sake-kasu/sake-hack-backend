@@ -6,17 +6,22 @@ package sqlc
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
-	CountSakes(ctx context.Context, category NullSakeCategory) (int64, error)
+	CountSakes(ctx context.Context, arg CountSakesParams) (int64, error)
 	CreateSake(ctx context.Context, arg CreateSakeParams) (CreateSakeRow, error)
-	DeleteSake(ctx context.Context, id pgtype.UUID) error
-	GetSakeByID(ctx context.Context, id pgtype.UUID) (Sake, error)
-	ListSakes(ctx context.Context, arg ListSakesParams) ([]Sake, error)
-	UpdateSake(ctx context.Context, arg UpdateSakeParams) error
+	DeleteSake(ctx context.Context, id int32) (int64, error)
+	DeleteSakeDrinkStyles(ctx context.Context, sakeID int32) error
+	GetDrinkStylesBySakeID(ctx context.Context, sakeID int32) ([]GetDrinkStylesBySakeIDRow, error)
+	GetSakeDetailByID(ctx context.Context, id int32) (GetSakeDetailByIDRow, error)
+	GetSakeKindByName(ctx context.Context, name string) (GetSakeKindByNameRow, error)
+	InsertSakeDrinkStyle(ctx context.Context, arg InsertSakeDrinkStyleParams) error
+	ListSakes(ctx context.Context, arg ListSakesParams) ([]ListSakesRow, error)
+	UpdateSake(ctx context.Context, arg UpdateSakeParams) (UpdateSakeRow, error)
+	UpsertBrewery(ctx context.Context, arg UpsertBreweryParams) (int32, error)
+	UpsertDrinkStyle(ctx context.Context, arg UpsertDrinkStyleParams) (int32, error)
+	UpsertSakeKind(ctx context.Context, name string) (int32, error)
 }
 
 var _ Querier = (*Queries)(nil)

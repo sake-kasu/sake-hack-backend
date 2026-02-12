@@ -21,12 +21,3 @@ sql:
             go_type: "time.Time"
           - db_type: "pg_catalog.timestamp"
             go_type: "time.Time"
-          # UUID型
-          - db_type: "pg_catalog.uuid"
-            go_type: "github.com/google/uuid.UUID"
-          # PostGIS GEOMETRY型
-          - db_type: "geometry"
-            go_type:
-              import: "github.com/twpayne/go-geom"
-              type: "geom.T"
-              pointer: true
