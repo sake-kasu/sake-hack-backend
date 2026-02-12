@@ -22,7 +22,7 @@ services:
     env_file:
       - .env
     ports:
-      - 5455:5432
+      - ${POSTGRES_HOST_PORT:-5432}:5432
     networks:
       - sake_hack_network
 
@@ -51,7 +51,7 @@ services:
         source: sake-hack-valkey-data
         target: /data
     ports:
-      - 6389:6379
+      - ${VALKEY_HOST_PORT:-6379}:6379
     env_file:
       - .env
     command: >
