@@ -1,8 +1,8 @@
 get:
   tags:
     - Stocks
-  summary: 酒一覧取得
-  description: 酒の一覧をページネーション付きで取得します
+  summary: 在庫一覧取得
+  description: 在庫の一覧をページネーション付きで取得します
   operationId: listStocks
   parameters:
     - name: offset
@@ -50,7 +50,7 @@ get:
           validate: "omitempty,min=1"
   responses:
     "200":
-      description: 酒一覧の取得に成功
+      description: 在庫一覧の取得に成功
       content:
         application/json:
           schema:
@@ -62,10 +62,10 @@ get:
 
 post:
   tags:
-    - Sakes
-  summary: 酒を登録
-  description: 新しい酒を登録します
-  operationId: createSake
+    - Stocks
+  summary: 在庫を登録
+  description: 新しい在庫を登録します
+  operationId: createStock
   requestBody:
     required: true
     content:
@@ -73,16 +73,32 @@ post:
         schema:
           $ref: "../components/schemas/sake.yaml#/CreateSakeRequest"
         example:
-          typeId: 3
-          breweryId: 1
-          name: "獺祭 純米大吟醸 磨き二割三分"
+          category: "JAPANESE_SAKE"
+          kind:
+            id: 3
+            name: "純米大吟醸"
+          brewery:
+            id: 1
+            name: "旭酒造"
+            originCountry: "日本"
+            originRegion: "山口県"
+          name:
+            name: "獺祭 純米大吟醸 磨き二割三分"
+            phonetic: "だっさい じゅんまいだいぎんじょう みがきにわりさんぶ"
           abv: 16.0
-          tasteNotes: "フルーティーで華やかな香り"
+          purchaseVolume: 720.0
+          remainingVolume: 720.0
           memo: "特別な日に飲みたい"
-          drinkStyleIds: [1, 2]
+          drinkStyles:
+            - id: 1
+              name: "冷酒"
+              description: "5-10度に冷やして"
+            - id: 2
+              name: "常温"
+          price: 5500
   responses:
     "201":
-      description: 酒の登録に成功
+      description: 在庫の登録に成功
       content:
         application/json:
           schema:

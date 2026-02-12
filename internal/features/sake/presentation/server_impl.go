@@ -164,38 +164,62 @@ func toListSakesResponse(output *usecase.ListSakesOutput) generated.ListSakesRes
 }
 
 // toSakeResponse DomainエンティティをAPIレスポンスに変換
+// NOTE: entity.Sake にはまだ Category/ImagePreview フィールドがないため暫定マッピング
 func toSakeResponse(sake entity.Sake) generated.Sake {
-	drinkStyles := make([]generated.DrinkStyle, 0, len(sake.DrinkStyles))
-	for _, ds := range sake.DrinkStyles {
-		drinkStyles = append(drinkStyles, generated.DrinkStyle{
-			Id:          ds.ID,
-			Name:        ds.Name,
-			Description: ds.Description,
-		})
-	}
-
 	return generated.Sake{
-		Id: sake.ID,
-		Type: generated.SakeType{
-			Id:   sake.Type.ID,
-			Name: sake.Type.Name,
-		},
-		Brewery: generated.Brewery{
-			Id:            sake.Brewery.ID,
-			Name:          sake.Brewery.Name,
-			OriginCountry: sake.Brewery.OriginCountry,
-			OriginRegion:  sake.Brewery.OriginRegion,
-			Latitude:      sake.Brewery.Latitude,
-			Longitude:     sake.Brewery.Longitude,
-		},
-		Name:        sake.Name,
-		Abv:         sake.ABV,
-		TasteNotes:  sake.TasteNotes,
-		Memo:        sake.Memo,
-		DrinkStyles: drinkStyles,
-		CreatedAt:   sake.CreatedAt,
-		UpdatedAt:   sake.UpdatedAt,
+		Id:           sake.ID,
+		Category:     generated.SakeCategory(sake.Type.Name),
+		Name:         sake.Name,
+		ImagePreview: "",
 	}
+}
+
+// GetSakeDetail 酒詳細取得
+// (GET /sakes/{id})
+func (s *SakeServerImpl) GetSakeDetail(c *gin.Context, id int32) {
+	c.JSON(http.StatusNotImplemented, generated.ErrorResponse{
+		Errors: &[]generated.APIError{{Code: "NOT_IMPLEMENTED", Message: "未実装です"}},
+	})
+}
+
+// ListStocks 在庫一覧取得
+// (GET /stocks)
+func (s *SakeServerImpl) ListStocks(c *gin.Context, params generated.ListStocksParams) {
+	c.JSON(http.StatusNotImplemented, generated.ErrorResponse{
+		Errors: &[]generated.APIError{{Code: "NOT_IMPLEMENTED", Message: "未実装です"}},
+	})
+}
+
+// CreateStock 在庫登録
+// (POST /stocks)
+func (s *SakeServerImpl) CreateStock(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, generated.ErrorResponse{
+		Errors: &[]generated.APIError{{Code: "NOT_IMPLEMENTED", Message: "未実装です"}},
+	})
+}
+
+// GetStockDetail 在庫詳細取得
+// (GET /stocks/{id})
+func (s *SakeServerImpl) GetStockDetail(c *gin.Context, id int32) {
+	c.JSON(http.StatusNotImplemented, generated.ErrorResponse{
+		Errors: &[]generated.APIError{{Code: "NOT_IMPLEMENTED", Message: "未実装です"}},
+	})
+}
+
+// UpdateStock 在庫更新
+// (PUT /stocks/{id})
+func (s *SakeServerImpl) UpdateStock(c *gin.Context, id int32) {
+	c.JSON(http.StatusNotImplemented, generated.ErrorResponse{
+		Errors: &[]generated.APIError{{Code: "NOT_IMPLEMENTED", Message: "未実装です"}},
+	})
+}
+
+// DeleteStock 在庫削除
+// (DELETE /stocks/{id})
+func (s *SakeServerImpl) DeleteStock(c *gin.Context, id int32) {
+	c.JSON(http.StatusNotImplemented, generated.ErrorResponse{
+		Errors: &[]generated.APIError{{Code: "NOT_IMPLEMENTED", Message: "未実装です"}},
+	})
 }
 
 // handleError エラーをHTTPレスポンスに変換

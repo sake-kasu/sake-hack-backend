@@ -1,6 +1,6 @@
 get:
   tags:
-    - Stock
+    - Stocks
   summary: 酒詳細取得
   description: 酒の詳細情報を取得します
   operationId: getStockDetail
@@ -28,7 +28,7 @@ get:
 
 put:
   tags:
-    - Stock
+    - Stocks
   summary: 酒情報更新
   description: 既存の酒情報を更新します
   operationId: updateStock
@@ -62,7 +62,7 @@ put:
 
 delete:
   tags:
-    - Stock
+    - Stocks
   summary: 酒情報削除
   description: 指定された酒情報を削除します
   operationId: deleteStock

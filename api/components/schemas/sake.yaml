@@ -107,9 +107,7 @@ Sake:
       format: int32
       description: 酒ID
     category:
-      type: 
-        $ref: "#/SakeCategory"
-      description: 酒の大分類
+      $ref: "#/SakeCategory"
     name:
       type: string
       description: 酒名
@@ -127,7 +125,7 @@ SakeDetail:
     - name
     - abv
     - purchaseVolume
-    - RemainingVolume
+    - remainingVolume
     - memo 
     - drinkStyles
     - price

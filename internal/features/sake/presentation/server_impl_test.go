@@ -104,7 +104,8 @@ func TestListSakes_Success(t *testing.T) {
 	assert.Len(t, *response.Data, 1)
 	assert.Equal(t, int32(1), (*response.Data)[0].Id)
 	assert.Equal(t, "獺祭 純米大吟醸50", (*response.Data)[0].Name)
-	assert.Equal(t, float32(16.0), (*response.Data)[0].Abv)
+	assert.Equal(t, generated.SakeCategory("純米大吟醸"), (*response.Data)[0].Category)
+	assert.Equal(t, "", (*response.Data)[0].ImagePreview)
 	assert.NotNil(t, response.Meta)
 	assert.Equal(t, int64(100), response.Meta.Total)
 
@@ -412,10 +413,8 @@ func TestToSakeResponse(t *testing.T) {
 
 	assert.Equal(t, int32(1), response.Id)
 	assert.Equal(t, "獺祭", response.Name)
-	assert.Equal(t, float32(16.0), response.Abv)
-	assert.NotNil(t, response.Memo)
-	assert.Equal(t, "メモ", *response.Memo)
-	assert.Len(t, response.DrinkStyles, 1)
+	assert.Equal(t, generated.SakeCategory("純米大吟醸"), response.Category)
+	assert.Equal(t, "", response.ImagePreview)
 }
 
 func TestValidateListSakesParams_Success(t *testing.T) {
