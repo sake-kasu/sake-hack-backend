@@ -74,6 +74,33 @@ lint: ## リンターを実行
 	@echo "🔍 リンターを実行しています..."
 	@golangci-lint run --timeout=5m ./...
 
+arch-check: ## アーキテクチャ検証(Feature間依存チェック)
+	@echo "🏗️ Feature間依存チェックを実行中..."
+	@FEATURES=$$(ls -d internal/features/*/ 2>/dev/null | xargs -n1 basename | grep -v shared); \
+	VIOLATIONS=0; \
+	for feature in $$FEATURES; do \
+		for other in $$FEATURES; do \
+			if [ "$$feature" != "$$other" ]; then \
+				FOUND=$$(grep -r "features/$$other" internal/features/$$feature --include="*.go" 2>/dev/null | grep -v "_test.go" || true); \
+				if [ -n "$$FOUND" ]; then \
+					echo ""; \
+					echo "❌ $$feature -> $$other への直接依存を検出:"; \
+					echo "$$FOUND" | head -5; \
+					VIOLATIONS=$$((VIOLATIONS + 1)); \
+				fi; \
+			fi; \
+		done; \
+	done; \
+	if [ $$VIOLATIONS -gt 0 ]; then \
+		echo ""; \
+		echo "⚠️  Feature間の直接依存が検出されました。"; \
+		echo "   Consumer側でインターフェースを定義し、Application層で型変換を行ってください。"; \
+		echo "   (shared機能への依存は許可されます)"; \
+		exit 1; \
+	else \
+		echo "✅ Feature間の直接依存はありません"; \
+	fi
+
 gosec-install: ## Gosecのインストール
 	@echo "Installing gosec..."
 	@go install github.com/securego/gosec/v2/cmd/gosec@latest
@@ -210,3 +237,5 @@ migrate-status: ## マイグレーション状態確認
 sqlc-generate: ## SQLからGoコードを生成
 	@echo "🔧 SQLからGoコードを生成しています..."
 	@sqlc generate
+
+generate: api-generate sqlc-generate ## 全コード生成(OpenAPI + SQLC)

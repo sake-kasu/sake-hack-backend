@@ -8,33 +8,42 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/query"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
-	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/repository"
 )
 
-// MockSakeRepository はSakeRepositoryのモック
-type MockSakeRepository struct {
+// MockSakeQuery はSakeQueryのモック
+type MockSakeQuery struct {
 	mock.Mock
 }
 
-func (m *MockSakeRepository) List(ctx context.Context, filter repository.ListSakesFilter) ([]entity.Sake, entity.Pagination, error) {
+func (m *MockSakeQuery) List(ctx context.Context, filter query.ListSakesFilter) ([]entity.SakeListItem, entity.Pagination, error) {
 	args := m.Called(ctx, filter)
 	if args.Get(0) == nil {
 		return nil, entity.Pagination{}, args.Error(2)
 	}
-	return args.Get(0).([]entity.Sake), args.Get(1).(entity.Pagination), args.Error(2)
+	return args.Get(0).([]entity.SakeListItem), args.Get(1).(entity.Pagination), args.Error(2)
+}
+
+func (m *MockSakeQuery) GetDetail(ctx context.Context, id int32) (*entity.SakeDetail, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*entity.SakeDetail), args.Error(1)
 }
 
 func TestListSakesUsecase_Execute_Success(t *testing.T) {
-	mockRepo := new(MockSakeRepository)
-	uc := NewListSakesUsecase(mockRepo)
+	mockQuery := new(MockSakeQuery)
+	uc := NewListSakesUsecase(mockQuery)
 
-	typeID := int32(1)
+	kindID := int32(1)
 	breweryID := int32(2)
-	expectedSakes := []entity.Sake{
+	expectedSakes := []entity.SakeListItem{
 		{
-			ID:   1,
-			Name: "獺祭",
+			ID:       1,
+			Category: entity.SakeCategoryJapaneseSake,
+			Name:     "獺祭",
 		},
 	}
 	expectedPagination := entity.Pagination{
@@ -43,14 +52,14 @@ func TestListSakesUsecase_Execute_Success(t *testing.T) {
 		Limit:  20,
 	}
 
-	mockRepo.On("List", mock.Anything, mock.MatchedBy(func(filter repository.ListSakesFilter) bool {
+	mockQuery.On("List", mock.Anything, mock.MatchedBy(func(filter query.ListSakesFilter) bool {
 		return filter.Offset == 0 && filter.Limit == 20 &&
-			filter.TypeID != nil && *filter.TypeID == typeID &&
+			filter.KindID != nil && *filter.KindID == kindID &&
 			filter.BreweryID != nil && *filter.BreweryID == breweryID
 	})).Return(expectedSakes, expectedPagination, nil)
 
 	input := ListSakesInput{
-		TypeID:    &typeID,
+		KindID:    &kindID,
 		BreweryID: &breweryID,
 		Offset:    0,
 		Limit:     20,
@@ -62,19 +71,19 @@ func TestListSakesUsecase_Execute_Success(t *testing.T) {
 	assert.NotNil(t, output)
 	assert.Len(t, output.Sakes, 1)
 	assert.Equal(t, int32(1), output.Sakes[0].ID)
+	assert.Equal(t, entity.SakeCategoryJapaneseSake, output.Sakes[0].Category)
 	assert.Equal(t, int64(100), output.Pagination.Total)
-	mockRepo.AssertExpectations(t)
+	mockQuery.AssertExpectations(t)
 }
 
 func TestListSakesUsecase_Execute_OffsetValidation(t *testing.T) {
-	mockRepo := new(MockSakeRepository)
-	uc := NewListSakesUsecase(mockRepo)
+	mockQuery := new(MockSakeQuery)
+	uc := NewListSakesUsecase(mockQuery)
 
-	mockRepo.On("List", mock.Anything, mock.MatchedBy(func(filter repository.ListSakesFilter) bool {
-		return filter.Offset == 0 // デフォルト値
-	})).Return([]entity.Sake{}, entity.Pagination{}, nil)
+	mockQuery.On("List", mock.Anything, mock.MatchedBy(func(filter query.ListSakesFilter) bool {
+		return filter.Offset == 0
+	})).Return([]entity.SakeListItem{}, entity.Pagination{}, nil)
 
-	// offset < 0 の場合、デフォルト値0が使用される
 	input := ListSakesInput{
 		Offset: -1,
 		Limit:  20,
@@ -84,18 +93,17 @@ func TestListSakesUsecase_Execute_OffsetValidation(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, output)
-	mockRepo.AssertExpectations(t)
+	mockQuery.AssertExpectations(t)
 }
 
 func TestListSakesUsecase_Execute_LimitValidation_LessThan1(t *testing.T) {
-	mockRepo := new(MockSakeRepository)
-	uc := NewListSakesUsecase(mockRepo)
+	mockQuery := new(MockSakeQuery)
+	uc := NewListSakesUsecase(mockQuery)
 
-	mockRepo.On("List", mock.Anything, mock.MatchedBy(func(filter repository.ListSakesFilter) bool {
-		return filter.Limit == 20 // デフォルト値
-	})).Return([]entity.Sake{}, entity.Pagination{}, nil)
+	mockQuery.On("List", mock.Anything, mock.MatchedBy(func(filter query.ListSakesFilter) bool {
+		return filter.Limit == 20
+	})).Return([]entity.SakeListItem{}, entity.Pagination{}, nil)
 
-	// limit < 1 の場合、デフォルト値20が使用される
 	input := ListSakesInput{
 		Offset: 0,
 		Limit:  0,
@@ -105,18 +113,17 @@ func TestListSakesUsecase_Execute_LimitValidation_LessThan1(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, output)
-	mockRepo.AssertExpectations(t)
+	mockQuery.AssertExpectations(t)
 }
 
 func TestListSakesUsecase_Execute_LimitValidation_GreaterThan100(t *testing.T) {
-	mockRepo := new(MockSakeRepository)
-	uc := NewListSakesUsecase(mockRepo)
+	mockQuery := new(MockSakeQuery)
+	uc := NewListSakesUsecase(mockQuery)
 
-	mockRepo.On("List", mock.Anything, mock.MatchedBy(func(filter repository.ListSakesFilter) bool {
-		return filter.Limit == 20 // デフォルト値
-	})).Return([]entity.Sake{}, entity.Pagination{}, nil)
+	mockQuery.On("List", mock.Anything, mock.MatchedBy(func(filter query.ListSakesFilter) bool {
+		return filter.Limit == 20
+	})).Return([]entity.SakeListItem{}, entity.Pagination{}, nil)
 
-	// limit > 100 の場合、デフォルト値20が使用される
 	input := ListSakesInput{
 		Offset: 0,
 		Limit:  101,
@@ -126,15 +133,15 @@ func TestListSakesUsecase_Execute_LimitValidation_GreaterThan100(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, output)
-	mockRepo.AssertExpectations(t)
+	mockQuery.AssertExpectations(t)
 }
 
-func TestListSakesUsecase_Execute_RepositoryError(t *testing.T) {
-	mockRepo := new(MockSakeRepository)
-	uc := NewListSakesUsecase(mockRepo)
+func TestListSakesUsecase_Execute_QueryError(t *testing.T) {
+	mockQuery := new(MockSakeQuery)
+	uc := NewListSakesUsecase(mockQuery)
 
 	expectedErr := errors.New("database error")
-	mockRepo.On("List", mock.Anything, mock.Anything).Return(nil, entity.Pagination{}, expectedErr)
+	mockQuery.On("List", mock.Anything, mock.Anything).Return(nil, entity.Pagination{}, expectedErr)
 
 	input := ListSakesInput{
 		Offset: 0,
@@ -146,14 +153,14 @@ func TestListSakesUsecase_Execute_RepositoryError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, output)
 	assert.Equal(t, expectedErr, err)
-	mockRepo.AssertExpectations(t)
+	mockQuery.AssertExpectations(t)
 }
 
 func TestListSakesUsecase_Execute_EmptyResult(t *testing.T) {
-	mockRepo := new(MockSakeRepository)
-	uc := NewListSakesUsecase(mockRepo)
+	mockQuery := new(MockSakeQuery)
+	uc := NewListSakesUsecase(mockQuery)
 
-	mockRepo.On("List", mock.Anything, mock.Anything).Return([]entity.Sake{}, entity.Pagination{
+	mockQuery.On("List", mock.Anything, mock.Anything).Return([]entity.SakeListItem{}, entity.Pagination{
 		Total:  0,
 		Offset: 0,
 		Limit:  20,
@@ -170,5 +177,5 @@ func TestListSakesUsecase_Execute_EmptyResult(t *testing.T) {
 	assert.NotNil(t, output)
 	assert.Len(t, output.Sakes, 0)
 	assert.Equal(t, int64(0), output.Pagination.Total)
-	mockRepo.AssertExpectations(t)
+	mockQuery.AssertExpectations(t)
 }

@@ -6,16 +6,40 @@ import (
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
 )
 
-// ListSakesFilter 酒一覧取得のフィルター条件
-type ListSakesFilter struct {
-	TypeID    *int32
-	BreweryID *int32
-	Offset    int32
-	Limit     int32
+// CreateSakeInput 酒の作成に必要な入力
+type CreateSakeInput struct {
+	Category        entity.SakeCategory
+	Kind            entity.SakeKind
+	Brewery         entity.Brewery
+	Name            entity.SakeName
+	Abv             float32
+	PurchaseVolume  float32
+	RemainingVolume float32
+	Memo            *string
+	DrinkStyles     []entity.DrinkStyle
+	Price           int32
+	ImageUrl        *string
 }
 
-// SakeRepository 酒リポジトリのインターフェース
+// UpdateSakeInput 酒の更新に必要な入力
+type UpdateSakeInput struct {
+	ID              int32
+	Category        entity.SakeCategory
+	Kind            entity.SakeKind
+	Brewery         entity.Brewery
+	Name            entity.SakeName
+	Abv             float32
+	PurchaseVolume  float32
+	RemainingVolume float32
+	Memo            *string
+	DrinkStyles     []entity.DrinkStyle
+	Price           int32
+	ImageUrl        *string
+}
+
+// SakeRepository 酒リポジトリのインターフェース(書き込み操作)
 type SakeRepository interface {
-	// List フィルター条件に基づいて酒一覧を取得
-	List(ctx context.Context, filter ListSakesFilter) ([]entity.Sake, entity.Pagination, error)
+	Create(ctx context.Context, input CreateSakeInput) (*entity.SakeListItem, error)
+	Update(ctx context.Context, input UpdateSakeInput) (*entity.SakeListItem, error)
+	Delete(ctx context.Context, id int32) error
 }

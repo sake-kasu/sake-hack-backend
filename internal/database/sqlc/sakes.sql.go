@@ -7,78 +7,133 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countSakes = `-- name: CountSakes :one
 SELECT COUNT(*) AS total
 FROM sakes s
 WHERE
-    ($1::INTEGER IS NULL OR s.type_id = $1)
+    ($1::INTEGER IS NULL OR s.kind_id = $1)
     AND ($2::INTEGER IS NULL OR s.brewery_id = $2)
 `
 
 type CountSakesParams struct {
-	TypeID    *int32 `db:"type_id" json:"type_id"`
+	KindID    *int32 `db:"kind_id" json:"kind_id"`
 	BreweryID *int32 `db:"brewery_id" json:"brewery_id"`
 }
 
 func (q *Queries) CountSakes(ctx context.Context, arg CountSakesParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countSakes, arg.TypeID, arg.BreweryID)
+	row := q.db.QueryRow(ctx, countSakes, arg.KindID, arg.BreweryID)
 	var total int64
 	err := row.Scan(&total)
 	return total, err
 }
 
-const getBrewery = `-- name: GetBrewery :one
-SELECT id, name, origin_country, origin_region, position, created_at, updated_at
-FROM breweries
-WHERE id = $1
+const createSake = `-- name: CreateSake :one
+INSERT INTO sakes (category, kind_id, brewery_id, name, phonetic, abv, purchase_volume, remaining_volume, memo, price, image_url)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+RETURNING id, category, name, image_url, created_at, updated_at
 `
 
-func (q *Queries) GetBrewery(ctx context.Context, id int32) (Brewery, error) {
-	row := q.db.QueryRow(ctx, getBrewery, id)
-	var i Brewery
+type CreateSakeParams struct {
+	Category        SakeCategory `db:"category" json:"category"`
+	KindID          int32        `db:"kind_id" json:"kind_id"`
+	BreweryID       int32        `db:"brewery_id" json:"brewery_id"`
+	Name            string       `db:"name" json:"name"`
+	Phonetic        string       `db:"phonetic" json:"phonetic"`
+	Abv             float32      `db:"abv" json:"abv"`
+	PurchaseVolume  float32      `db:"purchase_volume" json:"purchase_volume"`
+	RemainingVolume float32      `db:"remaining_volume" json:"remaining_volume"`
+	Memo            *string      `db:"memo" json:"memo"`
+	Price           int32        `db:"price" json:"price"`
+	ImageUrl        *string      `db:"image_url" json:"image_url"`
+}
+
+type CreateSakeRow struct {
+	ID        int32              `db:"id" json:"id"`
+	Category  SakeCategory       `db:"category" json:"category"`
+	Name      string             `db:"name" json:"name"`
+	ImageUrl  *string            `db:"image_url" json:"image_url"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
+func (q *Queries) CreateSake(ctx context.Context, arg CreateSakeParams) (CreateSakeRow, error) {
+	row := q.db.QueryRow(ctx, createSake,
+		arg.Category,
+		arg.KindID,
+		arg.BreweryID,
+		arg.Name,
+		arg.Phonetic,
+		arg.Abv,
+		arg.PurchaseVolume,
+		arg.RemainingVolume,
+		arg.Memo,
+		arg.Price,
+		arg.ImageUrl,
+	)
+	var i CreateSakeRow
 	err := row.Scan(
 		&i.ID,
+		&i.Category,
 		&i.Name,
-		&i.OriginCountry,
-		&i.OriginRegion,
-		&i.Position,
+		&i.ImageUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
+const deleteSake = `-- name: DeleteSake :execrows
+DELETE FROM sakes WHERE id = $1
+`
+
+func (q *Queries) DeleteSake(ctx context.Context, id int32) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteSake, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteSakeDrinkStyles = `-- name: DeleteSakeDrinkStyles :exec
+DELETE FROM sake_drink_styles WHERE sake_id = $1
+`
+
+func (q *Queries) DeleteSakeDrinkStyles(ctx context.Context, sakeID int32) error {
+	_, err := q.db.Exec(ctx, deleteSakeDrinkStyles, sakeID)
+	return err
+}
+
 const getDrinkStylesBySakeID = `-- name: GetDrinkStylesBySakeID :many
 SELECT
     ds.id,
     ds.name,
-    ds.description,
-    ds.created_at,
-    ds.updated_at
+    ds.description
 FROM drink_styles ds
 INNER JOIN sake_drink_styles sds ON ds.id = sds.drink_style_id
 WHERE sds.sake_id = $1
 ORDER BY ds.id
 `
 
-func (q *Queries) GetDrinkStylesBySakeID(ctx context.Context, sakeID int32) ([]DrinkStyle, error) {
+type GetDrinkStylesBySakeIDRow struct {
+	ID          int32   `db:"id" json:"id"`
+	Name        string  `db:"name" json:"name"`
+	Description *string `db:"description" json:"description"`
+}
+
+func (q *Queries) GetDrinkStylesBySakeID(ctx context.Context, sakeID int32) ([]GetDrinkStylesBySakeIDRow, error) {
 	rows, err := q.db.Query(ctx, getDrinkStylesBySakeID, sakeID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []DrinkStyle
+	var items []GetDrinkStylesBySakeIDRow
 	for rows.Next() {
-		var i DrinkStyle
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
+		var i GetDrinkStylesBySakeIDRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Description); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -89,38 +144,126 @@ func (q *Queries) GetDrinkStylesBySakeID(ctx context.Context, sakeID int32) ([]D
 	return items, nil
 }
 
-const getSakeType = `-- name: GetSakeType :one
-SELECT id, name, created_at, updated_at
-FROM sake_types
-WHERE id = $1
+const getSakeDetailByID = `-- name: GetSakeDetailByID :one
+SELECT
+    s.id,
+    s.category,
+    s.name,
+    s.phonetic,
+    s.abv,
+    s.purchase_volume,
+    s.remaining_volume,
+    s.memo,
+    s.price,
+    s.image_url,
+    s.created_at,
+    s.updated_at,
+    sk.id AS kind_id,
+    sk.name AS kind_name,
+    b.id AS brewery_id,
+    b.name AS brewery_name,
+    b.origin_country AS brewery_origin_country,
+    b.origin_region AS brewery_origin_region,
+    b.latitude AS brewery_latitude,
+    b.longitude AS brewery_longitude
+FROM sakes s
+INNER JOIN sake_kinds sk ON s.kind_id = sk.id
+INNER JOIN breweries b ON s.brewery_id = b.id
+WHERE s.id = $1
 `
 
-func (q *Queries) GetSakeType(ctx context.Context, id int32) (SakeType, error) {
-	row := q.db.QueryRow(ctx, getSakeType, id)
-	var i SakeType
+type GetSakeDetailByIDRow struct {
+	ID                   int32              `db:"id" json:"id"`
+	Category             SakeCategory       `db:"category" json:"category"`
+	Name                 string             `db:"name" json:"name"`
+	Phonetic             string             `db:"phonetic" json:"phonetic"`
+	Abv                  float32            `db:"abv" json:"abv"`
+	PurchaseVolume       float32            `db:"purchase_volume" json:"purchase_volume"`
+	RemainingVolume      float32            `db:"remaining_volume" json:"remaining_volume"`
+	Memo                 *string            `db:"memo" json:"memo"`
+	Price                int32              `db:"price" json:"price"`
+	ImageUrl             *string            `db:"image_url" json:"image_url"`
+	CreatedAt            pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	KindID               int32              `db:"kind_id" json:"kind_id"`
+	KindName             string             `db:"kind_name" json:"kind_name"`
+	BreweryID            int32              `db:"brewery_id" json:"brewery_id"`
+	BreweryName          string             `db:"brewery_name" json:"brewery_name"`
+	BreweryOriginCountry string             `db:"brewery_origin_country" json:"brewery_origin_country"`
+	BreweryOriginRegion  *string            `db:"brewery_origin_region" json:"brewery_origin_region"`
+	BreweryLatitude      *float64           `db:"brewery_latitude" json:"brewery_latitude"`
+	BreweryLongitude     *float64           `db:"brewery_longitude" json:"brewery_longitude"`
+}
+
+func (q *Queries) GetSakeDetailByID(ctx context.Context, id int32) (GetSakeDetailByIDRow, error) {
+	row := q.db.QueryRow(ctx, getSakeDetailByID, id)
+	var i GetSakeDetailByIDRow
 	err := row.Scan(
 		&i.ID,
+		&i.Category,
 		&i.Name,
+		&i.Phonetic,
+		&i.Abv,
+		&i.PurchaseVolume,
+		&i.RemainingVolume,
+		&i.Memo,
+		&i.Price,
+		&i.ImageUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.KindID,
+		&i.KindName,
+		&i.BreweryID,
+		&i.BreweryName,
+		&i.BreweryOriginCountry,
+		&i.BreweryOriginRegion,
+		&i.BreweryLatitude,
+		&i.BreweryLongitude,
 	)
 	return i, err
+}
+
+const getSakeKindByName = `-- name: GetSakeKindByName :one
+SELECT id, name FROM sake_kinds WHERE name = $1
+`
+
+type GetSakeKindByNameRow struct {
+	ID   int32  `db:"id" json:"id"`
+	Name string `db:"name" json:"name"`
+}
+
+func (q *Queries) GetSakeKindByName(ctx context.Context, name string) (GetSakeKindByNameRow, error) {
+	row := q.db.QueryRow(ctx, getSakeKindByName, name)
+	var i GetSakeKindByNameRow
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
+const insertSakeDrinkStyle = `-- name: InsertSakeDrinkStyle :exec
+INSERT INTO sake_drink_styles (sake_id, drink_style_id)
+VALUES ($1, $2)
+ON CONFLICT DO NOTHING
+`
+
+type InsertSakeDrinkStyleParams struct {
+	SakeID       int32 `db:"sake_id" json:"sake_id"`
+	DrinkStyleID int32 `db:"drink_style_id" json:"drink_style_id"`
+}
+
+func (q *Queries) InsertSakeDrinkStyle(ctx context.Context, arg InsertSakeDrinkStyleParams) error {
+	_, err := q.db.Exec(ctx, insertSakeDrinkStyle, arg.SakeID, arg.DrinkStyleID)
+	return err
 }
 
 const listSakes = `-- name: ListSakes :many
 SELECT
     s.id,
-    s.type_id,
-    s.brewery_id,
+    s.category,
     s.name,
-    s.abv,
-    s.taste_notes,
-    s.memo,
-    s.created_at,
-    s.updated_at
+    s.image_url
 FROM sakes s
 WHERE
-    ($3::INTEGER IS NULL OR s.type_id = $3)
+    ($3::INTEGER IS NULL OR s.kind_id = $3)
     AND ($4::INTEGER IS NULL OR s.brewery_id = $4)
 ORDER BY s.created_at DESC
 LIMIT $1 OFFSET $2
@@ -129,34 +272,36 @@ LIMIT $1 OFFSET $2
 type ListSakesParams struct {
 	Limit     int32  `db:"limit" json:"limit"`
 	Offset    int32  `db:"offset" json:"offset"`
-	TypeID    *int32 `db:"type_id" json:"type_id"`
+	KindID    *int32 `db:"kind_id" json:"kind_id"`
 	BreweryID *int32 `db:"brewery_id" json:"brewery_id"`
 }
 
-func (q *Queries) ListSakes(ctx context.Context, arg ListSakesParams) ([]Sake, error) {
+type ListSakesRow struct {
+	ID       int32        `db:"id" json:"id"`
+	Category SakeCategory `db:"category" json:"category"`
+	Name     string       `db:"name" json:"name"`
+	ImageUrl *string      `db:"image_url" json:"image_url"`
+}
+
+func (q *Queries) ListSakes(ctx context.Context, arg ListSakesParams) ([]ListSakesRow, error) {
 	rows, err := q.db.Query(ctx, listSakes,
 		arg.Limit,
 		arg.Offset,
-		arg.TypeID,
+		arg.KindID,
 		arg.BreweryID,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Sake
+	var items []ListSakesRow
 	for rows.Next() {
-		var i Sake
+		var i ListSakesRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.TypeID,
-			&i.BreweryID,
+			&i.Category,
 			&i.Name,
-			&i.Abv,
-			&i.TasteNotes,
-			&i.Memo,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ImageUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -166,4 +311,141 @@ func (q *Queries) ListSakes(ctx context.Context, arg ListSakesParams) ([]Sake, e
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateSake = `-- name: UpdateSake :one
+UPDATE sakes
+SET category = $2,
+    kind_id = $3,
+    brewery_id = $4,
+    name = $5,
+    phonetic = $6,
+    abv = $7,
+    purchase_volume = $8,
+    remaining_volume = $9,
+    memo = $10,
+    price = $11,
+    image_url = $12,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING id, category, name, image_url, created_at, updated_at
+`
+
+type UpdateSakeParams struct {
+	ID              int32        `db:"id" json:"id"`
+	Category        SakeCategory `db:"category" json:"category"`
+	KindID          int32        `db:"kind_id" json:"kind_id"`
+	BreweryID       int32        `db:"brewery_id" json:"brewery_id"`
+	Name            string       `db:"name" json:"name"`
+	Phonetic        string       `db:"phonetic" json:"phonetic"`
+	Abv             float32      `db:"abv" json:"abv"`
+	PurchaseVolume  float32      `db:"purchase_volume" json:"purchase_volume"`
+	RemainingVolume float32      `db:"remaining_volume" json:"remaining_volume"`
+	Memo            *string      `db:"memo" json:"memo"`
+	Price           int32        `db:"price" json:"price"`
+	ImageUrl        *string      `db:"image_url" json:"image_url"`
+}
+
+type UpdateSakeRow struct {
+	ID        int32              `db:"id" json:"id"`
+	Category  SakeCategory       `db:"category" json:"category"`
+	Name      string             `db:"name" json:"name"`
+	ImageUrl  *string            `db:"image_url" json:"image_url"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
+func (q *Queries) UpdateSake(ctx context.Context, arg UpdateSakeParams) (UpdateSakeRow, error) {
+	row := q.db.QueryRow(ctx, updateSake,
+		arg.ID,
+		arg.Category,
+		arg.KindID,
+		arg.BreweryID,
+		arg.Name,
+		arg.Phonetic,
+		arg.Abv,
+		arg.PurchaseVolume,
+		arg.RemainingVolume,
+		arg.Memo,
+		arg.Price,
+		arg.ImageUrl,
+	)
+	var i UpdateSakeRow
+	err := row.Scan(
+		&i.ID,
+		&i.Category,
+		&i.Name,
+		&i.ImageUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const upsertBrewery = `-- name: UpsertBrewery :one
+INSERT INTO breweries (name, origin_country, origin_region, latitude, longitude)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (name, origin_country) DO UPDATE SET
+    origin_region = EXCLUDED.origin_region,
+    latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude,
+    updated_at = CURRENT_TIMESTAMP
+RETURNING id
+`
+
+type UpsertBreweryParams struct {
+	Name          string   `db:"name" json:"name"`
+	OriginCountry string   `db:"origin_country" json:"origin_country"`
+	OriginRegion  *string  `db:"origin_region" json:"origin_region"`
+	Latitude      *float64 `db:"latitude" json:"latitude"`
+	Longitude     *float64 `db:"longitude" json:"longitude"`
+}
+
+func (q *Queries) UpsertBrewery(ctx context.Context, arg UpsertBreweryParams) (int32, error) {
+	row := q.db.QueryRow(ctx, upsertBrewery,
+		arg.Name,
+		arg.OriginCountry,
+		arg.OriginRegion,
+		arg.Latitude,
+		arg.Longitude,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const upsertDrinkStyle = `-- name: UpsertDrinkStyle :one
+INSERT INTO drink_styles (name, description)
+VALUES ($1, $2)
+ON CONFLICT (name) DO UPDATE SET
+    description = EXCLUDED.description,
+    updated_at = CURRENT_TIMESTAMP
+RETURNING id
+`
+
+type UpsertDrinkStyleParams struct {
+	Name        string  `db:"name" json:"name"`
+	Description *string `db:"description" json:"description"`
+}
+
+func (q *Queries) UpsertDrinkStyle(ctx context.Context, arg UpsertDrinkStyleParams) (int32, error) {
+	row := q.db.QueryRow(ctx, upsertDrinkStyle, arg.Name, arg.Description)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const upsertSakeKind = `-- name: UpsertSakeKind :one
+INSERT INTO sake_kinds (name)
+VALUES ($1)
+ON CONFLICT (name) DO UPDATE SET
+    updated_at = CURRENT_TIMESTAMP
+RETURNING id
+`
+
+func (q *Queries) UpsertSakeKind(ctx context.Context, name string) (int32, error) {
+	row := q.db.QueryRow(ctx, upsertSakeKind, name)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }

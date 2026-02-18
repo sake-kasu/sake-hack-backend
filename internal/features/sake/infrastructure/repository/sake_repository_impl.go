@@ -2,10 +2,7 @@ package repository
 
 import (
 	"context"
-	"errors"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/sake-kasu/sake-hack-backend/internal/apperror"
@@ -29,141 +26,203 @@ func NewSakeRepository(db *pgxpool.Pool) repository.SakeRepository {
 	}
 }
 
-// List 酒一覧を取得
-func (r *sakeRepositoryImpl) List(ctx context.Context, filter repository.ListSakesFilter) ([]entity.Sake, entity.Pagination, error) {
-	defer logger.TraceMethodAuto(ctx, filter)()
+// Create 酒を新規作成する
+func (r *sakeRepositoryImpl) Create(ctx context.Context, input repository.CreateSakeInput) (*entity.SakeListItem, error) {
+	defer logger.TraceMethodAuto(ctx, input)()
 
-	// カウント取得
-	countParams := sqlc.CountSakesParams{
-		TypeID:    filter.TypeID,
-		BreweryID: filter.BreweryID,
-	}
-	total, err := r.queries.CountSakes(ctx, countParams)
+	tx, err := r.db.Begin(ctx)
 	if err != nil {
-		logger.LogDatabaseError(ctx, "SELECT", "sakes", err, map[string]interface{}{
-			"filter": filter,
-		})
-		return nil, entity.Pagination{}, apperror.DatabaseError("酒の件数取得に失敗しました", err)
+		logger.LogDatabaseError(ctx, "BEGIN", "sakes", err, nil)
+		return nil, apperror.DatabaseError("トランザクション開始に失敗しました", err)
 	}
+	defer tx.Rollback(ctx) //nolint:errcheck
 
-	// リスト取得
-	listParams := sqlc.ListSakesParams{
-		Limit:     filter.Limit,
-		Offset:    filter.Offset,
-		TypeID:    filter.TypeID,
-		BreweryID: filter.BreweryID,
-	}
-	sakeRows, err := r.queries.ListSakes(ctx, listParams)
+	qtx := r.queries.WithTx(tx)
+
+	breweryID, err := r.upsertBrewery(ctx, qtx, input.Brewery)
 	if err != nil {
-		logger.LogDatabaseError(ctx, "SELECT", "sakes", err, map[string]interface{}{
-			"filter": filter,
-		})
-		return nil, entity.Pagination{}, apperror.DatabaseError("酒一覧の取得に失敗しました", err)
+		return nil, err
 	}
 
-	// Entity変換
-	sakes := make([]entity.Sake, 0, len(sakeRows))
-	for _, row := range sakeRows {
-		sake, err := r.toSakeEntity(ctx, row)
-		if err != nil {
-			return nil, entity.Pagination{}, err
-		}
-		sakes = append(sakes, *sake)
-	}
-
-	pagination := entity.Pagination{
-		Total:  total,
-		Offset: filter.Offset,
-		Limit:  filter.Limit,
-	}
-
-	return sakes, pagination, nil
-}
-
-// toSakeEntity sqlcモデルからDomainエンティティに変換
-func (r *sakeRepositoryImpl) toSakeEntity(ctx context.Context, row sqlc.Sake) (*entity.Sake, error) {
-	// 酒の種類取得
-	sakeType, err := r.queries.GetSakeType(ctx, row.TypeID)
+	kindID, err := r.upsertSakeKind(ctx, qtx, input.Kind)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apperror.NotFoundError("酒の種類が見つかりません")
-		}
-		logger.LogDatabaseError(ctx, "SELECT", "sake_types", err, map[string]interface{}{
-			"type_id": row.TypeID,
-		})
-		return nil, apperror.DatabaseError("酒の種類取得に失敗しました", err)
+		return nil, err
 	}
 
-	// 酒造取得
-	brewery, err := r.queries.GetBrewery(ctx, row.BreweryID)
+	row, err := qtx.CreateSake(ctx, sqlc.CreateSakeParams{
+		Category:        sqlc.SakeCategory(input.Category),
+		KindID:          kindID,
+		BreweryID:       breweryID,
+		Name:            input.Name.Name,
+		Phonetic:        input.Name.Phonetic,
+		Abv:             input.Abv,
+		PurchaseVolume:  input.PurchaseVolume,
+		RemainingVolume: input.RemainingVolume,
+		Memo:            input.Memo,
+		Price:           input.Price,
+		ImageUrl:        input.ImageUrl,
+	})
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apperror.NotFoundError("酒造が見つかりません")
-		}
-		logger.LogDatabaseError(ctx, "SELECT", "breweries", err, map[string]interface{}{
-			"brewery_id": row.BreweryID,
-		})
-		return nil, apperror.DatabaseError("酒造取得に失敗しました", err)
+		logger.LogDatabaseError(ctx, "INSERT", "sakes", err, map[string]interface{}{"input": input})
+		return nil, apperror.DatabaseError("酒の登録に失敗しました", err)
 	}
 
-	// 飲み方取得
-	drinkStyleRows, err := r.queries.GetDrinkStylesBySakeID(ctx, row.ID)
-	if err != nil {
-		logger.LogDatabaseError(ctx, "SELECT", "drink_styles", err, map[string]interface{}{
-			"sake_id": row.ID,
-		})
-		return nil, apperror.DatabaseError("飲み方取得に失敗しました", err)
+	if err := r.syncDrinkStyles(ctx, qtx, row.ID, input.DrinkStyles); err != nil {
+		return nil, err
 	}
 
-	drinkStyles := make([]entity.DrinkStyle, 0, len(drinkStyleRows))
-	for _, ds := range drinkStyleRows {
-		drinkStyles = append(drinkStyles, entity.DrinkStyle{
-			ID:          ds.ID,
-			Name:        ds.Name,
-			Description: ds.Description,
-		})
+	if err := tx.Commit(ctx); err != nil {
+		logger.LogDatabaseError(ctx, "COMMIT", "sakes", err, nil)
+		return nil, apperror.DatabaseError("トランザクションのコミットに失敗しました", err)
 	}
 
-	// 座標抽出
-	latitude, longitude := extractCoordinates(brewery.Position)
+	imagePreview := ""
+	if row.ImageUrl != nil {
+		imagePreview = *row.ImageUrl
+	}
 
-	return &entity.Sake{
-		ID: row.ID,
-		Type: entity.SakeType{
-			ID:   sakeType.ID,
-			Name: sakeType.Name,
-		},
-		Brewery: entity.Brewery{
-			ID:            brewery.ID,
-			Name:          brewery.Name,
-			OriginCountry: brewery.OriginCountry,
-			OriginRegion:  brewery.OriginRegion,
-			Latitude:      latitude,
-			Longitude:     longitude,
-		},
-		Name:        row.Name,
-		ABV:         convertNumericToFloat32(row.Abv),
-		TasteNotes:  row.TasteNotes,
-		Memo:        row.Memo,
-		DrinkStyles: drinkStyles,
-		CreatedAt:   row.CreatedAt,
-		UpdatedAt:   row.UpdatedAt,
+	return &entity.SakeListItem{
+		ID:           row.ID,
+		Category:     entity.SakeCategory(row.Category),
+		Name:         row.Name,
+		ImagePreview: imagePreview,
 	}, nil
 }
 
-// extractCoordinates GEOMETRY型から緯度経度を抽出
-func extractCoordinates(geomData interface{}) (*float64, *float64) {
-	// PostGISのGEOMETRY型はinterface{}として返されるため
-	// 現時点ではGEOMETRY型のパースは未実装(座標はnilを返す)
-	// 将来的にはtwpayne/go-geomを使用して座標を抽出する
-	return nil, nil
+// Update 酒を更新する
+func (r *sakeRepositoryImpl) Update(ctx context.Context, input repository.UpdateSakeInput) (*entity.SakeListItem, error) {
+	defer logger.TraceMethodAuto(ctx, input)()
+
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		logger.LogDatabaseError(ctx, "BEGIN", "sakes", err, nil)
+		return nil, apperror.DatabaseError("トランザクション開始に失敗しました", err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	qtx := r.queries.WithTx(tx)
+
+	breweryID, err := r.upsertBrewery(ctx, qtx, input.Brewery)
+	if err != nil {
+		return nil, err
+	}
+
+	kindID, err := r.upsertSakeKind(ctx, qtx, input.Kind)
+	if err != nil {
+		return nil, err
+	}
+
+	row, err := qtx.UpdateSake(ctx, sqlc.UpdateSakeParams{
+		ID:              input.ID,
+		Category:        sqlc.SakeCategory(input.Category),
+		KindID:          kindID,
+		BreweryID:       breweryID,
+		Name:            input.Name.Name,
+		Phonetic:        input.Name.Phonetic,
+		Abv:             input.Abv,
+		PurchaseVolume:  input.PurchaseVolume,
+		RemainingVolume: input.RemainingVolume,
+		Memo:            input.Memo,
+		Price:           input.Price,
+		ImageUrl:        input.ImageUrl,
+	})
+	if err != nil {
+		logger.LogDatabaseError(ctx, "UPDATE", "sakes", err, map[string]interface{}{"sake_id": input.ID})
+		return nil, apperror.DatabaseError("酒の更新に失敗しました", err)
+	}
+
+	if err := r.syncDrinkStyles(ctx, qtx, row.ID, input.DrinkStyles); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		logger.LogDatabaseError(ctx, "COMMIT", "sakes", err, nil)
+		return nil, apperror.DatabaseError("トランザクションのコミットに失敗しました", err)
+	}
+
+	imagePreview := ""
+	if row.ImageUrl != nil {
+		imagePreview = *row.ImageUrl
+	}
+
+	return &entity.SakeListItem{
+		ID:           row.ID,
+		Category:     entity.SakeCategory(row.Category),
+		Name:         row.Name,
+		ImagePreview: imagePreview,
+	}, nil
 }
 
-// convertNumericToFloat32 pgtype.NumericをFloat32に変換
-func convertNumericToFloat32(n pgtype.Numeric) float32 {
-	f64, err := n.Float64Value()
-	if err != nil || !f64.Valid {
-		return 0.0
+// Delete 酒を削除する
+func (r *sakeRepositoryImpl) Delete(ctx context.Context, id int32) error {
+	defer logger.TraceMethodAuto(ctx, id)()
+
+	rowsAffected, err := r.queries.DeleteSake(ctx, id)
+	if err != nil {
+		logger.LogDatabaseError(ctx, "DELETE", "sakes", err, map[string]interface{}{"sake_id": id})
+		return apperror.DatabaseError("酒の削除に失敗しました", err)
 	}
-	return float32(f64.Float64)
+	if rowsAffected == 0 {
+		return apperror.NotFoundError("酒が見つかりません").WithDetails("sake_id", id)
+	}
+
+	return nil
+}
+
+// upsertBrewery 酒造をUPSERTしてIDを返す
+func (r *sakeRepositoryImpl) upsertBrewery(ctx context.Context, qtx *sqlc.Queries, brewery entity.Brewery) (int32, error) {
+	id, err := qtx.UpsertBrewery(ctx, sqlc.UpsertBreweryParams{
+		Name:          brewery.Name,
+		OriginCountry: brewery.OriginCountry,
+		OriginRegion:  brewery.OriginRegion,
+		Latitude:      brewery.Latitude,
+		Longitude:     brewery.Longitude,
+	})
+	if err != nil {
+		logger.LogDatabaseError(ctx, "UPSERT", "breweries", err, map[string]interface{}{"brewery": brewery.Name})
+		return 0, apperror.DatabaseError("酒造の登録に失敗しました", err)
+	}
+	return id, nil
+}
+
+// upsertSakeKind 酒の種類をUPSERTしてIDを返す
+func (r *sakeRepositoryImpl) upsertSakeKind(ctx context.Context, qtx *sqlc.Queries, kind entity.SakeKind) (int32, error) {
+	id, err := qtx.UpsertSakeKind(ctx, kind.Name)
+	if err != nil {
+		logger.LogDatabaseError(ctx, "UPSERT", "sake_kinds", err, map[string]interface{}{"kind": kind.Name})
+		return 0, apperror.DatabaseError("酒の種類の登録に失敗しました", err)
+	}
+	return id, nil
+}
+
+// syncDrinkStyles 飲み方を同期する(既存を削除して再挿入)
+func (r *sakeRepositoryImpl) syncDrinkStyles(ctx context.Context, qtx *sqlc.Queries, sakeID int32, drinkStyles []entity.DrinkStyle) error {
+	if err := qtx.DeleteSakeDrinkStyles(ctx, sakeID); err != nil {
+		logger.LogDatabaseError(ctx, "DELETE", "sake_drink_styles", err, map[string]interface{}{"sake_id": sakeID})
+		return apperror.DatabaseError("飲み方の削除に失敗しました", err)
+	}
+
+	for _, ds := range drinkStyles {
+		dsID, err := qtx.UpsertDrinkStyle(ctx, sqlc.UpsertDrinkStyleParams{
+			Name:        ds.Name,
+			Description: ds.Description,
+		})
+		if err != nil {
+			logger.LogDatabaseError(ctx, "UPSERT", "drink_styles", err, map[string]interface{}{"drink_style": ds.Name})
+			return apperror.DatabaseError("飲み方の登録に失敗しました", err)
+		}
+
+		if err := qtx.InsertSakeDrinkStyle(ctx, sqlc.InsertSakeDrinkStyleParams{
+			SakeID:       sakeID,
+			DrinkStyleID: dsID,
+		}); err != nil {
+			logger.LogDatabaseError(ctx, "INSERT", "sake_drink_styles", err, map[string]interface{}{
+				"sake_id":        sakeID,
+				"drink_style_id": dsID,
+			})
+			return apperror.DatabaseError("酒と飲み方の紐付けに失敗しました", err)
+		}
+	}
+
+	return nil
 }

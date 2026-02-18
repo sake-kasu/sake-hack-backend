@@ -20,13 +20,23 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
-// Defines values for ErrorCode.
+// Defines values for SakeCategory.
 const (
-	ErrorCodeE0001 ErrorCode = "E0001"
-	ErrorCodeE0002 ErrorCode = "E0002"
-	ErrorCodeE9000 ErrorCode = "E9000"
-	ErrorCodeW0001 ErrorCode = "W0001"
+	SakeCategoryAWAMORI      SakeCategory = "AWAMORI"
+	SakeCategoryBEER         SakeCategory = "BEER"
+	SakeCategoryJAPANESESAKE SakeCategory = "JAPANESE_SAKE"
+	SakeCategoryOTHER        SakeCategory = "OTHER"
+	SakeCategoryRIQUEUR      SakeCategory = "RIQUEUR"
+	SakeCategorySHOCHU       SakeCategory = "SHOCHU"
+	SakeCategorySPIRITS      SakeCategory = "SPIRITS"
+	SakeCategoryWHISKY       SakeCategory = "WHISKY"
+	SakeCategoryWINE         SakeCategory = "WINE"
 )
+
+// APIError defines model for APIError.
+type APIError struct {
+	// Code エラーコード
+	Code string `json:"code"`
 
 // Defines values for SakeCategory.
 const (
@@ -89,12 +99,72 @@ type CreateSakeRequest struct {
 	VolumeRemain *VolumeRemain `json:"volume_remain"`
 }
 
-// ErrorCode エラーコードまたはワーニングコード
-// - E0001: 認証エラー
-// - E0002: データベース実行エラー
-// - W0001: バリデーションエラー
-// - E9000: その他エラー
-type ErrorCode string
+// Brewery defines model for Brewery.
+type Brewery struct {
+	// Id 酒造ID
+	Id int32 `json:"id"`
+
+	// Latitude 緯度
+	Latitude *float64 `json:"latitude"`
+
+	// Longitude 経度
+	Longitude *float64 `json:"longitude"`
+
+	// Name 酒造名
+	Name string `json:"name"`
+
+	// OriginCountry 所在国
+	OriginCountry string `json:"originCountry"`
+
+	// OriginRegion 所在地域
+	OriginRegion *string `json:"originRegion"`
+}
+
+// CreateSakeRequest defines model for CreateSakeRequest.
+type CreateSakeRequest struct {
+	// Abv アルコール度数(%)
+	Abv      float32      `json:"abv"`
+	Brewery  Brewery      `json:"brewery"`
+	Category SakeCategory `json:"category"`
+
+	// DrinkStyles おすすめの飲み方
+	DrinkStyles []DrinkStyle `json:"drinkStyles"`
+
+	// ImageUrl 表示用の画像URL
+	ImageUrl *string  `json:"imageUrl,omitempty"`
+	Kind     SakeKind `json:"kind"`
+
+	// Memo 感想
+	Memo *string  `json:"memo"`
+	Name SakeName `json:"name"`
+
+	// Price 購入時価格
+	Price int32 `json:"price"`
+
+	// PurchaseVolume 購入時容量
+	PurchaseVolume float32 `json:"purchaseVolume"`
+
+	// RemainingVolume 残容量
+	RemainingVolume float32 `json:"remainingVolume"`
+}
+
+// CreateSakeResponse defines model for CreateSakeResponse.
+type CreateSakeResponse struct {
+	Data   *Sake       `json:"data,omitempty"`
+	Errors *[]APIError `json:"errors,omitempty"`
+}
+
+// DrinkStyle defines model for DrinkStyle.
+type DrinkStyle struct {
+	// Description 詳細説明
+	Description *string `json:"description"`
+
+	// Id 飲み方ID
+	Id int32 `json:"id"`
+
+	// Name 飲み方の名前
+	Name string `json:"name"`
+}
 
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
@@ -127,24 +197,28 @@ type ListSakesResponse struct {
 	Total int `json:"total"`
 }
 
-// Memo メモ
-type Memo = string
+// Sake defines model for Sake.
+type Sake struct {
+	Category SakeCategory `json:"category"`
 
-// Price 金額(円)
-type Price = int
+	// Id 酒ID
+	Id int32 `json:"id"`
 
-// Region 産地
-type Region = string
+	// ImagePreview 画像URL formatは実装次第
+	ImagePreview string `json:"imagePreview"`
 
-// SakeCategory 酒カテゴリ
+	// Name 酒名
+	Name string `json:"name"`
+}
+
+// SakeCategory defines model for SakeCategory.
 type SakeCategory string
 
-// SakeDetail 酒詳細情報
+// SakeDetail defines model for SakeDetail.
 type SakeDetail struct {
-	// AlcoholPercentage アルコール度数(%)
-	AlcoholPercentage *AlcoholPercentage `json:"alcohol_percentage"`
-
-	// Category 酒カテゴリ
+	// Abv アルコール度数(%)
+	Abv      float32      `json:"abv"`
+	Brewery  Brewery      `json:"brewery"`
 	Category SakeCategory `json:"category"`
 
 	// CreatedAt 作成日時
@@ -156,20 +230,22 @@ type SakeDetail struct {
 	// Id 酒ID
 	Id SakeID `json:"id"`
 
-	// ImageUrl 画像URL（S3）
-	ImageUrl *ImageURL `json:"image_url"`
+	// ImageUrl 表示用の画像URL
+	ImageUrl *string  `json:"imageUrl,omitempty"`
+	Kind     SakeKind `json:"kind"`
 
-	// Memo メモ
-	Memo *Memo `json:"memo"`
-
-	// Name 酒名
+	// Memo 感想
+	Memo *string  `json:"memo"`
 	Name SakeName `json:"name"`
 
-	// Price 金額(円)
-	Price *Price `json:"price"`
+	// Price 購入時価格
+	Price int32 `json:"price"`
 
-	// Region 産地
-	Region *Region `json:"region"`
+	// PurchaseVolume 購入時容量
+	PurchaseVolume float32 `json:"purchaseVolume"`
+
+	// RemainingVolume 残容量
+	RemainingVolume float32 `json:"remainingVolume"`
 
 	// UpdatedAt 更新日時
 	UpdatedAt time.Time `json:"updated_at"`
@@ -181,8 +257,19 @@ type SakeDetail struct {
 	VolumeRemain *VolumeRemain `json:"volume_remain"`
 }
 
-// SakeID 酒ID
-type SakeID = openapi_types.UUID
+// SakeKind defines model for SakeKind.
+type SakeKind struct {
+	// Id 酒の小分類ID
+	Id int32 `json:"id"`
+
+	// Name 酒の小分類の名前
+	Name string `json:"name"`
+}
+
+// SakeListMeta defines model for SakeListMeta.
+type SakeListMeta struct {
+	// Limit 取得した件数
+	Limit int32 `json:"limit"`
 
 // SakeName 酒名
 type SakeName = string
@@ -216,17 +303,42 @@ type UpdateSakeRequest struct {
 	VolumeRemain *VolumeRemain `json:"volume_remain"`
 }
 
-// VolumeMax 最大容量(ml)
-type VolumeMax = int
+// SakeName defines model for SakeName.
+type SakeName struct {
+	// Name 漢字・英名の名前
+	Name string `json:"name"`
 
-// VolumeRemain 残量(%)
-type VolumeRemain = int
+	// Phonetic 読み方
+	Phonetic string `json:"phonetic"`
+}
 
-// Limit defines model for Limit.
-type Limit = int32
+// UpdateSakeRequest defines model for UpdateSakeRequest.
+type UpdateSakeRequest struct {
+	// Abv アルコール度数(%)
+	Abv      float32      `json:"abv"`
+	Brewery  Brewery      `json:"brewery"`
+	Category SakeCategory `json:"category"`
 
-// Offset defines model for Offset.
-type Offset = int32
+	// DrinkStyles おすすめの飲み方
+	DrinkStyles []DrinkStyle `json:"drinkStyles"`
+
+	// ImageUrl 表示用の画像URL
+	ImageUrl *string  `json:"imageUrl,omitempty"`
+	Kind     SakeKind `json:"kind"`
+
+	// Memo 感想
+	Memo *string  `json:"memo"`
+	Name SakeName `json:"name"`
+
+	// Price 購入時価格
+	Price int32 `json:"price"`
+
+	// PurchaseVolume 購入時容量
+	PurchaseVolume float32 `json:"purchaseVolume"`
+
+	// RemainingVolume 残容量
+	RemainingVolume float32 `json:"remainingVolume"`
+}
 
 // BadRequest defines model for BadRequest.
 type BadRequest = ErrorResponse
@@ -234,8 +346,11 @@ type BadRequest = ErrorResponse
 // InternalServerError defines model for InternalServerError.
 type InternalServerError = ErrorResponse
 
-// GetSakesParams defines parameters for GetSakes.
-type GetSakesParams struct {
+// NotFound defines model for NotFound.
+type NotFound = ErrorResponse
+
+// ListSakesParams defines parameters for ListSakes.
+type ListSakesParams struct {
 	// Offset スキップする件数
 	Offset *Offset `form:"offset,omitempty" json:"offset,omitempty"`
 
@@ -249,32 +364,50 @@ type GetSakesParams struct {
 	Q *string `form:"q,omitempty" json:"q,omitempty"`
 }
 
-// GetSakesParamsCategory defines parameters for GetSakes.
-type GetSakesParamsCategory string
+// ListStocksParams defines parameters for ListStocks.
+type ListStocksParams struct {
+	// Offset スキップする件数
+	Offset *int32 `form:"offset,omitempty" json:"offset,omitempty"`
 
-// CreateSakeJSONRequestBody defines body for CreateSake for application/json ContentType.
-type CreateSakeJSONRequestBody = CreateSakeRequest
+	// Limit 取得する件数
+	Limit *int32 `form:"limit,omitempty" json:"limit,omitempty"`
 
-// UpdateSakeJSONRequestBody defines body for UpdateSake for application/json ContentType.
-type UpdateSakeJSONRequestBody = UpdateSakeRequest
+	// TypeId 酒の種類IDでフィルタ
+	TypeId *int32 `form:"typeId,omitempty" json:"typeId,omitempty"`
+
+	// BreweryId 酒造IDでフィルタ
+	BreweryId *int32 `form:"breweryId,omitempty" json:"breweryId,omitempty"`
+}
+
+// CreateStockJSONRequestBody defines body for CreateStock for application/json ContentType.
+type CreateStockJSONRequestBody = CreateSakeRequest
+
+// UpdateStockJSONRequestBody defines body for UpdateStock for application/json ContentType.
+type UpdateStockJSONRequestBody = UpdateSakeRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// 酒一覧取得
 	// (GET /sakes)
-	GetSakes(c *gin.Context, params GetSakesParams)
-	// 酒情報登録
-	// (POST /sakes)
-	CreateSake(c *gin.Context)
-	// 酒情報削除
-	// (DELETE /sakes/{id})
-	DeleteSake(c *gin.Context, id openapi_types.UUID)
+	ListSakes(c *gin.Context, params ListSakesParams)
 	// 酒詳細取得
 	// (GET /sakes/{id})
-	GetSakeDetail(c *gin.Context, id openapi_types.UUID)
+	GetSakeDetail(c *gin.Context, id int32)
+	// 在庫一覧取得
+	// (GET /stocks)
+	ListStocks(c *gin.Context, params ListStocksParams)
+	// 在庫を登録
+	// (POST /stocks)
+	CreateStock(c *gin.Context)
+	// 酒情報削除
+	// (DELETE /stocks/{id})
+	DeleteStock(c *gin.Context, id int32)
+	// 酒詳細取得
+	// (GET /stocks/{id})
+	GetStockDetail(c *gin.Context, id int32)
 	// 酒情報更新
-	// (PATCH /sakes/{id})
-	UpdateSake(c *gin.Context, id openapi_types.UUID)
+	// (PUT /stocks/{id})
+	UpdateStock(c *gin.Context, id int32)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -421,6 +554,165 @@ func (siw *ServerInterfaceWrapper) UpdateSake(c *gin.Context) {
 	siw.Handler.UpdateSake(c, id)
 }
 
+// GetSakeDetail operation middleware
+func (siw *ServerInterfaceWrapper) GetSakeDetail(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int32
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetSakeDetail(c, id)
+}
+
+// ListStocks operation middleware
+func (siw *ServerInterfaceWrapper) ListStocks(c *gin.Context) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListStocksParams
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", c.Request.URL.Query(), &params.Offset)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter offset: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", c.Request.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter limit: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// ------------- Optional query parameter "typeId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "typeId", c.Request.URL.Query(), &params.TypeId)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter typeId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// ------------- Optional query parameter "breweryId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "breweryId", c.Request.URL.Query(), &params.BreweryId)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter breweryId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.ListStocks(c, params)
+}
+
+// CreateStock operation middleware
+func (siw *ServerInterfaceWrapper) CreateStock(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.CreateStock(c)
+}
+
+// DeleteStock operation middleware
+func (siw *ServerInterfaceWrapper) DeleteStock(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int32
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.DeleteStock(c, id)
+}
+
+// GetStockDetail operation middleware
+func (siw *ServerInterfaceWrapper) GetStockDetail(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int32
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetStockDetail(c, id)
+}
+
+// UpdateStock operation middleware
+func (siw *ServerInterfaceWrapper) UpdateStock(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int32
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.UpdateStock(c, id)
+}
+
 // GinServerOptions provides options for the Gin server.
 type GinServerOptions struct {
 	BaseURL      string
@@ -448,54 +740,62 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
-	router.GET(options.BaseURL+"/sakes", wrapper.GetSakes)
-	router.POST(options.BaseURL+"/sakes", wrapper.CreateSake)
-	router.DELETE(options.BaseURL+"/sakes/:id", wrapper.DeleteSake)
+	router.GET(options.BaseURL+"/sakes", wrapper.ListSakes)
 	router.GET(options.BaseURL+"/sakes/:id", wrapper.GetSakeDetail)
-	router.PATCH(options.BaseURL+"/sakes/:id", wrapper.UpdateSake)
+	router.GET(options.BaseURL+"/stocks", wrapper.ListStocks)
+	router.POST(options.BaseURL+"/stocks", wrapper.CreateStock)
+	router.DELETE(options.BaseURL+"/stocks/:id", wrapper.DeleteStock)
+	router.GET(options.BaseURL+"/stocks/:id", wrapper.GetStockDetail)
+	router.PUT(options.BaseURL+"/stocks/:id", wrapper.UpdateStock)
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"4MLiMwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

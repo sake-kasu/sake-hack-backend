@@ -3,14 +3,14 @@ package usecase
 import (
 	"context"
 
+	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/query"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
-	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/repository"
 	"github.com/sake-kasu/sake-hack-backend/internal/logger"
 )
 
 // ListSakesInput 酒一覧取得の入力パラメータ
 type ListSakesInput struct {
-	TypeID    *int32
+	KindID    *int32
 	BreweryID *int32
 	Offset    int32
 	Limit     int32
@@ -18,7 +18,7 @@ type ListSakesInput struct {
 
 // ListSakesOutput 酒一覧取得の出力
 type ListSakesOutput struct {
-	Sakes      []entity.Sake
+	Sakes      []entity.SakeListItem
 	Pagination entity.Pagination
 }
 
@@ -29,34 +29,33 @@ type ListSakesUsecaseInterface interface {
 
 // ListSakesUsecase 酒一覧取得ユースケース
 type ListSakesUsecase struct {
-	sakeRepo repository.SakeRepository
+	sakeQuery query.SakeQuery
 }
 
 // NewListSakesUsecase コンストラクタ
-func NewListSakesUsecase(sakeRepo repository.SakeRepository) *ListSakesUsecase {
-	return &ListSakesUsecase{
-		sakeRepo: sakeRepo,
-	}
+func NewListSakesUsecase(sakeQuery query.SakeQuery) *ListSakesUsecase {
+	return &ListSakesUsecase{sakeQuery: sakeQuery}
 }
 
 // Execute 酒一覧を取得する
 func (u *ListSakesUsecase) Execute(ctx context.Context, input ListSakesInput) (*ListSakesOutput, error) {
 	defer logger.TraceMethodAuto(ctx, input)()
 
-	// バリデーション
-	if input.Offset < 0 {
-		input.Offset = 0
-	}
-	if input.Limit < 1 || input.Limit > 100 {
-		input.Limit = 20
+	offset := input.Offset
+	if offset < 0 {
+		offset = 0
 	}
 
-	// リポジトリから取得
-	sakes, pagination, err := u.sakeRepo.List(ctx, repository.ListSakesFilter{
-		TypeID:    input.TypeID,
+	limit := input.Limit
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	sakes, pagination, err := u.sakeQuery.List(ctx, query.ListSakesFilter{
+		KindID:    input.KindID,
 		BreweryID: input.BreweryID,
-		Offset:    input.Offset,
-		Limit:     input.Limit,
+		Offset:    offset,
+		Limit:     limit,
 	})
 	if err != nil {
 		return nil, err

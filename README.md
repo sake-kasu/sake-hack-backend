@@ -75,7 +75,7 @@ cd ..
 ### 5. マイグレーション実行
 
 ```bash
-make db-migrate-up
+make migrate-up
 ```
 
 ### 6. コード生成
