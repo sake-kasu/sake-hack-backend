@@ -51,7 +51,7 @@ func (u *ListSakesUsecase) Execute(ctx context.Context, input ListSakesInput) (*
 		limit = 20
 	}
 
-	sakes, pagination, err := u.sakeQuery.ListPublic(ctx, query.ListPublicSakesFilter{
+	sakes, pagination, err := u.sakeQuery.List(ctx, query.ListSakesFilter{
 		Category: input.Category,
 		Search:   input.Search,
 		Offset:   offset,

@@ -29,54 +29,7 @@ func NewSakeQuery(db *pgxpool.Pool) appQuery.SakeQuery {
 }
 
 // List フィルター条件に基づいて酒一覧を取得
-func (q *sakeQueryImpl) List(ctx context.Context, filter appQuery.ListSakesFilter) ([]entity.SakeListItem, entity.Pagination, error) {
-	defer logger.TraceMethodAuto(ctx, filter)()
-
-	total, err := q.queries.CountSakes(ctx, sqlc.CountSakesParams{
-		KindID:    filter.KindID,
-		BreweryID: filter.BreweryID,
-	})
-	if err != nil {
-		logger.LogDatabaseError(ctx, "SELECT", "sakes", err, map[string]interface{}{"filter": filter})
-		return nil, entity.Pagination{}, apperror.DatabaseError("酒の件数取得に失敗しました", err)
-	}
-
-	rows, err := q.queries.ListSakes(ctx, sqlc.ListSakesParams{
-		Limit:     filter.Limit,
-		Offset:    filter.Offset,
-		KindID:    filter.KindID,
-		BreweryID: filter.BreweryID,
-	})
-	if err != nil {
-		logger.LogDatabaseError(ctx, "SELECT", "sakes", err, map[string]interface{}{"filter": filter})
-		return nil, entity.Pagination{}, apperror.DatabaseError("酒一覧の取得に失敗しました", err)
-	}
-
-	items := make([]entity.SakeListItem, 0, len(rows))
-	for _, row := range rows {
-		imagePreview := ""
-		if row.ImageUrl != nil {
-			imagePreview = *row.ImageUrl
-		}
-		items = append(items, entity.SakeListItem{
-			ID:           row.ID,
-			Category:     entity.SakeCategory(row.Category),
-			Name:         row.Name,
-			ImagePreview: imagePreview,
-		})
-	}
-
-	pagination := entity.Pagination{
-		Total:  total,
-		Offset: filter.Offset,
-		Limit:  filter.Limit,
-	}
-
-	return items, pagination, nil
-}
-
-// ListPublic フィルター条件に基づいて公開酒一覧を取得
-func (q *sakeQueryImpl) ListPublic(ctx context.Context, filter appQuery.ListPublicSakesFilter) ([]entity.SakeDetail, entity.Pagination, error) {
+func (q *sakeQueryImpl) List(ctx context.Context, filter appQuery.ListSakesFilter) ([]entity.SakeDetail, entity.Pagination, error) {
 	defer logger.TraceMethodAuto(ctx, filter)()
 
 	// カウント用のクエリを手動で実行

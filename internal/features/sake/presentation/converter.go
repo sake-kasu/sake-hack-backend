@@ -1,10 +1,10 @@
 package presentation
 
 import (
-	"github.com/google/uuid"
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
-	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
+	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
+	"github.com/sake-kasu/sake-hack-backend/internal/utils"
 )
 
 // toListSakesResponse ListSakesOutputをAPIレスポンスに変換
@@ -22,10 +22,9 @@ func toListSakesResponse(output *usecase.ListSakesOutput) generated.ListSakesRes
 
 // toSakeDetail entity.SakeDetailをgenerated.SakeDetailに変換（公開用）
 func toSakeDetail(detail entity.SakeDetail) generated.SakeDetail {
-	// Note: int32 IDをUUIDとして扱う（暫定対応）
-	// 本来はDBスキーマとOpenAPI定義を統一すべき
-	id := uuid.MustParse(uuid.New().String())
-	
+	// int32 IDを決定的なUUIDに変換
+	id := utils.Int32ToUUID(detail.ID)
+
 	return generated.SakeDetail{
 		Id:                id,
 		Name:              generated.SakeName(detail.Name.Name),

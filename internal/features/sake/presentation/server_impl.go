@@ -4,36 +4,29 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
 	"github.com/sake-kasu/sake-hack-backend/internal/apperror"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
 	"github.com/sake-kasu/sake-hack-backend/internal/logger"
+	"github.com/sake-kasu/sake-hack-backend/internal/utils"
 )
 
 // SakeServerImpl 酒関連のServerInterface実装
 type SakeServerImpl struct {
 	listSakesUC     usecase.ListSakesUsecaseInterface
 	getSakeDetailUC usecase.GetSakeDetailUsecaseInterface
-	createStockUC   usecase.CreateStockUsecaseInterface
-	updateStockUC   usecase.UpdateStockUsecaseInterface
-	deleteStockUC   usecase.DeleteStockUsecaseInterface
 }
 
 // NewSakeServerImpl コンストラクタ
 func NewSakeServerImpl(
 	listSakesUC usecase.ListSakesUsecaseInterface,
 	getSakeDetailUC usecase.GetSakeDetailUsecaseInterface,
-	createStockUC usecase.CreateStockUsecaseInterface,
-	updateStockUC usecase.UpdateStockUsecaseInterface,
-	deleteStockUC usecase.DeleteStockUsecaseInterface,
 ) *SakeServerImpl {
 	return &SakeServerImpl{
 		listSakesUC:     listSakesUC,
 		getSakeDetailUC: getSakeDetailUC,
-		createStockUC:   createStockUC,
-		updateStockUC:   updateStockUC,
-		deleteStockUC:   deleteStockUC,
 	}
 }
 
@@ -81,9 +74,20 @@ func (s *SakeServerImpl) GetSakeDetail(c *gin.Context, id generated.SakeIDPathPa
 	ctx := c.Request.Context()
 	defer logger.TraceMethodAuto(ctx, id)()
 
-	// TODO: UUIDをint32に変換する実装が必要
-	// 現在はダミー実装
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented yet"})
+	// UUIDをint32に変換
+	id32, err := convertUUIDToInt32(id)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	output, err := s.getSakeDetailUC.Execute(ctx, id32)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toSakeDetail(*output.Detail))
 }
 
 // GetStocks 在庫一覧取得
@@ -134,6 +138,11 @@ func (s *SakeServerImpl) DeleteStock(c *gin.Context, id generated.StockIDPathPar
 
 	// TODO: 在庫削除の実装
 	c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented yet"})
+}
+
+// convertUUIDToInt32 UUIDをint32に変換（ヘルパー関数）
+func convertUUIDToInt32(id uuid.UUID) (int32, error) {
+	return utils.UUIDToInt32(id)
 }
 
 // handleError エラーをHTTPレスポンスに変換

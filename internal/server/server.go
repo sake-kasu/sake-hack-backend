@@ -13,7 +13,6 @@ import (
 	"github.com/sake-kasu/sake-hack-backend/internal/database"
 	sakeUsecase "github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
 	sakeInfraQuery "github.com/sake-kasu/sake-hack-backend/internal/features/sake/infrastructure/query"
-	sakeInfraRepo "github.com/sake-kasu/sake-hack-backend/internal/features/sake/infrastructure/repository"
 	sakePresentation "github.com/sake-kasu/sake-hack-backend/internal/features/sake/presentation"
 	"github.com/sake-kasu/sake-hack-backend/internal/logger"
 	"github.com/sake-kasu/sake-hack-backend/internal/middleware"
@@ -134,24 +133,17 @@ func (s *Server) setupRoutes() {
 	// ヘルスチェックエンドポイント
 	s.router.GET("/health", s.handleHealth)
 
-	// Query + Repository
+	// Query
 	sakeQuery := sakeInfraQuery.NewSakeQuery(s.postgresPool)
-	sakeRepo := sakeInfraRepo.NewSakeRepository(s.postgresPool)
 
 	// Usecase
 	listSakesUC := sakeUsecase.NewListSakesUsecase(sakeQuery)
 	getSakeDetailUC := sakeUsecase.NewGetSakeDetailUsecase(sakeQuery)
-	createStockUC := sakeUsecase.NewCreateStockUsecase(sakeRepo)
-	updateStockUC := sakeUsecase.NewUpdateStockUsecase(sakeRepo)
-	deleteStockUC := sakeUsecase.NewDeleteStockUsecase(sakeRepo)
 
 	// Presentation
 	sakeServer := sakePresentation.NewSakeServerImpl(
 		listSakesUC,
 		getSakeDetailUC,
-		createStockUC,
-		updateStockUC,
-		deleteStockUC,
 	)
 
 	// APIグループを作成(/apiプレフィックス)

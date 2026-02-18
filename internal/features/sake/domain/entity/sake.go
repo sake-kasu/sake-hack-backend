@@ -57,14 +57,6 @@ type SakeName struct {
 	Phonetic string
 }
 
-// SakeListItem リスト表示用の酒情報(軽量)
-type SakeListItem struct {
-	ID           int32
-	Category     SakeCategory
-	Name         string
-	ImagePreview string
-}
-
 // SakeDetail 酒の詳細情報
 type SakeDetail struct {
 	ID              int32
