@@ -10,16 +10,16 @@ import (
 
 // ListSakesInput 酒一覧取得の入力パラメータ
 type ListSakesInput struct {
-	KindID    *int32
-	BreweryID *int32
-	Offset    int32
-	Limit     int32
+	Category *string
+	Search   *string
+	Offset   int32
+	Limit    int32
 }
 
 // ListSakesOutput 酒一覧取得の出力
 type ListSakesOutput struct {
-	Sakes      []entity.SakeListItem
-	Pagination entity.Pagination
+	Sakes []entity.SakeDetail
+	Total int64
 }
 
 // ListSakesUsecaseInterface 酒一覧取得ユースケースのインターフェイス
@@ -51,18 +51,18 @@ func (u *ListSakesUsecase) Execute(ctx context.Context, input ListSakesInput) (*
 		limit = 20
 	}
 
-	sakes, pagination, err := u.sakeQuery.List(ctx, query.ListSakesFilter{
-		KindID:    input.KindID,
-		BreweryID: input.BreweryID,
-		Offset:    offset,
-		Limit:     limit,
+	sakes, pagination, err := u.sakeQuery.ListPublic(ctx, query.ListPublicSakesFilter{
+		Category: input.Category,
+		Search:   input.Search,
+		Offset:   offset,
+		Limit:    limit,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &ListSakesOutput{
-		Sakes:      sakes,
-		Pagination: pagination,
+		Sakes: sakes,
+		Total: pagination.Total,
 	}, nil
 }

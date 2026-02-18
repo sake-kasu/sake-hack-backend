@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/sake-kasu/sake-hack-backend/internal/apperror"
@@ -15,12 +16,14 @@ import (
 )
 
 type sakeQueryImpl struct {
+	db      *pgxpool.Pool
 	queries *sqlc.Queries
 }
 
 // NewSakeQuery SakeQueryの実装を作成
 func NewSakeQuery(db *pgxpool.Pool) appQuery.SakeQuery {
 	return &sakeQueryImpl{
+		db:      db,
 		queries: sqlc.New(db),
 	}
 }
@@ -61,6 +64,129 @@ func (q *sakeQueryImpl) List(ctx context.Context, filter appQuery.ListSakesFilte
 			Name:         row.Name,
 			ImagePreview: imagePreview,
 		})
+	}
+
+	pagination := entity.Pagination{
+		Total:  total,
+		Offset: filter.Offset,
+		Limit:  filter.Limit,
+	}
+
+	return items, pagination, nil
+}
+
+// ListPublic フィルター条件に基づいて公開酒一覧を取得
+func (q *sakeQueryImpl) ListPublic(ctx context.Context, filter appQuery.ListPublicSakesFilter) ([]entity.SakeDetail, entity.Pagination, error) {
+	defer logger.TraceMethodAuto(ctx, filter)()
+
+	// カウント用のクエリを手動で実行
+	countQuery := `
+		SELECT COUNT(*) AS total
+		FROM sakes s
+		WHERE
+			($1::text IS NULL OR s.category::text = $1)
+			AND ($2::text IS NULL OR s.name ILIKE '%' || $2 || '%')
+	`
+	var total int64
+	err := q.db.QueryRow(ctx, countQuery, filter.Category, filter.Search).Scan(&total)
+	if err != nil {
+		logger.LogDatabaseError(ctx, "SELECT", "sakes", err, map[string]interface{}{"filter": filter})
+		return nil, entity.Pagination{}, apperror.DatabaseError("酒の件数取得に失敗しました", err)
+	}
+
+	// リスト取得用のクエリを手動で実行
+	listQuery := `
+		SELECT
+			s.id,
+			s.category,
+			s.name,
+			s.image_url,
+			s.abv,
+			s.memo,
+			s.created_at,
+			s.updated_at,
+			sk.name AS kind_name,
+			b.origin_region AS brewery_region
+		FROM sakes s
+		INNER JOIN sake_kinds sk ON s.kind_id = sk.id
+		INNER JOIN breweries b ON s.brewery_id = b.id
+		WHERE
+			($1::text IS NULL OR s.category::text = $1)
+			AND ($2::text IS NULL OR s.name ILIKE '%' || $2 || '%')
+		ORDER BY s.created_at DESC
+		LIMIT $3 OFFSET $4
+	`
+	rows, err := q.db.Query(ctx, listQuery, filter.Category, filter.Search, filter.Limit, filter.Offset)
+	if err != nil {
+		logger.LogDatabaseError(ctx, "SELECT", "sakes", err, map[string]interface{}{"filter": filter})
+		return nil, entity.Pagination{}, apperror.DatabaseError("酒一覧の取得に失敗しました", err)
+	}
+	defer rows.Close()
+
+	items := make([]entity.SakeDetail, 0)
+	for rows.Next() {
+		var item struct {
+			ID            int32
+			Category      string
+			Name          string
+			ImageURL      *string
+			Abv           float32
+			Memo          *string
+			CreatedAt     pgtype.Timestamptz
+			UpdatedAt     pgtype.Timestamptz
+			KindName      string
+			BreweryRegion *string
+		}
+		
+		err := rows.Scan(
+			&item.ID,
+			&item.Category,
+			&item.Name,
+			&item.ImageURL,
+			&item.Abv,
+			&item.Memo,
+			&item.CreatedAt,
+			&item.UpdatedAt,
+			&item.KindName,
+			&item.BreweryRegion,
+		)
+		if err != nil {
+			logger.LogDatabaseError(ctx, "SCAN", "sakes", err, nil)
+			return nil, entity.Pagination{}, apperror.DatabaseError("酒一覧のスキャンに失敗しました", err)
+		}
+
+		items = append(items, entity.SakeDetail{
+			ID:       item.ID,
+			Category: entity.SakeCategory(item.Category),
+			Kind: entity.SakeKind{
+				ID:   0,
+				Name: item.KindName,
+			},
+			Brewery: entity.Brewery{
+				ID:            0,
+				Name:          "",
+				OriginCountry: "",
+				OriginRegion:  item.BreweryRegion,
+			},
+			Name: entity.SakeName{
+				Name:     item.Name,
+				Phonetic: "",
+			},
+			Abv:             item.Abv,
+			PurchaseVolume:  0,
+			RemainingVolume: 0,
+			Memo:            item.Memo,
+			DrinkStyles:     []entity.DrinkStyle{},
+			Price:           0,
+			ImageUrl:        item.ImageURL,
+			CreatedAt:       item.CreatedAt.Time,
+			UpdatedAt:       item.UpdatedAt.Time,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		logger.LogDatabaseError(ctx, "ROWS", "sakes", err, nil)
+		return nil, entity.Pagination{}, apperror.DatabaseError("酒一覧の取得に失敗しました", err)
 	}
 
 	pagination := entity.Pagination{

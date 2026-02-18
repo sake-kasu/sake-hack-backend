@@ -18,6 +18,34 @@ WHERE
     (sqlc.narg('kind_id')::INTEGER IS NULL OR s.kind_id = sqlc.narg('kind_id'))
     AND (sqlc.narg('brewery_id')::INTEGER IS NULL OR s.brewery_id = sqlc.narg('brewery_id'));
 
+-- name: ListPublicSakes :many
+SELECT
+    s.id,
+    s.category,
+    s.name,
+    s.image_url,
+    s.abv,
+    s.memo,
+    s.created_at,
+    s.updated_at,
+    sk.name AS kind_name,
+    b.origin_region AS brewery_region
+FROM sakes s
+INNER JOIN sake_kinds sk ON s.kind_id = sk.id
+INNER JOIN breweries b ON s.brewery_id = b.id
+WHERE
+    (sqlc.narg('category')::sake_category IS NULL OR s.category = sqlc.narg('category'))
+    AND (sqlc.narg('search_query')::TEXT IS NULL OR s.name ILIKE '%' || sqlc.narg('search_query') || '%')
+ORDER BY s.created_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: CountPublicSakes :one
+SELECT COUNT(*) AS total
+FROM sakes s
+WHERE
+    (sqlc.narg('category')::sake_category IS NULL OR s.category = sqlc.narg('category'))
+    AND (sqlc.narg('search_query')::TEXT IS NULL OR s.name ILIKE '%' || sqlc.narg('search_query') || '%');
+
 -- name: GetSakeDetailByID :one
 SELECT
     s.id,
