@@ -23,19 +23,121 @@ Go + クリーンアーキテクチャ + Package by Feature + OpenAPI-First 開�
 ```
 internal/
 ├── features/              # 機能別パッケージ
-│   ├── auth/
+│   ├── sake/
 │   │   ├── domain/        # Entity + Repository IF
-│   │   ├── application/   # Usecase
-│   │   ├── infrastructure/# Repository実装
+│   │   │   ├── entity/    # ドメインエンティティ
+│   │   │   └── repository/# リポジトリインターフェース
+│   │   ├── application/   # Usecase + Query IF
+│   │   │   ├── usecase/   # ユースケース実装
+│   │   │   └── query/     # クエリインターフェース(CQRS)
+│   │   ├── infrastructure/# Repository実装 + Query実装
+│   │   │   ├── repository/# リポジトリ実装
+│   │   │   └── query/     # クエリ実装
 │   │   └── presentation/  # HTTPハンドラ
+│   │       ├── server_impl.go  # Ginハンドラ
+│   │       ├── converter.go    # DTO変換
+│   │       └── validator.go    # バリデーション
 │   └── (他の機能...)
 ├── middleware/            # HTTP middleware
 ├── logger/                # 構造化ログ
 ├── server/                # サーバー設定
 ├── apperror/              # カスタムエラー
 ├── utils/                 # ユーティリティ
-└── database/              # DB接続管理
+├── api/                   # Openapi
+├── database/              # DB接続管理
+└── docs/                  # 要件資料（サブモジュール）
 ```
+
+#### アーキテクチャの特徴
+
+1. **クリーンアーキテクチャ**: 依存性逆転の原則に基づいた層分離
+2. **CQRS (Command Query Responsibility Segregation)**: 読み取り(Query)と書き込み(Command)の分離
+3. **DI (Dependency Injection)**: インターフェースによる疎結合
+4. **Package by Feature**: 機能単位でのパッケージング
+
+#### 実装例: GET /sakes API のデータフロー
+
+```
+HTTPリクエスト (GET /sakes?category=JAPANESE_SAKE&limit=20)
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│ [1] Presentation Layer (プレゼンテーション層)                │
+│ internal/features/sake/presentation/server_impl.go          │
+│ - GetSakes(): HTTPリクエスト受信                             │
+│ - パラメータ抽出・バリデーション                              │
+│ - ListSakesInputに変換                                       │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│ [2] Application Layer (アプリケーション層)                   │
+│ internal/features/sake/application/usecase/list_sakes.go    │
+│ - ListSakesUsecase.Execute()                                │
+│ - ビジネスルール適用 (limit: 1-100, default: 20)            │
+│ - ListPublicSakesFilterに変換                               │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│ [3] Query Interface (クエリインターフェース - CQRS)          │
+│ internal/features/sake/application/query/sake_query.go      │
+│ - SakeQuery.ListPublic() インターフェース                   │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│ [4] Infrastructure Layer (インフラストラクチャ層)            │
+│ internal/features/sake/infrastructure/query/sake_query_impl.go│
+│ - sakeQueryImpl.ListPublic()                                │
+│ - COUNT クエリで総件数取得                                   │
+│ - SELECT + JOIN で酒データ取得                              │
+│   (sakes ⋈ sake_kinds ⋈ breweries)                         │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│ [5] Database Layer (データベース層)                          │
+│ db/queries/sakes.sql (SQLC定義)                             │
+│ PostgreSQL + PostGIS                                        │
+└─────────────────────────────────────────────────────────────┘
+    ↓ entity.SakeDetail に変換
+┌─────────────────────────────────────────────────────────────┐
+│ [6] Domain Layer (ドメイン層)                                │
+│ internal/features/sake/domain/entity/sake.go                │
+│ - SakeDetail: 酒の詳細情報エンティティ                       │
+│ - Pagination: ページネーション情報                           │
+└─────────────────────────────────────────────────────────────┘
+    ↓ ListSakesOutput (Sakes + Total)
+┌─────────────────────────────────────────────────────────────┐
+│ [7] Presentation Layer (プレゼンテーション層)                │
+│ internal/features/sake/presentation/converter.go            │
+│ - toListSakesResponse(): DTO変換                            │
+│ - entity.SakeDetail → generated.SakeDetail                  │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+HTTPレスポンス (JSON)
+```
+
+#### レイヤー別の責務
+
+| レイヤー           | 責務                                               | 依存方向                 |
+| ------------------ | -------------------------------------------------- | ------------------------ |
+| **Presentation**   | HTTP入出力、バリデーション、DTO変換                | → Application            |
+| **Application**    | ビジネスロジック、ユースケース調整                 | → Domain, Query IF       |
+| **Domain**         | ビジネスルール、エンティティ、バリューオブジェクト | 依存なし(中心)           |
+| **Infrastructure** | DB操作、外部API呼び出し                            | → Domain, Application IF |
+
+#### CQRS パターンの採用
+
+読み取り(Query)と書き込み(Command)を分離することで、以下のメリットを実現:
+
+- **Query**: `application/query/` + `infrastructure/query/`
+  - 複雑な検索条件に最適化
+  - JOIN、集計、キャッシュなどに特化
+  - 例: `ListPublic()`, `GetDetail()`
+
+- **Command**: `domain/repository/` + `infrastructure/repository/`
+  - トランザクション管理
+  - ビジネスルール保証
+  - 例: `Create()`, `Update()`, `Delete()`
+
+この分離により、読み取りと書き込みで異なる最適化戦略を採用できます。
 
 ## セットアップ
 
