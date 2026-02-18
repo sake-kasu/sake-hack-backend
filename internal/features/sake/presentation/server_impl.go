@@ -36,35 +36,23 @@ func (s *SakeServerImpl) GetSakes(c *gin.Context, params generated.GetSakesParam
 	ctx := c.Request.Context()
 	defer logger.TraceMethodAuto(ctx, params)()
 
-	offset := int32(0)
-	if params.Offset != nil {
-		offset = *params.Offset
+	// パラメータバリデーション
+	if err := ValidateGetSakesParams(params); err != nil {
+		handleError(c, err)
+		return
 	}
 
-	limit := int32(20)
-	if params.Limit != nil {
-		limit = *params.Limit
-	}
+	// APIパラメータをUsecaseの入力に変換
+	input := toUsecaseListSakesInput(params)
 
-	var category *string
-	if params.Category != nil {
-		cat := string(*params.Category)
-		category = &cat
-	}
-
-	input := usecase.ListSakesInput{
-		Category: category,
-		Search:   params.Q,
-		Offset:   offset,
-		Limit:    limit,
-	}
-
+	// Usecase実行
 	output, err := s.listSakesUC.Execute(ctx, input)
 	if err != nil {
 		handleError(c, err)
 		return
 	}
 
+	// レスポンス返却
 	c.JSON(http.StatusOK, toListSakesResponse(output))
 }
 

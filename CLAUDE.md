@@ -33,7 +33,7 @@ make test / make cover / make lint / make gosec-scan
 make deps  # go mod tidy
 
 # API開発(OpenAPI仕様から自動生成)
-make api-validate / make api-generate / make api-bundle / make api-gendoc
+make api-validate / make api-generate / make api-bundle
 
 # データベース開発
 make sqlc-generate                # sqlcコード生成
@@ -134,7 +134,7 @@ db/
 - **設定方式**: 環境変数 + `.env`ファイル (caarlos0/env + godotenv)
 - **設定構造体**: 機能別に分割 (server.go, database.go, cache.go, jwt.go, cors.go, logger.go)
 - Server: SERVER_PORT(8080) / SERVER_MODE(debug) / SERVER_GRACEFUL_SHUTDOWN_TIMEOUT(30s)
-- JWT: JWT_SECRET(必須) / JWT_EXPIRATION(86400) / JWT_COOKIE_*設定 ※将来実装予定
+- JWT: JWT*SECRET(必須) / JWT_EXPIRATION(86400) / JWT_COOKIE*\*設定 ※将来実装予定
 - OAuth: 将来実装予定(CIOS または汎用 OAuth 2.0)
 - Cache(Valkey): CACHE_HOST/PORT/PASSWORD/DATABASE/POOL_SIZE/タイムアウト設定
 - Database(PostgreSQL): DB_HOST/PORT/NAME/USER/PASSWORD(必須) / DB_MAX_OPEN_CONNS / DB_CONN_MAX_LIFETIME

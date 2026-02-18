@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps env submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status seed seed-reset sqlc-generate docker-up docker-down
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps env submodule-init submodule-update submodule-status api-validate api-generate api-bundle openapi migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status seed seed-reset sqlc-generate docker-up docker-down
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -190,17 +190,12 @@ api-bundle: ## OpenAPI仕様をバンドル
 	@echo "📦 OpenAPI仕様をバンドルしています..."
 	@npx @redocly/cli bundle api/openapi.yaml -o api/openapi.bundled.yaml
 
-api-gendoc: ## APIドキュメントを生成
-	@echo "📚 APIドキュメントを生成しています..."
+openapi: ## OpenAPIドキュメントサーバーを起動(ポート8081)
+	@echo "🌐 OpenAPIドキュメントサーバーを起動しています..."
+	@echo "📚 ドキュメントを生成しています..."
 	@npx @redocly/cli build-docs api/openapi.yaml -o api/docs/index.html
-
-api-watch: ## APIドキュメントを監視して自動更新
-	@echo "👀 APIファイルを監視しています..."
-	@echo "📝 変更を検知すると自動的にドキュメントを再生成します"
-	@echo "🌐 ドキュメント: http://localhost:8080"
-	@npx concurrently -n "watch,serve" -c "blue,green" \
-		"npx nodemon --watch api --ext yaml,json --exec 'make api-gendoc'" \
-		"cd api/docs && python3 -m http.server 8080"
+	@echo "🚀 http://localhost:8081 でドキュメントサーバーを起動します"
+	@cd api/docs && python3 -m http.server 8081
 
 migrate-install: ## golang-migrateのインストール
 	@echo "golang-migrate をインストールしています..."

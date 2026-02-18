@@ -7,6 +7,25 @@ import (
 	"github.com/sake-kasu/sake-hack-backend/internal/utils"
 )
 
+// toUsecaseListSakesInput APIパラメータをUsecaseの入力に変換
+func toUsecaseListSakesInput(params generated.GetSakesParams) usecase.ListSakesInput {
+	return usecase.ListSakesInput{
+		Category: toUsecaseCategory(params.Category),
+		Search:   params.Q,
+		Offset:   utils.GetOffsetOrDefault(params.Offset),
+		Limit:    utils.GetLimitOrDefault(params.Limit),
+	}
+}
+
+// toUsecaseCategory APIのCategoryをUsecaseのカテゴリ文字列に変換
+func toUsecaseCategory(apiCategory *generated.CategoryQueryParameter) *string {
+	if apiCategory == nil {
+		return nil
+	}
+	category := string(*apiCategory)
+	return &category
+}
+
 // toListSakesResponse ListSakesOutputをAPIレスポンスに変換
 func toListSakesResponse(output *usecase.ListSakesOutput) generated.ListSakesResponse {
 	sakes := make([]generated.SakeDetail, 0, len(output.Sakes))
