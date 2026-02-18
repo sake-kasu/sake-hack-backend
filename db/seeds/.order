@@ -1,0 +1,7 @@
+# seedファイルの実行順序を定義
+# 依存関係を考慮して上から順に実行されます
+breweries.sql
+sake_kinds.sql
+drink_styles.sql
+sakes.sql
+sake_drink_styles.sql

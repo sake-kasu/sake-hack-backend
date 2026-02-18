@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps env submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate docker-up docker-down
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps env submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status seed seed-reset sqlc-generate docker-up docker-down
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -238,6 +238,70 @@ migrate-version: ## 現在のバージョン確認
 migrate-status: ## マイグレーション状態確認
 	@echo "Migration status:"
 	@migrate -path db/migrations -database "$(DB_URL)" version 2>&1 || true
+
+seed: ## シードデータを投入
+	@echo "🌱 シードデータを投入しています..."
+	@if [ ! -f db/seeds/.order ]; then \
+		echo "❌ エラー: db/seeds/.order ファイルが見つかりません"; \
+		exit 1; \
+	fi
+	@if command -v psql >/dev/null 2>&1; then \
+		while IFS= read -r file || [ -n "$$file" ]; do \
+			[ -z "$$file" ] && continue; \
+			[[ "$$file" =~ ^# ]] && continue; \
+			filepath="db/seeds/$$file"; \
+			if [ ! -f "$$filepath" ]; then \
+				echo "❌ エラー: $$filepath が見つかりません"; \
+				exit 1; \
+			fi; \
+			echo "  📄 $$filepath を実行中..."; \
+			PGPASSWORD=$(DB_PASSWORD) psql -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) -d $(DB_NAME) -f $$filepath; \
+			if [ $$? -ne 0 ]; then \
+				echo "❌ エラー: $$filepath の実行に失敗しました"; \
+				exit 1; \
+			fi; \
+		done < db/seeds/.order; \
+	elif command -v docker >/dev/null 2>&1; then \
+		CONTAINER=$$(docker ps --filter "name=sake-hack-db" --filter "status=running" --format "{{.Names}}" | head -n 1); \
+		if [ -z "$$CONTAINER" ]; then \
+			echo "❌ エラー: 実行中のPostgreSQLコンテナが見つかりません"; \
+			echo "   Docker環境を起動してください: make docker-up"; \
+			exit 1; \
+		fi; \
+		while IFS= read -r file || [ -n "$$file" ]; do \
+			[ -z "$$file" ] && continue; \
+			[[ "$$file" =~ ^# ]] && continue; \
+			filepath="db/seeds/$$file"; \
+			if [ ! -f "$$filepath" ]; then \
+				echo "❌ エラー: $$filepath が見つかりません"; \
+				exit 1; \
+			fi; \
+			echo "  📄 $$filepath を実行中..."; \
+			docker exec -i $$CONTAINER psql -U $(DB_USER) -d $(DB_NAME) < $$filepath; \
+			if [ $$? -ne 0 ]; then \
+				echo "❌ エラー: $$filepath の実行に失敗しました"; \
+				exit 1; \
+			fi; \
+		done < db/seeds/.order; \
+	else \
+		echo "❌ エラー: psqlコマンドまたはDockerが見つかりません"; \
+		exit 1; \
+	fi
+	@echo "✅ シードデータの投入が完了しました"
+
+seed-reset: ## DBをリセットしてシードデータを再投入
+	@echo "🔄 DBをリセットしてシードデータを再投入しています..."
+	@echo ""
+	@echo "⚠️  警告: すべてのデータが削除されます"
+	@echo ""
+	@echo "Step 1: 最新のリセットマイグレーション(0009)まで戻します..."
+	@migrate -path db/migrations -database "$(DB_URL)" down 1 || true
+	@echo ""
+	@echo "Step 2: 全マイグレーションを再適用します..."
+	@$(MAKE) migrate-up
+	@echo ""
+	@echo "Step 3: シードデータを投入します..."
+	@$(MAKE) seed
 
 # sqlc
 sqlc-generate: ## SQLからGoコードを生成

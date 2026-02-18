@@ -172,9 +172,9 @@ make docker-up
 make migrate-install
 make migrate-up
 
-# 7. テストデータ投入（オプション）
-# → 酒の種類、メーカー、酒データ、在庫データを投入
-docker exec -i sake-hack-db psql -U postgres -d sake_hack_app < test_data.sql
+# 7. シードデータ投入（オプション）
+# → 酒の種類、メーカー、酒データなどのテストデータを投入
+make seed
 
 # 8. コード生成（初回のみ）
 # → OpenAPI仕様からHTTPハンドラ、SQLからDB操作コードを自動生成
@@ -313,11 +313,47 @@ make api-watch          # APIドキュメント生成（リアルタイム反映
 ### データベース
 
 ```bash
-make db-migrate-up              # マイグレーション実行
-make db-migrate-down            # マイグレーションロールバック
-make db-migrate-create NAME=xxx # 新規マイグレーション作成
+make migrate-up                 # マイグレーション実行
+make migrate-down               # マイグレーションロールバック
+make migrate-create NAME=xxx    # 新規マイグレーション作成
+make seed                       # シードデータ投入
+make seed-reset                 # DBリセット後にシードデータを再投入
 make sqlc-generate              # sqlcコード生成
 ```
+
+#### シードデータについて
+
+シードデータは `db/seeds/` ディレクトリに配置されたSQLファイルで管理されています。
+
+**ファイル構成：**
+
+- `xxx.sql` - データファイル
+- `.order` - 実行順序を定義するファイル
+
+**使い方：**
+
+```bash
+# シードデータを投入（既存データがある場合は重複を無視）
+make seed
+
+# DBを完全にリセットしてシードデータを再投入
+# ※注意：すべてのデータが削除されます
+make seed-reset
+```
+
+**新しいシードファイルの追加：**
+
+1. `db/seeds/` ディレクトリにSQLファイルを作成
+2. `db/seeds/.order` ファイルに実行順序を追加
+
+```bash
+# 例: usersテーブルのシードデータを追加
+touch db/seeds/users.sql
+
+# .orderファイルを編集して依存関係を考慮した位置に追加
+```
+
+ファイルは `.order` ファイルに記載された順序で実行されます。
 
 ## CI/CD
 
