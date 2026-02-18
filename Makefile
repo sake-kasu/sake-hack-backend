@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate docker-up docker-down
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -239,3 +239,14 @@ sqlc-generate: ## SQLからGoコードを生成
 	@sqlc generate
 
 generate: api-generate sqlc-generate ## 全コード生成(OpenAPI + SQLC)
+
+# Docker環境
+docker-up: ## Docker環境を起動
+	@echo "🐳 Docker環境を起動しています..."
+	@echo "📝 config.yamlからdocker/.env.localを生成しています..."
+	@./scripts/generate-docker-env.sh
+	@cd docker && docker compose --env-file .env.local up -d
+
+docker-down: ## Docker環境を停止
+	@echo "🛑 Docker環境を停止しています..."
+	@cd docker && docker compose down

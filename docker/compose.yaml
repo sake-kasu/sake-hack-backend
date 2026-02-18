@@ -19,10 +19,13 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
-    env_file:
-      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: ${TZ}
     ports:
-      - ${POSTGRES_HOST_PORT:-5432}:5432
+      - "${POSTGRES_HOST_PORT}:5432"
     networks:
       - sake_hack_network
 
@@ -34,9 +37,7 @@ services:
       sake-hack-db:
         condition: service_healthy
     ports:
-      - 8081:8081
-    env_file:
-      - .env
+      - "8081:8081"
     environment:
       PGWEB_DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@sake-hack-db:5432/${POSTGRES_DB}?sslmode=disable"
     networks:
@@ -51,9 +52,7 @@ services:
         source: sake-hack-valkey-data
         target: /data
     ports:
-      - ${VALKEY_HOST_PORT:-6379}:6379
-    env_file:
-      - .env
+      - "${VALKEY_HOST_PORT}:6379"
     command: >
       valkey-server
       --appendonly yes

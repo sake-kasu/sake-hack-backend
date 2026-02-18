@@ -139,72 +139,114 @@ HTTPレスポンス (JSON)
 
 この分離により、読み取りと書き込みで異なる最適化戦略を採用できます。
 
-## セットアップ
+## ローカル環境セットアップ
 
 ### 前提条件
 
-- Go 1.25.4+
+- Go 1.26.0
 - Docker & Docker Compose
 - make
 
-### 1. サブモジュールの最新適用
+### クイックスタート（初回セットアップ）
 
 ```bash
+# 1. リポジトリをクローン
+git clone git@github.com:sake-kasu/sake-hack-backend.git
+cd sake-hack-backend
+
+# 2. サブモジュール初期化
+# → docs/ディレクトリに要件定義書・議事録をダウンロード
 make submodule-init
-```
 
-### 2. 依存関係のインストール
-
-```bash
+# 3. 依存関係インストール
+# → Go modulesの依存パッケージを取得
 make deps
-```
 
-### 3. 設定ファイルの作成
+# 4. Docker起動
+# → PostgreSQL + Valkey + pgweb を起動
+# → config.yamlから自動的にdocker/.env.localを生成
+make docker-up
 
-```bash
-cp config/config.yml.sample config/config.yml
-# config.yml を環境に合わせて編集
-```
-
-### 4. データベースの起動
-
-```bash
-cd docker
-docker-compose up -d
-cd ..
-```
-
-### 5. マイグレーション実行
-
-```bash
+# 5. マイグレーション実行
+# → DBスキーマを作成（初回のみmigrate-installが必要）
+make migrate-install
 make migrate-up
-```
 
-### 6. コード生成
+# 6. テストデータ投入（オプション）
+# → 酒の種類、メーカー、酒データ、在庫データを投入
+docker exec -i sake-hack-db psql -U postgres -d sake_hack_app < test_data.sql
 
-```bash
-# OpenAPIからコード生成
-make api-generate
+# 7. コード生成
+# → OpenAPI仕様からHTTPハンドラ、SQLからDB操作コードを自動生成
+make generate
 
-# sqlcからコード生成
-make sqlc-generate
-```
-
-### 7. ビルド・実行
-
-```bash
-# ビルド
-make build
-
-# 実行
+# 8. APIサーバー起動
+# → http://localhost:8080 で起動
 make run
 ```
 
-### 8. ヘルスチェック
+**動作確認（別ターミナルで実行）：**
 
 ```bash
+# ヘルスチェック
 curl http://localhost:8080/health
+
+# 酒一覧取得
+curl "http://localhost:8080/api/sakes?limit=10" | jq
+
+# 酒詳細取得（IDは test_data.sql のデータを参照）
+curl "http://localhost:8080/api/sakes/{sake_id}" | jq
 ```
+
+### トラブルシューティング
+
+#### ポートが使用中の場合
+
+```bash
+# config.yamlでポート変更
+vim config/config.yml
+# database.port: 5432 → 5433 に変更
+
+# Docker再起動
+make docker-down
+make docker-up
+
+# マイグレーション（新しいポートで）
+DB_PORT=5433 make migrate-up
+```
+
+#### Docker環境のクリーンアップ
+
+```bash
+# コンテナ停止・削除
+make docker-down
+
+# ボリュームも含めて完全削除
+cd docker && docker compose down -v
+cd ..
+```
+
+#### マイグレーションのやり直し
+
+```bash
+# 全ロールバック
+make migrate-down-all
+
+# 再適用
+make migrate-up
+```
+
+### 2回目以降の起動
+
+```bash
+# Docker起動
+make docker-up
+
+# APIサーバー起動
+make run
+```
+
+設定ファイルやマイグレーションは保持されているため、すぐに開発を開始できます。
 
 ## 開発コマンド
 

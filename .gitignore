@@ -22,9 +22,6 @@ vendor/
 # Go workspace file
 go.work
 
-# Config files
-config/config.yml
-
 # IDE
 .vscode/
 .idea/
@@ -43,6 +40,7 @@ logs/
 # Environment
 .env
 .env.local
+docker/.env.local
 
 api/openapi.bundled.yaml
 
