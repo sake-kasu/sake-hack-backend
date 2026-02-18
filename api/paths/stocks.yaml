@@ -1,111 +1,45 @@
 get:
   tags:
-    - Stocks
+    - stocks
   summary: 在庫一覧取得
-  description: 在庫の一覧をページネーション付きで取得します
-  operationId: listStocks
+  description: 在庫の一覧を取得します
+  operationId: getStocks
   parameters:
-    - name: offset
-      in: query
-      description: スキップする件数
-      required: false
-      schema:
-        type: integer
-        format: int32
-        default: 0
-        minimum: 0
-        x-oapi-codegen-extra-tags:
-          validate: "omitempty,min=0"
-    - name: limit
-      in: query
-      description: 取得する件数
-      required: false
-      schema:
-        type: integer
-        format: int32
-        default: 20
-        minimum: 1
-        maximum: 100
-        x-oapi-codegen-extra-tags:
-          validate: "omitempty,min=1,max=100"
-    - name: typeId
-      in: query
-      description: 酒の種類IDでフィルタ
-      required: false
-      schema:
-        type: integer
-        format: int32
-        minimum: 1
-        x-oapi-codegen-extra-tags:
-          validate: "omitempty,min=1"
-    - name: breweryId
-      in: query
-      description: 酒造IDでフィルタ
-      required: false
-      schema:
-        type: integer
-        format: int32
-        minimum: 1
-        x-oapi-codegen-extra-tags:
-          validate: "omitempty,min=1"
+    - $ref: "../components/parameters/common.yaml#/Offset"
+    - $ref: "../components/parameters/common.yaml#/Limit"
+    - $ref: "../components/schemas/stock.yaml#/StockCategoryQueryParameter"
+    - $ref: "../components/schemas/stock.yaml#/StockSearchQueryParameter"
   responses:
     "200":
       description: 在庫一覧の取得に成功
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/sake.yaml#/ListSakesResponse"
+            $ref: "../components/schemas/stock.yaml#/ListStocksResponse"
     "400":
       $ref: "../components/responses/common.yaml#/BadRequest"
     "500":
       $ref: "../components/responses/common.yaml#/InternalServerError"
-
 post:
   tags:
-    - Stocks
-  summary: 在庫を登録
-  description: 新しい在庫を登録します
+    - stocks
+  summary: 在庫登録
+  description: 在庫情報を登録します
   operationId: createStock
   requestBody:
     required: true
     content:
       application/json:
         schema:
-          $ref: "../components/schemas/sake.yaml#/CreateSakeRequest"
-        example:
-          category: "JAPANESE_SAKE"
-          kind:
-            id: 3
-            name: "純米大吟醸"
-          brewery:
-            id: 1
-            name: "旭酒造"
-            originCountry: "日本"
-            originRegion: "山口県"
-          name:
-            name: "獺祭 純米大吟醸 磨き二割三分"
-            phonetic: "だっさい じゅんまいだいぎんじょう みがきにわりさんぶ"
-          abv: 16.0
-          purchaseVolume: 720.0
-          remainingVolume: 720.0
-          memo: "特別な日に飲みたい"
-          drinkStyles:
-            - id: 1
-              name: "冷酒"
-              description: "5-10度に冷やして"
-            - id: 2
-              name: "常温"
-          price: 5500
+          $ref: "../components/schemas/stock.yaml#/CreateStockRequest"
   responses:
-    "201":
-      description: 在庫の登録に成功
+    "200":
+      description: 在庫登録成功
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/sake.yaml#/CreateSakeResponse"
+            $ref: "../components/schemas/stock.yaml#/StockDetail"
     "400":
       $ref: "../components/responses/common.yaml#/BadRequest"
-    "404":
-      $ref: "../components/responses/common.yaml#/NotFound"
     "500":
       $ref: "../components/responses/common.yaml#/InternalServerError"

@@ -10,6 +10,8 @@ servers:
   - url: http://localhost:8080
     description: Local development server
 
+security: []  # 現時点では認証なし（Phase 3で実装予定）
+
 paths:
   /sakes:
     $ref: "./paths/sakes.yaml"
@@ -20,13 +22,8 @@ paths:
   /stocks/{id}:
     $ref: "./paths/stockDetail.yaml"
 
-components:
-  securitySchemes:
-    BearerAuth:
-      $ref: "./components/securitySchemes/auth.yaml#/BearerAuth"
-
 tags:
-  - name: Sakes
-    description: 酒関連
-  - name: Stocks
-    description: 在庫関連
+  - name: sakes
+    description: 酒関連API（公開閲覧用）
+  - name: stocks
+    description: 在庫管理API（店舗用）

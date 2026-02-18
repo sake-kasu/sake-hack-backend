@@ -6,8 +6,8 @@ on:
       - develop
 
 env:
-  GO_VERSION: "1.25.4"
-  GOLANGCI_LINT_VERSION: "v2.2.1"
+  GO_VERSION: "1.26.0"
+  GOLANGCI_LINT_VERSION: "v2.10.1"
   COVERAGE_THRESHOLD: "80"
 
 jobs:
@@ -53,7 +53,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: "22"
 
       - name: Install Redocly CLI
         run: npm install -g @redocly/cli
@@ -101,7 +101,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: "22"
 
       - name: Install dependencies
         run: |
@@ -113,7 +113,7 @@ jobs:
 
       - name: Check generated code is up-to-date
         run: |
-          git diff --exit-code generated/ || (echo "❌ 生成コードが最新ではありません。make api-generateを実行してください" && exit 1)
+          git diff --exit-code api/generated/ || (echo "❌ 生成コードが最新ではありません。make api-generateを実行してください" && exit 1)
           echo "✅ 生成コードが最新です"
 
   # ===== BUILD JOBS =====
@@ -195,7 +195,7 @@ jobs:
     needs: [validate-go-modules]
     services:
       postgres:
-        image: postgis/postgis:18-3.5
+        image: postgis/postgis:16-3.4
         env:
           POSTGRES_DB: sake_hack_app_test
           POSTGRES_USER: postgres

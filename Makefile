@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps api-validate api-generate api-bundle api-gendoc migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -152,6 +152,20 @@ deps: ## 依存関係を整理
 	@go mod tidy
 	@go mod download
 
+# サブモジュール
+submodule-init: ## サブモジュールを初期化
+	@echo "🔧 サブモジュールを初期化しています..."
+	@git submodule update --init --recursive
+
+submodule-update: ## サブモジュールを最新に更新
+	@echo "🔄 サブモジュールを最新に更新しています..."
+	@git submodule update --remote --merge
+	@echo "✅ サブモジュールが最新になりました"
+
+submodule-status: ## サブモジュールの状態を確認
+	@echo "📋 サブモジュールの状態:"
+	@git submodule status
+
 # API開発(OpenAPI仕様から自動生成)
 api-validate: ## OpenAPI仕様を検証
 	@echo "✅ OpenAPI仕様を検証しています..."
@@ -173,6 +187,14 @@ api-bundle: ## OpenAPI仕様をバンドル
 api-gendoc: ## APIドキュメントを生成
 	@echo "📚 APIドキュメントを生成しています..."
 	@npx @redocly/cli build-docs api/openapi.yaml -o api/docs/index.html
+
+api-watch: ## APIドキュメントを監視して自動更新
+	@echo "👀 APIファイルを監視しています..."
+	@echo "📝 変更を検知すると自動的にドキュメントを再生成します"
+	@echo "🌐 ドキュメント: http://localhost:8080"
+	@npx concurrently -n "watch,serve" -c "blue,green" \
+		"npx nodemon --watch api --ext yaml,json --exec 'make api-gendoc'" \
+		"cd api/docs && python3 -m http.server 8080"
 
 migrate-install: ## golang-migrateのインストール
 	@echo "golang-migrate をインストールしています..."

@@ -45,11 +45,10 @@ internal/
 - Docker & Docker Compose
 - make
 
-### 1. リポジトリのクローン
+### 1. サブモジュールの最新適用
 
 ```bash
-git clone https://github.com/sake-kasu/sake-hack-backend.git
-cd sake-hack-backend
+make submodule-init
 ```
 
 ### 2. 依存関係のインストール
@@ -127,6 +126,17 @@ make lint               # リンター実行
 make gosec-scan         # セキュリティスキャン
 ```
 
+### サブモジュール
+
+```bash
+make submodule-init     # サブモジュールを初期化
+make submodule-update   # サブモジュールを最新に更新
+make submodule-status   # サブモジュールの状態確認
+```
+
+> **Note**: `docs/` ディレクトリは [sake-docs](https://github.com/sake-kasu/sake-docs) リポジトリからサブモジュールとして管理されています。
+> プロジェクトドキュメント（要件定義書、議事録など）は `docs/` ディレクトリで確認できます。
+
 ### API 開発
 
 ```bash
@@ -134,6 +144,7 @@ make api-validate       # OpenAPI仕様検証
 make api-generate       # コード生成
 make api-bundle         # OpenAPI仕様バンドル
 make api-gendoc         # APIドキュメント生成
+make api-watch          # APIドキュメント生成（リアルタイム反映）
 ```
 
 ### データベース
