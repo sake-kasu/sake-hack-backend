@@ -1,28 +1,14 @@
 get:
   tags:
-    - Sakes
-  summary: 酒一覧取得
+    - sakes
+  summary: 酒一覧取得（公開用）
   description: 酒の一覧を取得します
   operationId: getSakes
   parameters:
     - $ref: "../components/parameters/common.yaml#/Offset"
     - $ref: "../components/parameters/common.yaml#/Limit"
-    - name: category
-      in: query
-      description: 酒カテゴリ絞り込み
-      required: false
-      schema:
-        $ref: "../components/schemas/sake.yaml#/SakeCategory"
-        x-oapi-codegen-extra-tags:
-          validate: "omitempty,oneof=JAPANESE_SAKE SHOCHU AWAMORI BEER WINE FRUIT_SAKE LIQUOR NON_ALCOHOL OTHER"
-    - name: q
-      in: query
-      description: 酒名検索
-      required: false
-      schema:
-        type: string
-        x-oapi-codegen-extra-tags:
-          validate: "omitempty"
+    - $ref: "../components/schemas/sake.yaml#/CategoryQueryParameter"
+    - $ref: "../components/schemas/sake.yaml#/SearchQueryParameter"
   responses:
     "200":
       description: 酒一覧の取得に成功

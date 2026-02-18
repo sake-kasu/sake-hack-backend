@@ -1,5 +1,36 @@
 # Sake schemas (公開閲覧用 - 容量、在庫数、価格は含まない)
 
+# Common Parameters
+SakeIDPathParameter:
+  name: id
+  in: path
+  required: true
+  schema:
+    type: string
+    format: uuid
+  description: 酒ID
+
+CategoryQueryParameter:
+  name: category
+  in: query
+  description: 酒カテゴリ絞り込み
+  required: false
+  schema:
+    $ref: "#/SakeCategory"
+    x-oapi-codegen-extra-tags:
+      validate: "omitempty,oneof=JAPANESE_SAKE SHOCHU AWAMORI BEER WINE FRUIT_SAKE LIQUOR NON_ALCOHOL OTHER"
+
+SearchQueryParameter:
+  name: q
+  in: query
+  description: 酒名検索
+  required: false
+  schema:
+    type: string
+    x-oapi-codegen-extra-tags:
+      validate: "omitempty"
+
+# Schema definitions
 SakeID:
   type: string
   format: uuid

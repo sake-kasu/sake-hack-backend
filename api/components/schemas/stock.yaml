@@ -1,5 +1,36 @@
 # Stock-specific schemas (店舗管理用 - 全情報含む)
 
+# Common Parameters
+StockIDPathParameter:
+  name: id
+  in: path
+  required: true
+  schema:
+    type: string
+    format: uuid
+  description: 在庫ID
+
+StockCategoryQueryParameter:
+  name: category
+  in: query
+  description: 酒カテゴリ絞り込み
+  required: false
+  schema:
+    $ref: "#/StockCategory"
+    x-oapi-codegen-extra-tags:
+      validate: "omitempty,oneof=JAPANESE_SAKE SHOCHU AWAMORI BEER WINE FRUIT_SAKE LIQUOR NON_ALCOHOL OTHER"
+
+StockSearchQueryParameter:
+  name: q
+  in: query
+  description: 酒名検索
+  required: false
+  schema:
+    type: string
+    x-oapi-codegen-extra-tags:
+      validate: "omitempty"
+
+# Schema definitions
 StockID:
   type: string
   format: uuid

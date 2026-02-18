@@ -1,17 +1,11 @@
 get:
   tags:
-    - Stocks
+    - stocks
   summary: 在庫詳細取得
   description: 在庫の詳細情報を取得します
   operationId: getStockDetail
   parameters:
-    - name: id
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-      description: 在庫ID
+    - $ref: "../components/schemas/stock.yaml#/StockIDPathParameter"
   responses:
     "200":
       description: 在庫詳細取得成功
@@ -27,18 +21,12 @@ get:
       $ref: "../components/responses/common.yaml#/InternalServerError"
 patch:
   tags:
-    - Stocks
+    - stocks
   summary: 在庫情報更新
   description: 在庫情報を更新します
   operationId: updateStock
   parameters:
-    - name: id
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-      description: 在庫ID
+    - $ref: "../components/schemas/stock.yaml#/StockIDPathParameter"
   requestBody:
     required: true
     content:
@@ -60,18 +48,12 @@ patch:
       $ref: "../components/responses/common.yaml#/InternalServerError"
 delete:
   tags:
-    - Stocks
+    - stocks
   summary: 在庫削除
   description: 指定された在庫を削除します
   operationId: deleteStock
   parameters:
-    - name: id
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-      description: 在庫ID
+    - $ref: "../components/schemas/stock.yaml#/StockIDPathParameter"
   responses:
     "204":
       description: 在庫削除成功
