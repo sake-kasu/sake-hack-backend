@@ -26,11 +26,17 @@ type ValkeyConfig struct {
 func NewValkeyClient(config ValkeyConfig) (valkey.Client, error) {
 	addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
 
-	client, err := valkey.NewClient(valkey.ClientOption{
+	clientOption := valkey.ClientOption{
 		InitAddress: []string{addr},
-		Password:    config.Password,
 		SelectDB:    config.Database,
-	})
+	}
+
+	// パスワードが設定されている場合のみ追加
+	if config.Password != "" {
+		clientOption.Password = config.Password
+	}
+
+	client, err := valkey.NewClient(clientOption)
 	if err != nil {
 		return nil, fmt.Errorf("valkeyのClientの作成に失敗しました: %w", err)
 	}

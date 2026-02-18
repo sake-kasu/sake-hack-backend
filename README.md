@@ -167,20 +167,21 @@ make deps
 # → config.yamlから自動的にdocker/.env.localを生成
 make docker-up
 
-# 5. マイグレーション実行
+# 6. マイグレーション実行
 # → DBスキーマを作成（初回のみmigrate-installが必要）
 make migrate-install
 make migrate-up
 
-# 6. テストデータ投入（オプション）
+# 7. テストデータ投入（オプション）
 # → 酒の種類、メーカー、酒データ、在庫データを投入
 docker exec -i sake-hack-db psql -U postgres -d sake_hack_app < test_data.sql
 
-# 7. コード生成
+# 8. コード生成（初回のみ）
 # → OpenAPI仕様からHTTPハンドラ、SQLからDB操作コードを自動生成
 make generate
 
-# 8. APIサーバー起動
+# 9. APIサーバー起動
+# → config.yamlから自動的に.envを生成
 # → http://localhost:8080 で起動
 make run
 ```
@@ -196,6 +197,24 @@ curl "http://localhost:8080/api/sakes?limit=10" | jq
 
 # 酒詳細取得（IDは test_data.sql のデータを参照）
 curl "http://localhost:8080/api/sakes/{sake_id}" | jq
+```
+
+### 設定ファイルについて
+
+プロジェクトは `config/config.yml` で一元管理されています：
+
+- **ローカル環境**: `config.yml`を編集 → `make run`で自動的に`.env`を生成
+- **Docker環境**: `config.yml`から`docker/.env.local`を自動生成
+- **本番環境**: Helmfile等で環境変数を直接設定
+
+**設定ファイルの再生成:**
+
+```bash
+# .envを再生成（config.ymlを変更した場合）
+make env
+
+# Docker環境変数を再生成
+make docker-up  # 自動的に再生成される
 ```
 
 ### トラブルシューティング

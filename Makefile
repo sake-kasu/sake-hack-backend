@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate docker-up docker-down
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps env submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate docker-up docker-down
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -30,7 +30,7 @@ build: ## アプリケーションをビルド
 	@echo "🔨 $(BINARY_NAME)をビルドしています..."
 	@go build -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PATH)
 
-run: ## アプリケーションを実行
+run: env ## アプリケーションを実行
 	@echo "🚀 $(BINARY_NAME)を実行しています..."
 	@go run $(MAIN_PATH)/main.go
 
@@ -38,7 +38,7 @@ air-install: ## airのインストール
 	@echo "Installing air..."
 	@go install github.com/air-verse/air@latest
 
-dev: air-install ## ホットリロードで開発サーバーを起動(Air使用)
+dev: air-install env ## ホットリロードで開発サーバーを起動(Air使用)
 	@echo "🔥 開発サーバーを起動しています(ホットリロード有効)..."
 	@air
 
@@ -151,6 +151,12 @@ deps: ## 依存関係を整理
 	@echo "📦 依存関係を整理しています..."
 	@go mod tidy
 	@go mod download
+
+env: ## config.yamlから.envを生成
+	@echo "📝 config.yamlから.envを生成しています..."
+	@chmod +x ./scripts/generate-env.sh
+	@./scripts/generate-env.sh
+	@echo "✅ .envファイルを生成しました"
 
 # サブモジュール
 submodule-init: ## サブモジュールを初期化
