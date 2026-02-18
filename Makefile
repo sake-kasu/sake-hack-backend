@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -124,6 +124,20 @@ deps: ## 依存関係を整理
 	@echo "📦 依存関係を整理しています..."
 	@go mod tidy
 	@go mod download
+
+# サブモジュール
+submodule-init: ## サブモジュールを初期化
+	@echo "🔧 サブモジュールを初期化しています..."
+	@git submodule update --init --recursive
+
+submodule-update: ## サブモジュールを最新に更新
+	@echo "🔄 サブモジュールを最新に更新しています..."
+	@git submodule update --remote --merge
+	@echo "✅ サブモジュールが最新になりました"
+
+submodule-status: ## サブモジュールの状態を確認
+	@echo "📋 サブモジュールの状態:"
+	@git submodule status
 
 # API開発(OpenAPI仕様から自動生成)
 api-validate: ## OpenAPI仕様を検証
