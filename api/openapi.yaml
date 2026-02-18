@@ -15,7 +15,13 @@ paths:
     $ref: "./paths/sakes.yaml"
   /sakes/{id}:
     $ref: "./paths/sakeDetail.yaml"
+  /stocks:
+    $ref: "./paths/stocks.yaml"
+  /stocks/{id}:
+    $ref: "./paths/stockDetail.yaml"
 
 tags:
-  - name: Sake
-    description: 酒関連API
+  - name: Sakes
+    description: 酒関連API（公開閲覧用）
+  - name: Stocks
+    description: 在庫管理API（店舗用）

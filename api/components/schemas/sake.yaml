@@ -1,4 +1,5 @@
-# Shared primitive and small reusable schemas
+# Sake schemas (公開閲覧用 - 容量、在庫数、価格は含まない)
+
 SakeID:
   type: string
   format: uuid
@@ -16,12 +17,6 @@ ImageURL:
   nullable: true
   description: 画像URL(S3)
   example: https://example.com/images/sake.jpg
-
-ImageData:
-  type: string
-  format: byte
-  nullable: true
-  description: 画像データ(Base64エンコード)
 
 SakeCategory:
   type: string
@@ -55,30 +50,10 @@ AlcoholPercentage:
   maximum: 100.0
   nullable: true
 
-VolumeMax:
-  type: integer
-  description: 最大容量(ml)
-  example: 720
-  nullable: true
-
-VolumeRemain:
-  type: integer
-  description: 残量(%)
-  example: 75
-  nullable: true
-  maximum: 100
-  minimum: 0
-
 Region:
   type: string
   description: 産地
   example: 山口県
-  nullable: true
-
-Price:
-  type: integer
-  description: 金額(円)
-  example: 1500
   nullable: true
 
 Memo:
@@ -88,10 +63,10 @@ Memo:
   nullable: true
   maxLength: 500
 
-# Compound schemas for reuse
+# Compound schemas
 SakeDetail:
   type: object
-  description: 酒詳細情報
+  description: 酒詳細情報（公開用 - 容量、在庫数、価格は含まない）
   required:
     - id
     - name
@@ -99,10 +74,7 @@ SakeDetail:
     - category
     - description
     - alcohol_percentage
-    - volume_max
-    - volume_remain
     - region
-    - price
     - memo
     - created_at
     - updated_at
@@ -119,14 +91,8 @@ SakeDetail:
       $ref: "#/CategoryDescription"
     alcohol_percentage:
       $ref: "#/AlcoholPercentage"
-    volume_max:
-      $ref: "#/VolumeMax"
-    volume_remain:
-      $ref: "#/VolumeRemain"
     region:
       $ref: "#/Region"
-    price:
-      $ref: "#/Price"
     memo:
       $ref: "#/Memo"
     created_at:
@@ -138,7 +104,7 @@ SakeDetail:
       format: date-time
       description: 更新日時
 
-# Request/response schemas
+# Response schemas
 ListSakesResponse:
   type: object
   required:
@@ -153,67 +119,3 @@ ListSakesResponse:
       items:
         $ref: "#/SakeDetail"
       description: 酒リスト
-
-CreateSakeRequest:
-  type: object
-  required:
-    - name
-    - image_data
-    - category
-    - description
-    - alcohol_percentage
-    - volume_max
-    - volume_remain
-    - region
-    - price
-    - memo
-  properties:
-    name:
-      $ref: "#/SakeName"
-    image_data:
-      $ref: "#/ImageData"
-    category:
-      $ref: "#/SakeCategory"
-    description:
-      $ref: "#/CategoryDescription"
-    alcohol_percentage:
-      $ref: "#/AlcoholPercentage"
-    volume_max:
-      $ref: "#/VolumeMax"
-    volume_remain:
-      $ref: "#/VolumeRemain"
-    region:
-      $ref: "#/Region"
-    price:
-      $ref: "#/Price"
-    memo:
-      $ref: "#/Memo"
-
-UpdateSakeRequest:
-  type: object
-  description: 更新リクエスト。フィールドを省略すると変更なし、nullを指定すると明示的にnullに更新
-  properties:
-    name:
-      allOf:
-        - $ref: "#/SakeName"
-      nullable: true
-    image_data:
-      $ref: "#/ImageData"
-    category:
-      allOf:
-        - $ref: "#/SakeCategory"
-      nullable: true
-    description:
-      $ref: "#/CategoryDescription"
-    alcohol_percentage:
-      $ref: "#/AlcoholPercentage"
-    volume_max:
-      $ref: "#/VolumeMax"
-    volume_remain:
-      $ref: "#/VolumeRemain"
-    region:
-      $ref: "#/Region"
-    price:
-      $ref: "#/Price"
-    memo:
-      $ref: "#/Memo"

@@ -1,0 +1,59 @@
+get:
+  tags:
+    - Stocks
+  summary: 在庫一覧取得
+  description: 在庫の一覧を取得します
+  operationId: getStocks
+  parameters:
+    - $ref: "../components/parameters/common.yaml#/Offset"
+    - $ref: "../components/parameters/common.yaml#/Limit"
+    - name: category
+      in: query
+      description: 酒カテゴリ絞り込み
+      required: false
+      schema:
+        $ref: "../components/schemas/stock.yaml#/StockCategory"
+        x-oapi-codegen-extra-tags:
+          validate: "omitempty,oneof=JAPANESE_SAKE SHOCHU AWAMORI BEER WINE FRUIT_SAKE LIQUOR NON_ALCOHOL OTHER"
+    - name: q
+      in: query
+      description: 酒名検索
+      required: false
+      schema:
+        type: string
+        x-oapi-codegen-extra-tags:
+          validate: "omitempty"
+  responses:
+    "200":
+      description: 在庫一覧の取得に成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/stock.yaml#/ListStocksResponse"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
+post:
+  tags:
+    - Stocks
+  summary: 在庫登録（店舗用）
+  description: 在庫情報を登録します（店舗のみ）
+  operationId: createStock
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/stock.yaml#/CreateStockRequest"
+  responses:
+    "200":
+      description: 在庫登録成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/stock.yaml#/StockDetail"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
