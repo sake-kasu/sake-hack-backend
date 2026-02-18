@@ -13,13 +13,13 @@ servers:
 security: []  # 現時点では認証なし（Phase 3で実装予定）
 
 paths:
-  /sakes:
+  /api/sakes:
     $ref: "./paths/sakes.yaml"
-  /sakes/{id}:
+  /api/sakes/{id}:
     $ref: "./paths/sakeDetail.yaml"
-  /stocks:
+  /api/stocks:
     $ref: "./paths/stocks.yaml"
-  /stocks/{id}:
+  /api/stocks/{id}:
     $ref: "./paths/stockDetail.yaml"
 
 tags:

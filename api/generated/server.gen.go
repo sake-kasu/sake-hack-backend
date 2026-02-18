@@ -369,25 +369,25 @@ type UpdateStockJSONRequestBody = UpdateStockRequest
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// 酒一覧取得（公開用）
-	// (GET /sakes)
+	// (GET /api/sakes)
 	GetSakes(c *gin.Context, params GetSakesParams)
 	// 酒詳細取得（公開用）
-	// (GET /sakes/{id})
+	// (GET /api/sakes/{id})
 	GetSakeDetail(c *gin.Context, id SakeIDPathParameter)
 	// 在庫一覧取得
-	// (GET /stocks)
+	// (GET /api/stocks)
 	GetStocks(c *gin.Context, params GetStocksParams)
 	// 在庫登録
-	// (POST /stocks)
+	// (POST /api/stocks)
 	CreateStock(c *gin.Context)
 	// 在庫削除
-	// (DELETE /stocks/{id})
+	// (DELETE /api/stocks/{id})
 	DeleteStock(c *gin.Context, id StockIDPathParameter)
 	// 在庫詳細取得
-	// (GET /stocks/{id})
+	// (GET /api/stocks/{id})
 	GetStockDetail(c *gin.Context, id StockIDPathParameter)
 	// 在庫情報更新
-	// (PATCH /stocks/{id})
+	// (PATCH /api/stocks/{id})
 	UpdateStock(c *gin.Context, id StockIDPathParameter)
 }
 
@@ -636,13 +636,13 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
-	router.GET(options.BaseURL+"/sakes", wrapper.GetSakes)
-	router.GET(options.BaseURL+"/sakes/:id", wrapper.GetSakeDetail)
-	router.GET(options.BaseURL+"/stocks", wrapper.GetStocks)
-	router.POST(options.BaseURL+"/stocks", wrapper.CreateStock)
-	router.DELETE(options.BaseURL+"/stocks/:id", wrapper.DeleteStock)
-	router.GET(options.BaseURL+"/stocks/:id", wrapper.GetStockDetail)
-	router.PATCH(options.BaseURL+"/stocks/:id", wrapper.UpdateStock)
+	router.GET(options.BaseURL+"/api/sakes", wrapper.GetSakes)
+	router.GET(options.BaseURL+"/api/sakes/:id", wrapper.GetSakeDetail)
+	router.GET(options.BaseURL+"/api/stocks", wrapper.GetStocks)
+	router.POST(options.BaseURL+"/api/stocks", wrapper.CreateStock)
+	router.DELETE(options.BaseURL+"/api/stocks/:id", wrapper.DeleteStock)
+	router.GET(options.BaseURL+"/api/stocks/:id", wrapper.GetStockDetail)
+	router.PATCH(options.BaseURL+"/api/stocks/:id", wrapper.UpdateStock)
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
@@ -683,16 +683,16 @@ var swaggerSpec = []string{
 	"zD7ZZeXcIhnVaV1MjLns9ANr63uXKPv3b3Nr73Pf3yf6JqPQN/mGnwIhz3piqthKnKsR7EeHbUUz/A/O",
 	"bEtwp8C79IQuj1prr3gJckFK+prdiw1V9bq+/Us32JqirP23MRebj7p8qbQl1VGUE4pzawVjDHrsi0Za",
 	"mNZcgbGhmmsISiWR7vl+CcaGkByvae2OsrkrFnESlaOgKQGpGudRXxeuC1PWSgrJMCVStK4L1zVS4IF4",
-	"kGFOyJ1HDQQ9LuDTooO3o4cvX9Eyz35MsegODil+sSu4aBxEwJ8QH3+xHQoPR24Eh0aBJGQ/bsgIFSn5",
-	"M48qCMtcnVexMvA2OXOz6B63IRw+sQvJ0rlhwKVkfmzOdoS+5ThiMzsxaz1coU5u4vIEbePKHfJcPmcE",
-	"0FzNkqCbYXb7mZYkSLNMQTAulXciwhsBfkV+w5ki0tU87kL3xHimQvB5+5DqQ9DubY4bh0FvUk7V894Z",
-	"bqDLufpc6//K2U3hpspL3Kv2E40Orw5VRoc7MQ6MDHeWeyxk4jzPADQd9bSn2uWfCaT8k/6AkOWuOZtA",
-	"5ZWNC+YNP3vMT6stRSsbdC4Q5ZY+5Kd/Kh9xngcO9hMnpOFLSnzkxBwS8IQi4+85aWWSOU308t7ElIsF",
-	"bqiz438uT5DnC8jjJqY4SiIcUNw7Td48u0tdsQHJmLMmH+aX1spHRRvj50TFMZNT0Hu7gCPfVC52uXDn",
-	"Mot4FQg+tEcnio+oIjyxfVqe+sQn8dzXEqVqlAFwiGODFRHcnvuUDQLP7OgkI+DkE0HAkOssJgJueHt2",
-	"e37Dz6tGYBahaxgPHil+U3QoMZisiaO7KKmkJCTjGk4LBMBm++wpSiQUSlK6QUXDkS/CX4RZ6Ng7BbRJ",
-	"+YVn+dHnrd1Rt7rOL/x0+PKVW2PbUwdeYtMSMzBRb63mZsdtLu8XDycWS9ZzHTM3M/8JAAD//3rlmSoo",
-	"MgAA",
+	"kGFOCKbEkDuTGgh6YMAnRgdvRw9fvqKlnv2gYtEdHlIMY9dw0TiIgD8hPgJjuxQej9wIDo8CSch+4JAR",
+	"KlLypx5VEJa5Pq9iZeCNcuZm0V1uQzh8YpeSpbPDgIvJ/Nic7Qh9y3HEZnZi1nq4Qh3dxOUJ2saVO+S5",
+	"gM4IoLmaJUG3w+wGNC1JkGaagmBcKu9UhDcD/Jr8hjNJpKsLsRe6J8YzFQLQ249UH4Z2j3PcWAx6m3Kq",
+	"3vfOcgPdztXnWv9XDm8KN1Ve4l65n2iEeHU4RoS40+PA6HDnusdCKM7zDEDUUc98ql3+mcDKP/UPCFvu",
+	"mrMJWF7ZuGDeELRH/rTyUrSyQeeCUW7pQ376p/IR53nsYD93Qhq+pMRHTswhAc8pMv7+k1YpmdNEMO+t",
+	"TLlY4IY6O/7n8gR53o8+boKKoyTCAcW+0/TNs7vVFRuUjDlr8mF+aa18ZLQxfk5kHDNJBb2/Czj2TeXi",
+	"lwt3LrOJV4Hgg3t0sviIasIT36flqU98Gs99TVGqRhkQhzg2WBHF7TlQ2SDwzJJOMgJOPhkEDL3OYjLg",
+	"hrdnuec3/LxqBGYSuobx4JHiN0WHEoPJmji6i5JKSkIyruG0QABs1s+epkRCoSSlG1Q0HPki/EWYhY69",
+	"U0C7lF94lh993toddavs/MJPhy9fubW2PYXgpTYtMwOT9dZqbnbc5vJ+8XBisWQ91zFzM/OfAAAA//+G",
+	"j4MKODIAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

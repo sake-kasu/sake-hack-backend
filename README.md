@@ -58,7 +58,7 @@ internal/
 #### 実装例: GET /sakes API のデータフロー
 
 ```
-HTTPリクエスト (GET /sakes?category=JAPANESE_SAKE&limit=20)
+HTTPリクエスト (GET /api/sakes?category=JAPANESE_SAKE&limit=20)
     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ [1] Presentation Layer (プレゼンテーション層)                │
