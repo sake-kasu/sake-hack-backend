@@ -59,6 +59,8 @@ func (conv *sakeConverter) toSakeResponse(ctx context.Context, item entity.SakeL
 		Category:     generated.SakeCategory(item.Category),
 		Name:         item.Name,
 		ImagePreview: conv.resolveImageURL(ctx, item.ObjectKey),
+		LikeCount:    item.LikeCount,
+		IsLiked:      item.IsLiked,
 	}
 }
 
@@ -100,6 +102,8 @@ func (conv *sakeConverter) toSakeDetailResponse(ctx context.Context, detail *ent
 		Memo:            detail.Memo,
 		DrinkStyles:     drinkStyles,
 		Price:           detail.Price,
+		LikeCount:       detail.LikeCount,
+		IsLiked:         detail.IsLiked,
 		ImageUrl:        &imageURL,
 		CreatedAt:       detail.CreatedAt,
 		UpdatedAt:       detail.UpdatedAt,

@@ -67,7 +67,10 @@ func (s *SakeServerImpl) ListSakes(c *gin.Context, params generated.ListSakesPar
 		return
 	}
 
-	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(params.Offset, params.Limit, params.TypeId, params.BreweryId))
+	input := toListSakesInput(params.Offset, params.Limit, params.TypeId, params.BreweryId)
+	input.LikeToken = params.XLikeToken
+
+	output, err := s.listSakesUC.Execute(ctx, input)
 	if err != nil {
 		handleError(c, err)
 		return
@@ -78,11 +81,14 @@ func (s *SakeServerImpl) ListSakes(c *gin.Context, params generated.ListSakesPar
 
 // GetSakeDetail 酒詳細取得
 // (GET /sakes/{id})
-func (s *SakeServerImpl) GetSakeDetail(c *gin.Context, id int32) {
+func (s *SakeServerImpl) GetSakeDetail(c *gin.Context, id int32, params generated.GetSakeDetailParams) {
 	ctx := c.Request.Context()
 	defer logger.TraceMethodAuto(ctx, id)()
 
-	output, err := s.getSakeDetailUC.Execute(ctx, id)
+	output, err := s.getSakeDetailUC.Execute(ctx, usecase.GetSakeDetailInput{
+		ID:        id,
+		LikeToken: params.XLikeToken,
+	})
 	if err != nil {
 		handleError(c, err)
 		return
@@ -102,7 +108,10 @@ func (s *SakeServerImpl) ListStocks(c *gin.Context, params generated.ListStocksP
 		return
 	}
 
-	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(params.Offset, params.Limit, params.TypeId, params.BreweryId))
+	input := toListSakesInput(params.Offset, params.Limit, params.TypeId, params.BreweryId)
+	input.LikeToken = params.XLikeToken
+
+	output, err := s.listSakesUC.Execute(ctx, input)
 	if err != nil {
 		handleError(c, err)
 		return
@@ -144,7 +153,9 @@ func (s *SakeServerImpl) GetStockDetail(c *gin.Context, id int32) {
 	ctx := c.Request.Context()
 	defer logger.TraceMethodAuto(ctx, id)()
 
-	output, err := s.getSakeDetailUC.Execute(ctx, id)
+	output, err := s.getSakeDetailUC.Execute(ctx, usecase.GetSakeDetailInput{
+		ID: id,
+	})
 	if err != nil {
 		handleError(c, err)
 		return
@@ -176,7 +187,7 @@ func (s *SakeServerImpl) UpdateStock(c *gin.Context, id int32) {
 		return
 	}
 
-	detailOutput, err := s.getSakeDetailUC.Execute(ctx, id)
+	detailOutput, err := s.getSakeDetailUC.Execute(ctx, usecase.GetSakeDetailInput{ID: id})
 	if err != nil {
 		handleError(c, err)
 		return
@@ -224,7 +235,7 @@ func (s *SakeServerImpl) PatchStock(c *gin.Context, id int32) {
 		return
 	}
 
-	detailOutput, err := s.getSakeDetailUC.Execute(ctx, id)
+	detailOutput, err := s.getSakeDetailUC.Execute(ctx, usecase.GetSakeDetailInput{ID: id})
 	if err != nil {
 		handleError(c, err)
 		return
