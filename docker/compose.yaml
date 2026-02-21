@@ -1,7 +1,7 @@
 name: sake-hack
 
 services:
-  sake-hack-db:
+  postgis:
     build: ./postgres
     platform: linux/amd64
     container_name: sake-hack-db
@@ -26,12 +26,12 @@ services:
     networks:
       - sake_hack_network
 
-  sake-hack-pgweb:
+  pgweb:
     image: sosedoff/pgweb
     container_name: sake-hack-pgweb
     restart: always
     depends_on:
-      sake-hack-db:
+      postgis:
         condition: service_healthy
     ports:
       - 8081:8081
@@ -42,7 +42,7 @@ services:
     networks:
       - sake_hack_network
 
-  sake-hack-valkey:
+  valkey:
     image: valkey/valkey:9.0.0
     container_name: sake-hack-valkey
     restart: always
@@ -61,9 +61,36 @@ services:
     networks:
       - sake_hack_network
 
+  rustfs:
+    image: rustfs/rustfs:1.0.0-alpha.83
+    container_name: sake-hack-rustfs
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - RUSTFS_ACCESS_KEY=rustfsadmin
+      - RUSTFS_SECRET_KEY=rustfsadmin
+      - RUSTFS_CONSOLE_ENABLED=true
+      - RUSTFS_SERVER_URL=http://localhost:9000
+      - RUSTFS_ADDRESS=:9000
+      - RUSTFS_CONSOLE_ADDRESS=:9001
+      - RUSTFS_CORS_ALLOW_ORIGIN=*
+      - RUSTFS_CORS_ALLOW_METHODS=*
+      - RUSTFS_CORS_ALLOW_HEADERS=*
+      - RUSTFS_CORS_EXPOSE_HEADERS=*
+      - RUSTFS_CORS_ALLOW_CREDENTIALS=true
+    volumes:
+      - type: volume
+        source: sake-hack-rustfs-data
+        target: /data
+    networks:
+      - sake_hack_network
+
 volumes:
   sake-hack-db:
   sake-hack-valkey-data:
+  sake-hack-rustfs-data:
 
 networks:
   sake_hack_network:
