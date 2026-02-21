@@ -113,7 +113,7 @@ jobs:
 
       - name: Check generated code is up-to-date
         run: |
-          git diff --exit-code generated/ || (echo "❌ 生成コードが最新ではありません。make api-generateを実行してください" && exit 1)
+          git diff --exit-code api/generated/ || (echo "❌ 生成コードが最新ではありません。make api-generateを実行してください" && exit 1)
           echo "✅ 生成コードが最新です"
 
   # ===== BUILD JOBS =====
