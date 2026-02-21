@@ -16,9 +16,16 @@ import (
 
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
 	"github.com/sake-kasu/sake-hack-backend/internal/apperror"
+	likePresentation "github.com/sake-kasu/sake-hack-backend/internal/features/like/presentation"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
 )
+
+// testCompositeServer はテスト用のcompositeServer
+type testCompositeServer struct {
+	*SakeServerImpl
+	*likePresentation.LikeServerImpl
+}
 
 // --- Mock Usecases ---
 
@@ -38,8 +45,8 @@ type MockGetSakeDetailUsecase struct {
 	mock.Mock
 }
 
-func (m *MockGetSakeDetailUsecase) Execute(ctx context.Context, id int32) (*usecase.GetSakeDetailOutput, error) {
-	args := m.Called(ctx, id)
+func (m *MockGetSakeDetailUsecase) Execute(ctx context.Context, input usecase.GetSakeDetailInput) (*usecase.GetSakeDetailOutput, error) {
+	args := m.Called(ctx, input)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -172,7 +179,13 @@ func newTestServer() (*SakeServerImpl, *MockListSakesUsecase, *MockGetSakeDetail
 func newRouter(server *SakeServerImpl) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	generated.RegisterHandlers(router, server)
+	// SakeServerImplだけではServerInterfaceを満たさないため、
+	// テスト用のcompositeServerでLikeServerImplのスタブをembedding
+	composite := &testCompositeServer{
+		SakeServerImpl: server,
+		LikeServerImpl: likePresentation.NewLikeServerImpl(nil, nil),
+	}
+	generated.RegisterHandlers(router, composite)
 	return router
 }
 
@@ -345,7 +358,7 @@ func TestGetSakeDetail_Success(t *testing.T) {
 	// URLResolverのモック設定
 	urlResolver.On("ResolveURL", mock.Anything, objectKey).Return("https://signed-url.example.com/sakes/detail123.jpg", nil)
 
-	detailUC.On("Execute", mock.Anything, int32(1)).Return(&usecase.GetSakeDetailOutput{
+	detailUC.On("Execute", mock.Anything, mock.Anything).Return(&usecase.GetSakeDetailOutput{
 		Detail: &entity.SakeDetail{
 			ID:       1,
 			Category: entity.SakeCategoryJapaneseSake,
@@ -393,7 +406,9 @@ func TestGetSakeDetail_Success(t *testing.T) {
 func TestGetSakeDetail_NotFound(t *testing.T) {
 	server, _, detailUC, _, _, _, _, _, _, _, _, _ := newTestServer()
 
-	detailUC.On("Execute", mock.Anything, int32(999)).Return(
+	detailUC.On("Execute", mock.Anything, mock.MatchedBy(func(input usecase.GetSakeDetailInput) bool {
+		return input.ID == 999
+	})).Return(
 		nil,
 		apperror.NotFoundError("酒が見つかりません"),
 	)
@@ -520,7 +535,7 @@ func TestGetStockDetail_Success(t *testing.T) {
 	server, _, detailUC, _, _, _, _, _, _, _, _, _ := newTestServer()
 	now := time.Now().Truncate(time.Second)
 
-	detailUC.On("Execute", mock.Anything, int32(1)).Return(&usecase.GetSakeDetailOutput{
+	detailUC.On("Execute", mock.Anything, mock.Anything).Return(&usecase.GetSakeDetailOutput{
 		Detail: &entity.SakeDetail{
 			ID:              1,
 			Category:        entity.SakeCategoryWhisky,
@@ -563,7 +578,7 @@ func TestUpdateStock_Success(t *testing.T) {
 		Sake: &entity.SakeListItem{ID: 1, Category: entity.SakeCategoryJapaneseSake, Name: "獺祭"},
 	}, nil)
 
-	detailUC.On("Execute", mock.Anything, int32(1)).Return(&usecase.GetSakeDetailOutput{
+	detailUC.On("Execute", mock.Anything, mock.Anything).Return(&usecase.GetSakeDetailOutput{
 		Detail: &entity.SakeDetail{
 			ID:              1,
 			Category:        entity.SakeCategoryJapaneseSake,
@@ -691,7 +706,7 @@ func TestPatchStock_Success(t *testing.T) {
 	}).Return(nil)
 
 	urlResolver.On("ResolveURL", mock.Anything, objectKey).Return("https://signed-url.example.com/sakes/1/test-uuid.jpg", nil)
-	detailUC.On("Execute", mock.Anything, int32(1)).Return(&usecase.GetSakeDetailOutput{
+	detailUC.On("Execute", mock.Anything, mock.Anything).Return(&usecase.GetSakeDetailOutput{
 		Detail: &entity.SakeDetail{
 			ID:              1,
 			Category:        entity.SakeCategoryJapaneseSake,
