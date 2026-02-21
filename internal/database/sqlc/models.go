@@ -86,6 +86,8 @@ const (
 	SakeCategoryRIQUEUR      SakeCategory = "RIQUEUR"
 	SakeCategorySPIRITS      SakeCategory = "SPIRITS"
 	SakeCategoryOTHER        SakeCategory = "OTHER"
+	SakeCategoryFRUITWINE    SakeCategory = "FRUIT_WINE"
+	SakeCategoryNONALCOHOL   SakeCategory = "NON_ALCOHOL"
 )
 
 func (e *SakeCategory) Scan(src interface{}) error {
@@ -133,7 +135,9 @@ func (e SakeCategory) Valid() bool {
 		SakeCategoryAWAMORI,
 		SakeCategoryRIQUEUR,
 		SakeCategorySPIRITS,
-		SakeCategoryOTHER:
+		SakeCategoryOTHER,
+		SakeCategoryFRUITWINE,
+		SakeCategoryNONALCOHOL:
 		return true
 	}
 	return false
@@ -150,6 +154,8 @@ func AllSakeCategoryValues() []SakeCategory {
 		SakeCategoryRIQUEUR,
 		SakeCategorySPIRITS,
 		SakeCategoryOTHER,
+		SakeCategoryFRUITWINE,
+		SakeCategoryNONALCOHOL,
 	}
 }
 

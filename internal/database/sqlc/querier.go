@@ -17,6 +17,9 @@ type Querier interface {
 	GetSakeDetailByID(ctx context.Context, id int32) (GetSakeDetailByIDRow, error)
 	GetSakeKindByName(ctx context.Context, name string) (GetSakeKindByNameRow, error)
 	InsertSakeDrinkStyle(ctx context.Context, arg InsertSakeDrinkStyleParams) error
+	ListBreweries(ctx context.Context, arg ListBreweriesParams) ([]ListBreweriesRow, error)
+	ListDrinkStyles(ctx context.Context) ([]ListDrinkStylesRow, error)
+	ListKinds(ctx context.Context) ([]ListKindsRow, error)
 	ListSakes(ctx context.Context, arg ListSakesParams) ([]ListSakesRow, error)
 	UpdateSake(ctx context.Context, arg UpdateSakeParams) (UpdateSakeRow, error)
 	UpdateSakeObjectKey(ctx context.Context, arg UpdateSakeObjectKeyParams) (int64, error)
