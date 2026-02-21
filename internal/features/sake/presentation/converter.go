@@ -1,16 +1,45 @@
 package presentation
 
 import (
+	"context"
+
+	"go.uber.org/zap"
+
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
-	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
+	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/port"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
+	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
+	"github.com/sake-kasu/sake-hack-backend/internal/logger"
 )
 
+// sakeConverter はレスポンス変換を行う構造体
+type sakeConverter struct {
+	urlResolver port.URLResolver
+}
+
+// newSakeConverter はコンストラクタ
+func newSakeConverter(urlResolver port.URLResolver) *sakeConverter {
+	return &sakeConverter{urlResolver: urlResolver}
+}
+
+// resolveImageURL はオブジェクトキーから署名付きURLを生成する
+func (conv *sakeConverter) resolveImageURL(ctx context.Context, objectKey *string) string {
+	if objectKey == nil || *objectKey == "" {
+		return ""
+	}
+	url, err := conv.urlResolver.ResolveURL(ctx, *objectKey)
+	if err != nil {
+		logger.Warn(ctx, "署名付きURLの生成に失敗しました", zap.String("object_key", *objectKey), zap.Error(err))
+		return ""
+	}
+	return url
+}
+
 // toListSakesResponse ListSakesOutputをAPIレスポンスに変換
-func toListSakesResponse(output *usecase.ListSakesOutput) generated.ListSakesResponse {
+func (conv *sakeConverter) toListSakesResponse(ctx context.Context, output *usecase.ListSakesOutput) generated.ListSakesResponse {
 	sakes := make([]generated.Sake, 0, len(output.Sakes))
 	for _, item := range output.Sakes {
-		sakes = append(sakes, toSakeResponse(item))
+		sakes = append(sakes, conv.toSakeResponse(ctx, item))
 	}
 
 	return generated.ListSakesResponse{
@@ -24,17 +53,17 @@ func toListSakesResponse(output *usecase.ListSakesOutput) generated.ListSakesRes
 }
 
 // toSakeResponse SakeListItemをAPI Sakeレスポンスに変換
-func toSakeResponse(item entity.SakeListItem) generated.Sake {
+func (conv *sakeConverter) toSakeResponse(ctx context.Context, item entity.SakeListItem) generated.Sake {
 	return generated.Sake{
 		Id:           item.ID,
 		Category:     generated.SakeCategory(item.Category),
 		Name:         item.Name,
-		ImagePreview: item.ImagePreview,
+		ImagePreview: conv.resolveImageURL(ctx, item.ObjectKey),
 	}
 }
 
 // toSakeDetailResponse SakeDetailをAPI SakeDetailレスポンスに変換
-func toSakeDetailResponse(detail *entity.SakeDetail) generated.SakeDetail {
+func (conv *sakeConverter) toSakeDetailResponse(ctx context.Context, detail *entity.SakeDetail) generated.SakeDetail {
 	drinkStyles := make([]generated.DrinkStyle, 0, len(detail.DrinkStyles))
 	for _, ds := range detail.DrinkStyles {
 		drinkStyles = append(drinkStyles, generated.DrinkStyle{
@@ -43,6 +72,8 @@ func toSakeDetailResponse(detail *entity.SakeDetail) generated.SakeDetail {
 			Description: ds.Description,
 		})
 	}
+
+	imageURL := conv.resolveImageURL(ctx, detail.ObjectKey)
 
 	return generated.SakeDetail{
 		Id:       detail.ID,
@@ -69,15 +100,15 @@ func toSakeDetailResponse(detail *entity.SakeDetail) generated.SakeDetail {
 		Memo:            detail.Memo,
 		DrinkStyles:     drinkStyles,
 		Price:           detail.Price,
-		ImageUrl:        detail.ImageUrl,
+		ImageUrl:        &imageURL,
 		CreatedAt:       detail.CreatedAt,
 		UpdatedAt:       detail.UpdatedAt,
 	}
 }
 
 // toCreateSakeResponse SakeListItemをCreateSakeResponseに変換
-func toCreateSakeResponse(item *entity.SakeListItem) generated.CreateSakeResponse {
-	sake := toSakeResponse(*item)
+func (conv *sakeConverter) toCreateSakeResponse(ctx context.Context, item *entity.SakeListItem) generated.CreateSakeResponse {
+	sake := conv.toSakeResponse(ctx, *item)
 	return generated.CreateSakeResponse{
 		Data: &sake,
 	}
@@ -118,7 +149,7 @@ func toCreateStockInput(req generated.CreateSakeRequest) usecase.CreateStockInpu
 		Memo:            req.Memo,
 		DrinkStyles:     drinkStyles,
 		Price:           req.Price,
-		ImageUrl:        req.ImageUrl,
+		ObjectKey:       req.ObjectKey,
 	}
 }
 
@@ -158,6 +189,6 @@ func toUpdateStockInput(id int32, req generated.UpdateSakeRequest) usecase.Updat
 		Memo:            req.Memo,
 		DrinkStyles:     drinkStyles,
 		Price:           req.Price,
-		ImageUrl:        req.ImageUrl,
+		ObjectKey:       req.ObjectKey,
 	}
 }
