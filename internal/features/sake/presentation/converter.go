@@ -106,6 +106,56 @@ func (conv *sakeConverter) toSakeDetailResponse(ctx context.Context, detail *ent
 	}
 }
 
+// toListKindsResponse ListKindsOutputをAPIレスポンスに変換
+func (conv *sakeConverter) toListKindsResponse(output *usecase.ListKindsOutput) generated.ListKindsResponse {
+	kinds := make([]generated.SakeKind, 0, len(output.Kinds))
+	for _, k := range output.Kinds {
+		kinds = append(kinds, generated.SakeKind{
+			Id:   k.ID,
+			Name: k.Name,
+		})
+	}
+
+	return generated.ListKindsResponse{
+		Data: &kinds,
+	}
+}
+
+// toListBreweriesResponse ListBreweriesOutputをAPIレスポンスに変換
+func (conv *sakeConverter) toListBreweriesResponse(output *usecase.ListBreweriesOutput) generated.ListBreweriesResponse {
+	breweries := make([]generated.Brewery, 0, len(output.Breweries))
+	for _, b := range output.Breweries {
+		breweries = append(breweries, generated.Brewery{
+			Id:            b.ID,
+			Name:          b.Name,
+			OriginCountry: b.OriginCountry,
+			OriginRegion:  b.OriginRegion,
+			Latitude:      b.Latitude,
+			Longitude:     b.Longitude,
+		})
+	}
+
+	return generated.ListBreweriesResponse{
+		Data: &breweries,
+	}
+}
+
+// toListDrinkStylesResponse ListDrinkStylesOutputをAPIレスポンスに変換
+func (conv *sakeConverter) toListDrinkStylesResponse(output *usecase.ListDrinkStylesOutput) generated.ListDrinkStylesResponse {
+	drinkStyles := make([]generated.DrinkStyle, 0, len(output.DrinkStyles))
+	for _, ds := range output.DrinkStyles {
+		drinkStyles = append(drinkStyles, generated.DrinkStyle{
+			Id:          ds.ID,
+			Name:        ds.Name,
+			Description: ds.Description,
+		})
+	}
+
+	return generated.ListDrinkStylesResponse{
+		Data: &drinkStyles,
+	}
+}
+
 // toCreateSakeResponse SakeListItemをCreateSakeResponseに変換
 func (conv *sakeConverter) toCreateSakeResponse(ctx context.Context, item *entity.SakeListItem) generated.CreateSakeResponse {
 	sake := conv.toSakeResponse(ctx, *item)
