@@ -59,10 +59,10 @@ type SakeName struct {
 
 // SakeListItem リスト表示用の酒情報(軽量)
 type SakeListItem struct {
-	ID           int32
-	Category     SakeCategory
-	Name         string
-	ImagePreview string
+	ID        int32
+	Category  SakeCategory
+	Name      string
+	ObjectKey *string
 }
 
 // SakeDetail 酒の詳細情報
@@ -78,7 +78,7 @@ type SakeDetail struct {
 	Memo            *string
 	DrinkStyles     []DrinkStyle
 	Price           int32
-	ImageUrl        *string
+	ObjectKey       *string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

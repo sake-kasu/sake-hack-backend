@@ -18,7 +18,7 @@ type CreateSakeInput struct {
 	Memo            *string
 	DrinkStyles     []entity.DrinkStyle
 	Price           int32
-	ImageUrl        *string
+	ObjectKey       *string
 }
 
 // UpdateSakeInput 酒の更新に必要な入力
@@ -34,7 +34,7 @@ type UpdateSakeInput struct {
 	Memo            *string
 	DrinkStyles     []entity.DrinkStyle
 	Price           int32
-	ImageUrl        *string
+	ObjectKey       *string
 }
 
 // SakeRepository 酒リポジトリのインターフェース(書き込み操作)
@@ -42,4 +42,5 @@ type SakeRepository interface {
 	Create(ctx context.Context, input CreateSakeInput) (*entity.SakeListItem, error)
 	Update(ctx context.Context, input UpdateSakeInput) (*entity.SakeListItem, error)
 	Delete(ctx context.Context, id int32) error
+	UpdateObjectKey(ctx context.Context, id int32, objectKey string) error
 }
