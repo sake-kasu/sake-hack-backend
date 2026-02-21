@@ -43,6 +43,7 @@ func (q *sakeQueryImpl) List(ctx context.Context, filter appQuery.ListSakesFilte
 		Offset:    filter.Offset,
 		KindID:    filter.KindID,
 		BreweryID: filter.BreweryID,
+		LikeToken: filter.LikeToken,
 	})
 	if err != nil {
 		logger.LogDatabaseError(ctx, "SELECT", "sakes", err, map[string]interface{}{"filter": filter})
@@ -56,6 +57,8 @@ func (q *sakeQueryImpl) List(ctx context.Context, filter appQuery.ListSakesFilte
 			Category:  entity.SakeCategory(row.Category),
 			Name:      row.Name,
 			ObjectKey: row.ObjectKey,
+			LikeCount: row.LikeCount,
+			IsLiked:   row.IsLiked,
 		})
 	}
 
@@ -69,10 +72,13 @@ func (q *sakeQueryImpl) List(ctx context.Context, filter appQuery.ListSakesFilte
 }
 
 // GetDetail 酒の詳細を取得
-func (q *sakeQueryImpl) GetDetail(ctx context.Context, id int32) (*entity.SakeDetail, error) {
+func (q *sakeQueryImpl) GetDetail(ctx context.Context, id int32, likeToken *string) (*entity.SakeDetail, error) {
 	defer logger.TraceMethodAuto(ctx, id)()
 
-	row, err := q.queries.GetSakeDetailByID(ctx, id)
+	row, err := q.queries.GetSakeDetailByID(ctx, sqlc.GetSakeDetailByIDParams{
+		ID:        id,
+		LikeToken: likeToken,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperror.NotFoundError("酒が見つかりません").WithDetails("sake_id", id)
@@ -122,6 +128,8 @@ func (q *sakeQueryImpl) GetDetail(ctx context.Context, id int32) (*entity.SakeDe
 		DrinkStyles:     drinkStyles,
 		Price:           row.Price,
 		ObjectKey:       row.ObjectKey,
+		LikeCount:       row.LikeCount,
+		IsLiked:         row.IsLiked,
 		CreatedAt:       row.CreatedAt.Time,
 		UpdatedAt:       row.UpdatedAt.Time,
 	}, nil
