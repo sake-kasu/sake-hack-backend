@@ -43,6 +43,7 @@ internal/
 
 - Go 1.26.0+
 - Docker & Docker Compose
+- asdf
 - make
 
 ### 1. サブモジュールの最新適用
@@ -51,34 +52,37 @@ internal/
 make submodule-init
 ```
 
-### 2. 依存関係のインストール
+### 2. セットアップスクリプト実行(推奨)
+
+```bash
+make setup
+```
+
+`make setup` は次をまとめて実行します。
+
+- `.tool-versions` の asdf plugin確認・追加
+- `.tool-versions` のツールインストール (`golang` / `sqlc` / `awscli`)
+- `.env.sample` / `docker/.env.sample` のコピー(未作成時のみ)
+- `docker compose -f docker/compose.yaml up -d`
+- RustFSバケット作成(未作成時のみ)
+- `make migrate-up`
+
+### 3. (必要に応じて) 手動セットアップ
 
 ```bash
 make deps
-```
-
-### 3. 設定ファイルの作成
-
-```bash
-cp config/config.yml.sample config/config.yml
-# config.yml を環境に合わせて編集
-```
-
-### 4. データベースの起動
-
-```bash
-cd docker
-docker-compose up -d
-cd ..
-```
-
-### 5. マイグレーション実行
-
-```bash
+cp .env.sample .env
+cp docker/.env.sample docker/.env
+docker compose -f docker/compose.yaml up -d
+AWS_ACCESS_KEY_ID=rustfsadmin \
+AWS_SECRET_ACCESS_KEY=rustfsadmin \
+aws --endpoint-url http://localhost:9000 s3api create-bucket --bucket sake-hack-bucket
 make migrate-up
 ```
 
-### 6. コード生成
+`.env` はアプリケーション設定、`docker/.env` は Docker Compose の設定です。
+
+### 4. コード生成
 
 ```bash
 # OpenAPIからコード生成
@@ -88,7 +92,7 @@ make api-generate
 make sqlc-generate
 ```
 
-### 7. ビルド・実行
+### 5. ビルド・実行
 
 ```bash
 # ビルド
@@ -98,7 +102,7 @@ make build
 make run
 ```
 
-### 8. ヘルスチェック
+### 6. ヘルスチェック
 
 ```bash
 curl http://localhost:8080/health
@@ -109,6 +113,7 @@ curl http://localhost:8080/health
 ### ビルド・実行
 
 ```bash
+make setup              # 初期セットアップ(推奨)
 make build              # ビルド
 make run                # 実行
 make dev                # 開発サーバー起動(ホットリロード)
@@ -149,9 +154,9 @@ make api-gendoc         # APIドキュメント生成
 ### データベース
 
 ```bash
-make db-migrate-up              # マイグレーション実行
-make db-migrate-down            # マイグレーションロールバック
-make db-migrate-create NAME=xxx # 新規マイグレーション作成
+make migrate-up                 # マイグレーション実行
+make migrate-down               # 1つロールバック
+make migrate-create NAME=xxx    # 新規マイグレーション作成
 make sqlc-generate              # sqlcコード生成
 ```
 
@@ -242,9 +247,11 @@ sake-hack-backend/
 │   ├── migrations/            # マイグレーションファイル
 │   └── queries/               # sqlc用SQLファイル
 ├── config/
-│   └── config.yml.sample      # 設定テンプレート
+│   └── config.yml.sample      # 旧設定テンプレート(現在未使用)
 ├── docker/
-│   └── compose.yaml           # Docker Compose設定
+│   ├── compose.yaml           # Docker Compose設定
+│   └── .env.sample            # Docker Compose用設定テンプレート
+├── .env.sample                # アプリケーション設定テンプレート
 ├── Makefile
 ├── sqlc.yaml
 └── README.md
