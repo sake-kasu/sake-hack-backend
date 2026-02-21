@@ -79,7 +79,7 @@ services:
       - RUSTFS_CORS_ALLOW_METHODS=*
       - RUSTFS_CORS_ALLOW_HEADERS=*
       - RUSTFS_CORS_EXPOSE_HEADERS=*
-      - RUSTFS_CORS_ALLOW_CREDENTIALS=true
+      - RUSTFS_CORS_ALLOW_CREDENTIALS=false
     volumes:
       - type: volume
         source: sake-hack-rustfs-data
