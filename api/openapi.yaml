@@ -11,6 +11,12 @@ servers:
     description: Local development server
 
 paths:
+  /kinds:
+    $ref: "./paths/kinds.yaml"
+  /breweries:
+    $ref: "./paths/breweries.yaml"
+  /drink-styles:
+    $ref: "./paths/drinkStyles.yaml"
   /sakes:
     $ref: "./paths/sakes.yaml"
   /sakes/{id}:
@@ -28,6 +34,8 @@ components:
       $ref: "./components/securitySchemes/auth.yaml#/BearerAuth"
 
 tags:
+  - name: Master
+    description: マスタデータ関連
   - name: Sakes
     description: 酒関連
   - name: Stocks

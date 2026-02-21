@@ -1,0 +1,17 @@
+get:
+  tags:
+    - Master
+  summary: 飲み方一覧取得
+  description: 飲み方の一覧を取得します
+  operationId: listDrinkStyles
+  responses:
+    "200":
+      description: 飲み方一覧の取得に成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/master.yaml#/ListDrinkStylesResponse"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"

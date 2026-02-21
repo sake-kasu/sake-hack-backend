@@ -1,0 +1,17 @@
+get:
+  tags:
+    - Master
+  summary: 酒の種類一覧取得
+  description: 酒の種類(小分類)の一覧を取得します
+  operationId: listKinds
+  responses:
+    "200":
+      description: 酒の種類一覧の取得に成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/master.yaml#/ListKindsResponse"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
