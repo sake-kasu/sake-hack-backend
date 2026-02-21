@@ -7,17 +7,21 @@ import (
 
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
 	"github.com/sake-kasu/sake-hack-backend/internal/apperror"
+	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/port"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
 	"github.com/sake-kasu/sake-hack-backend/internal/logger"
 )
 
 // SakeServerImpl 酒関連のServerInterface実装
 type SakeServerImpl struct {
-	listSakesUC     usecase.ListSakesUsecaseInterface
-	getSakeDetailUC usecase.GetSakeDetailUsecaseInterface
-	createStockUC   usecase.CreateStockUsecaseInterface
-	updateStockUC   usecase.UpdateStockUsecaseInterface
-	deleteStockUC   usecase.DeleteStockUsecaseInterface
+	listSakesUC      usecase.ListSakesUsecaseInterface
+	getSakeDetailUC  usecase.GetSakeDetailUsecaseInterface
+	createStockUC    usecase.CreateStockUsecaseInterface
+	updateStockUC    usecase.UpdateStockUsecaseInterface
+	deleteStockUC    usecase.DeleteStockUsecaseInterface
+	patchStockUC     usecase.PatchStockUsecaseInterface
+	createUploadUrlUC usecase.CreateUploadUrlUsecaseInterface
+	converter        *sakeConverter
 }
 
 // NewSakeServerImpl コンストラクタ
@@ -27,13 +31,19 @@ func NewSakeServerImpl(
 	createStockUC usecase.CreateStockUsecaseInterface,
 	updateStockUC usecase.UpdateStockUsecaseInterface,
 	deleteStockUC usecase.DeleteStockUsecaseInterface,
+	patchStockUC usecase.PatchStockUsecaseInterface,
+	createUploadUrlUC usecase.CreateUploadUrlUsecaseInterface,
+	urlResolver port.URLResolver,
 ) *SakeServerImpl {
 	return &SakeServerImpl{
-		listSakesUC:     listSakesUC,
-		getSakeDetailUC: getSakeDetailUC,
-		createStockUC:   createStockUC,
-		updateStockUC:   updateStockUC,
-		deleteStockUC:   deleteStockUC,
+		listSakesUC:      listSakesUC,
+		getSakeDetailUC:  getSakeDetailUC,
+		createStockUC:    createStockUC,
+		updateStockUC:    updateStockUC,
+		deleteStockUC:    deleteStockUC,
+		patchStockUC:     patchStockUC,
+		createUploadUrlUC: createUploadUrlUC,
+		converter:        newSakeConverter(urlResolver),
 	}
 }
 
@@ -54,7 +64,7 @@ func (s *SakeServerImpl) ListSakes(c *gin.Context, params generated.ListSakesPar
 		return
 	}
 
-	c.JSON(http.StatusOK, toListSakesResponse(output))
+	c.JSON(http.StatusOK, s.converter.toListSakesResponse(ctx, output))
 }
 
 // GetSakeDetail 酒詳細取得
@@ -69,7 +79,7 @@ func (s *SakeServerImpl) GetSakeDetail(c *gin.Context, id int32) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toSakeDetailResponse(output.Detail))
+	c.JSON(http.StatusOK, s.converter.toSakeDetailResponse(ctx, output.Detail))
 }
 
 // ListStocks 在庫一覧取得
@@ -89,7 +99,7 @@ func (s *SakeServerImpl) ListStocks(c *gin.Context, params generated.ListStocksP
 		return
 	}
 
-	c.JSON(http.StatusOK, toListSakesResponse(output))
+	c.JSON(http.StatusOK, s.converter.toListSakesResponse(ctx, output))
 }
 
 // CreateStock 在庫登録
@@ -116,7 +126,7 @@ func (s *SakeServerImpl) CreateStock(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toCreateSakeResponse(output.Sake))
+	c.JSON(http.StatusCreated, s.converter.toCreateSakeResponse(ctx, output.Sake))
 }
 
 // GetStockDetail 在庫詳細取得
@@ -131,7 +141,7 @@ func (s *SakeServerImpl) GetStockDetail(c *gin.Context, id int32) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toSakeDetailResponse(output.Detail))
+	c.JSON(http.StatusOK, s.converter.toSakeDetailResponse(ctx, output.Detail))
 }
 
 // UpdateStock 在庫更新
@@ -163,7 +173,7 @@ func (s *SakeServerImpl) UpdateStock(c *gin.Context, id int32) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toSakeDetailResponse(detailOutput.Detail))
+	c.JSON(http.StatusOK, s.converter.toSakeDetailResponse(ctx, detailOutput.Detail))
 }
 
 // DeleteStock 在庫削除
@@ -178,6 +188,73 @@ func (s *SakeServerImpl) DeleteStock(c *gin.Context, id int32) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// PatchStock 在庫部分更新
+// (PATCH /stocks/{id})
+func (s *SakeServerImpl) PatchStock(c *gin.Context, id int32) {
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, id)()
+
+	var req generated.PatchStockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		handleError(c, apperror.BadRequestError("リクエストボディの解析に失敗しました"))
+		return
+	}
+
+	if err := validatePatchStockRequest(req); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	if err := s.patchStockUC.Execute(ctx, usecase.PatchStockInput{
+		ID:        id,
+		ObjectKey: req.ObjectKey,
+	}); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	detailOutput, err := s.getSakeDetailUC.Execute(ctx, id)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, s.converter.toSakeDetailResponse(ctx, detailOutput.Detail))
+}
+
+// CreateStockUploadUrl 画像アップロードURL発行
+// (POST /stocks/{id}/upload-url)
+func (s *SakeServerImpl) CreateStockUploadUrl(c *gin.Context, id int32) {
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, id)()
+
+	var req generated.PresignedUrlRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		handleError(c, apperror.BadRequestError("リクエストボディの解析に失敗しました"))
+		return
+	}
+
+	if err := validateUploadUrlRequest(req.ContentType, req.Filename); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	output, err := s.createUploadUrlUC.Execute(ctx, usecase.CreateUploadUrlInput{
+		SakeID:      id,
+		ContentType: req.ContentType,
+		Filename:    req.Filename,
+	})
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, generated.PresignedUrlResponse{
+		UploadUrl: output.UploadURL,
+		ObjectKey: output.ObjectKey,
+	})
 }
 
 // toListSakesInput パラメータをListSakesInputに変換する

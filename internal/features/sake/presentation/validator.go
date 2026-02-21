@@ -1,6 +1,8 @@
 package presentation
 
 import (
+	"strings"
+
 	"github.com/go-playground/validator/v10"
 
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
@@ -82,6 +84,68 @@ func validateCreateSakeRequest(req generated.CreateSakeRequest) error {
 
 	if verr.HasErrors() {
 		return verr
+	}
+	return nil
+}
+
+// allowedImageContentTypes は画像アップロードで許可されるContent-Type
+var allowedImageContentTypes = map[string]bool{
+	"image/jpeg": true,
+	"image/png":  true,
+	"image/gif":  true,
+	"image/webp": true,
+}
+
+// maxFilenameLength はファイル名の最大長
+const maxFilenameLength = 255
+
+// validateUploadUrlRequest は画像アップロードURL発行リクエストをバリデーションする
+func validateUploadUrlRequest(contentType, filename string) error {
+	verr := apperror.NewValidationError("アップロードURLリクエストが不正です")
+
+	if contentType == "" {
+		verr = verr.AddField("contentType", "Content-Typeは必須です")
+	} else if !allowedImageContentTypes[contentType] {
+		verr = verr.AddField("contentType", "許可されていないContent-Typeです(image/jpeg, image/png, image/gif, image/webpのみ)")
+	}
+
+	if filename == "" {
+		verr = verr.AddField("filename", "ファイル名は必須です")
+	} else if len(filename) > maxFilenameLength {
+		verr = verr.AddField("filename", "ファイル名は255文字以内である必要があります")
+	} else if strings.Contains(filename, "..") || strings.ContainsAny(filename, "/\\") {
+		verr = verr.AddField("filename", "ファイル名に不正な文字が含まれています")
+	}
+
+	if verr.HasErrors() {
+		return verr
+	}
+	return nil
+}
+
+// validatePatchStockRequest はPatchStockRequestをバリデーションする
+func validatePatchStockRequest(req generated.PatchStockRequest) error {
+	verr := apperror.NewValidationError("在庫部分更新リクエストが不正です")
+
+	if req.ObjectKey == "" {
+		verr = verr.AddField("objectKey", "オブジェクトキーは必須です")
+	} else if err := validateObjectKey(req.ObjectKey); err != nil {
+		verr = verr.AddField("objectKey", err.Error())
+	}
+
+	if verr.HasErrors() {
+		return verr
+	}
+	return nil
+}
+
+// validateObjectKey はオブジェクトキーの形式を検証する
+func validateObjectKey(key string) error {
+	if strings.Contains(key, "..") {
+		return apperror.BadRequestError("オブジェクトキーに不正な文字列が含まれています")
+	}
+	if !strings.HasPrefix(key, "sakes/") {
+		return apperror.BadRequestError("オブジェクトキーの形式が不正です")
 	}
 	return nil
 }
