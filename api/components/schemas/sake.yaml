@@ -268,9 +268,9 @@ CreateSakeRequest:
       type: integer
       format: int32
       description: 購入時価格
-    imageUrl:
+    objectKey:
       type: string
-      description: 表示用の画像URL
+      description: S3/RustFSのオブジェクトキー
 
 CreateSakeResponse:
   type: object
@@ -336,13 +336,22 @@ UpdateSakeRequest:
       items:
         $ref: "#/DrinkStyle"
       description: おすすめの飲み方
-    price: 
+    price:
       type: integer
       format: int32
       description: 購入時価格
-    imageUrl:
+    objectKey:
       type: string
-      description: 表示用の画像URL
+      description: S3/RustFSのオブジェクトキー
+
+PatchStockRequest:
+  type: object
+  required:
+    - objectKey
+  properties:
+    objectKey:
+      type: string
+      description: S3/RustFSのオブジェクトキー
 
 UpdateSakeResponse:
   type: object

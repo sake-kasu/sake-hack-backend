@@ -1,0 +1,27 @@
+PresignedUrlRequest:
+  type: object
+  required:
+    - contentType
+    - filename
+  properties:
+    contentType:
+      type: string
+      description: アップロードするファイルのContent-Type
+      example: image/jpeg
+    filename:
+      type: string
+      description: アップロードするファイル名
+      example: sake-photo.jpg
+
+PresignedUrlResponse:
+  type: object
+  required:
+    - uploadUrl
+    - objectKey
+  properties:
+    uploadUrl:
+      type: string
+      description: 署名付きアップロードURL
+    objectKey:
+      type: string
+      description: S3/RustFSのオブジェクトキー
