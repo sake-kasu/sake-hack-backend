@@ -51,7 +51,13 @@
       "Bash(make test:*)",
       "Bash(make lint:*)",
       "Bash(make gosec-scan:*)",
-      "Bash(make build:*)"
+      "Bash(make build:*)",
+      "Bash(go mod:*)",
+      "Bash(make sqlc-generate:*)",
+      "Bash(make api-validate:*)",
+      "Bash(make api-generate:*)",
+      "Bash(go build:*)",
+      "Bash(tail:*)"
     ]
   }
 }
