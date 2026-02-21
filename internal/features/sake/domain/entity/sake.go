@@ -14,6 +14,8 @@ const (
 	SakeCategoryAwamori      SakeCategory = "AWAMORI"
 	SakeCategoryRiqueur      SakeCategory = "RIQUEUR"
 	SakeCategorySpirits      SakeCategory = "SPIRITS"
+	SakeCategoryFruitWine    SakeCategory = "FRUIT_WINE"
+	SakeCategoryNonAlcohol   SakeCategory = "NON_ALCOHOL"
 	SakeCategoryOther        SakeCategory = "OTHER"
 )
 
@@ -22,7 +24,8 @@ func (c SakeCategory) IsValid() bool {
 	switch c {
 	case SakeCategoryJapaneseSake, SakeCategoryWhisky, SakeCategoryWine,
 		SakeCategoryBeer, SakeCategoryShochu, SakeCategoryAwamori,
-		SakeCategoryRiqueur, SakeCategorySpirits, SakeCategoryOther:
+		SakeCategoryRiqueur, SakeCategorySpirits, SakeCategoryFruitWine,
+		SakeCategoryNonAlcohol, SakeCategoryOther:
 		return true
 	}
 	return false
