@@ -19,6 +19,7 @@ type Querier interface {
 	InsertSakeDrinkStyle(ctx context.Context, arg InsertSakeDrinkStyleParams) error
 	ListSakes(ctx context.Context, arg ListSakesParams) ([]ListSakesRow, error)
 	UpdateSake(ctx context.Context, arg UpdateSakeParams) (UpdateSakeRow, error)
+	UpdateSakeObjectKey(ctx context.Context, arg UpdateSakeObjectKeyParams) (int64, error)
 	UpsertBrewery(ctx context.Context, arg UpsertBreweryParams) (int32, error)
 	UpsertDrinkStyle(ctx context.Context, arg UpsertDrinkStyleParams) (int32, error)
 	UpsertSakeKind(ctx context.Context, name string) (int32, error)

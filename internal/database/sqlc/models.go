@@ -301,8 +301,8 @@ type Sake struct {
 	Memo *string `db:"memo" json:"memo"`
 	// 購入時価格(円)
 	Price int32 `db:"price" json:"price"`
-	// 表示用の画像URL
-	ImageUrl  *string            `db:"image_url" json:"image_url"`
+	// S3/RustFSのオブジェクトキー
+	ObjectKey *string            `db:"object_key" json:"object_key"`
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
@@ -311,15 +311,6 @@ type Sake struct {
 type SakeDrinkStyle struct {
 	SakeID       int32 `db:"sake_id" json:"sake_id"`
 	DrinkStyleID int32 `db:"drink_style_id" json:"drink_style_id"`
-}
-
-// 酒の画像を管理するテーブル
-type SakeImage struct {
-	// 画像の一意識別子
-	ID int32 `db:"id" json:"id"`
-	// 画像のオブジェクトキー
-	ObjectKey string             `db:"object_key" json:"object_key"`
-	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
 // 酒の種類(小分類)マスターテーブル

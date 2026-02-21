@@ -3,7 +3,7 @@ SELECT
     s.id,
     s.category,
     s.name,
-    s.image_url
+    s.object_key
 FROM sakes s
 WHERE
     (sqlc.narg('kind_id')::INTEGER IS NULL OR s.kind_id = sqlc.narg('kind_id'))
@@ -29,7 +29,7 @@ SELECT
     s.remaining_volume,
     s.memo,
     s.price,
-    s.image_url,
+    s.object_key,
     s.created_at,
     s.updated_at,
     sk.id AS kind_id,
@@ -46,9 +46,9 @@ INNER JOIN breweries b ON s.brewery_id = b.id
 WHERE s.id = $1;
 
 -- name: CreateSake :one
-INSERT INTO sakes (category, kind_id, brewery_id, name, phonetic, abv, purchase_volume, remaining_volume, memo, price, image_url)
+INSERT INTO sakes (category, kind_id, brewery_id, name, phonetic, abv, purchase_volume, remaining_volume, memo, price, object_key)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-RETURNING id, category, name, image_url, created_at, updated_at;
+RETURNING id, category, name, object_key, created_at, updated_at;
 
 -- name: UpdateSake :one
 UPDATE sakes
@@ -62,10 +62,16 @@ SET category = $2,
     remaining_volume = $9,
     memo = $10,
     price = $11,
-    image_url = $12,
+    object_key = $12,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
-RETURNING id, category, name, image_url, created_at, updated_at;
+RETURNING id, category, name, object_key, created_at, updated_at;
+
+-- name: UpdateSakeObjectKey :execrows
+UPDATE sakes
+SET object_key = $2,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1;
 
 -- name: DeleteSake :execrows
 DELETE FROM sakes WHERE id = $1;

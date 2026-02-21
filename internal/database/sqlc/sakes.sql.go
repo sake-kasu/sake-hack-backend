@@ -32,9 +32,9 @@ func (q *Queries) CountSakes(ctx context.Context, arg CountSakesParams) (int64, 
 }
 
 const createSake = `-- name: CreateSake :one
-INSERT INTO sakes (category, kind_id, brewery_id, name, phonetic, abv, purchase_volume, remaining_volume, memo, price, image_url)
+INSERT INTO sakes (category, kind_id, brewery_id, name, phonetic, abv, purchase_volume, remaining_volume, memo, price, object_key)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-RETURNING id, category, name, image_url, created_at, updated_at
+RETURNING id, category, name, object_key, created_at, updated_at
 `
 
 type CreateSakeParams struct {
@@ -48,14 +48,14 @@ type CreateSakeParams struct {
 	RemainingVolume float32      `db:"remaining_volume" json:"remaining_volume"`
 	Memo            *string      `db:"memo" json:"memo"`
 	Price           int32        `db:"price" json:"price"`
-	ImageUrl        *string      `db:"image_url" json:"image_url"`
+	ObjectKey       *string      `db:"object_key" json:"object_key"`
 }
 
 type CreateSakeRow struct {
 	ID        int32              `db:"id" json:"id"`
 	Category  SakeCategory       `db:"category" json:"category"`
 	Name      string             `db:"name" json:"name"`
-	ImageUrl  *string            `db:"image_url" json:"image_url"`
+	ObjectKey *string            `db:"object_key" json:"object_key"`
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
@@ -72,14 +72,14 @@ func (q *Queries) CreateSake(ctx context.Context, arg CreateSakeParams) (CreateS
 		arg.RemainingVolume,
 		arg.Memo,
 		arg.Price,
-		arg.ImageUrl,
+		arg.ObjectKey,
 	)
 	var i CreateSakeRow
 	err := row.Scan(
 		&i.ID,
 		&i.Category,
 		&i.Name,
-		&i.ImageUrl,
+		&i.ObjectKey,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -155,7 +155,7 @@ SELECT
     s.remaining_volume,
     s.memo,
     s.price,
-    s.image_url,
+    s.object_key,
     s.created_at,
     s.updated_at,
     sk.id AS kind_id,
@@ -182,7 +182,7 @@ type GetSakeDetailByIDRow struct {
 	RemainingVolume      float32            `db:"remaining_volume" json:"remaining_volume"`
 	Memo                 *string            `db:"memo" json:"memo"`
 	Price                int32              `db:"price" json:"price"`
-	ImageUrl             *string            `db:"image_url" json:"image_url"`
+	ObjectKey            *string            `db:"object_key" json:"object_key"`
 	CreatedAt            pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt            pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 	KindID               int32              `db:"kind_id" json:"kind_id"`
@@ -208,7 +208,7 @@ func (q *Queries) GetSakeDetailByID(ctx context.Context, id int32) (GetSakeDetai
 		&i.RemainingVolume,
 		&i.Memo,
 		&i.Price,
-		&i.ImageUrl,
+		&i.ObjectKey,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.KindID,
@@ -260,7 +260,7 @@ SELECT
     s.id,
     s.category,
     s.name,
-    s.image_url
+    s.object_key
 FROM sakes s
 WHERE
     ($3::INTEGER IS NULL OR s.kind_id = $3)
@@ -277,10 +277,10 @@ type ListSakesParams struct {
 }
 
 type ListSakesRow struct {
-	ID       int32        `db:"id" json:"id"`
-	Category SakeCategory `db:"category" json:"category"`
-	Name     string       `db:"name" json:"name"`
-	ImageUrl *string      `db:"image_url" json:"image_url"`
+	ID        int32        `db:"id" json:"id"`
+	Category  SakeCategory `db:"category" json:"category"`
+	Name      string       `db:"name" json:"name"`
+	ObjectKey *string      `db:"object_key" json:"object_key"`
 }
 
 func (q *Queries) ListSakes(ctx context.Context, arg ListSakesParams) ([]ListSakesRow, error) {
@@ -301,7 +301,7 @@ func (q *Queries) ListSakes(ctx context.Context, arg ListSakesParams) ([]ListSak
 			&i.ID,
 			&i.Category,
 			&i.Name,
-			&i.ImageUrl,
+			&i.ObjectKey,
 		); err != nil {
 			return nil, err
 		}
@@ -325,10 +325,10 @@ SET category = $2,
     remaining_volume = $9,
     memo = $10,
     price = $11,
-    image_url = $12,
+    object_key = $12,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
-RETURNING id, category, name, image_url, created_at, updated_at
+RETURNING id, category, name, object_key, created_at, updated_at
 `
 
 type UpdateSakeParams struct {
@@ -343,14 +343,14 @@ type UpdateSakeParams struct {
 	RemainingVolume float32      `db:"remaining_volume" json:"remaining_volume"`
 	Memo            *string      `db:"memo" json:"memo"`
 	Price           int32        `db:"price" json:"price"`
-	ImageUrl        *string      `db:"image_url" json:"image_url"`
+	ObjectKey       *string      `db:"object_key" json:"object_key"`
 }
 
 type UpdateSakeRow struct {
 	ID        int32              `db:"id" json:"id"`
 	Category  SakeCategory       `db:"category" json:"category"`
 	Name      string             `db:"name" json:"name"`
-	ImageUrl  *string            `db:"image_url" json:"image_url"`
+	ObjectKey *string            `db:"object_key" json:"object_key"`
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
@@ -368,18 +368,38 @@ func (q *Queries) UpdateSake(ctx context.Context, arg UpdateSakeParams) (UpdateS
 		arg.RemainingVolume,
 		arg.Memo,
 		arg.Price,
-		arg.ImageUrl,
+		arg.ObjectKey,
 	)
 	var i UpdateSakeRow
 	err := row.Scan(
 		&i.ID,
 		&i.Category,
 		&i.Name,
-		&i.ImageUrl,
+		&i.ObjectKey,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const updateSakeObjectKey = `-- name: UpdateSakeObjectKey :execrows
+UPDATE sakes
+SET object_key = $2,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+`
+
+type UpdateSakeObjectKeyParams struct {
+	ID        int32   `db:"id" json:"id"`
+	ObjectKey *string `db:"object_key" json:"object_key"`
+}
+
+func (q *Queries) UpdateSakeObjectKey(ctx context.Context, arg UpdateSakeObjectKeyParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateSakeObjectKey, arg.ID, arg.ObjectKey)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const upsertBrewery = `-- name: UpsertBrewery :one
