@@ -5,6 +5,13 @@ get:
   description: 酒の一覧をページネーション付きで取得します
   operationId: listSakes
   parameters:
+    - name: X-Like-Token
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 255
+      description: 匿名ユーザー識別用トークン(いいね状態判定用)
     - name: offset
       in: query
       description: スキップする件数

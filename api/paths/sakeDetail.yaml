@@ -12,6 +12,13 @@ get:
           type: integer
           format: int32
         description: 詳細情報を取得したい酒id
+      - name: X-Like-Token
+        in: header
+        required: false
+        schema:
+          type: string
+          maxLength: 255
+        description: 匿名ユーザー識別用トークン(いいね状態判定用)
   responses:
     "200":
       description: 酒詳細の取得に成功
