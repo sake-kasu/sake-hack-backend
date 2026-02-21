@@ -21,6 +21,8 @@ paths:
     $ref: "./paths/sakes.yaml"
   /sakes/{id}:
     $ref: "./paths/sakeDetail.yaml"
+  /sakes/{id}/likes:
+    $ref: "./paths/sakeLikes.yaml"
   /stocks:
     $ref: "./paths/stocks.yaml"
   /stocks/{id}:
@@ -38,5 +40,7 @@ tags:
     description: マスタデータ関連
   - name: Sakes
     description: 酒関連
+  - name: Likes
+    description: いいね関連
   - name: Stocks
     description: 在庫関連

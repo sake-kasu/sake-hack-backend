@@ -103,6 +103,8 @@ Sake:
     - category
     - name
     - imagePreview
+    - likeCount
+    - isLiked
   properties:
     id:
       type: integer
@@ -116,6 +118,15 @@ Sake:
     imagePreview:
       type: string
       description: 画像URL formatは実装次第
+    likeCount:
+      type: integer
+      format: int64
+      description: いいね数
+      example: 42
+    isLiked:
+      type: boolean
+      description: リクエストユーザーがいいね済みかどうか
+      example: false
 
 SakeDetail:
   type: object
@@ -128,9 +139,11 @@ SakeDetail:
     - abv
     - purchaseVolume
     - remainingVolume
-    - memo 
+    - memo
     - drinkStyles
     - price
+    - likeCount
+    - isLiked
     - createdAt
     - updatedAt
   properties:
@@ -168,10 +181,19 @@ SakeDetail:
       items:
         $ref: "#/DrinkStyle"
       description: おすすめの飲み方
-    price: 
+    price:
       type: integer
       format: int32
       description: 購入時価格
+    likeCount:
+      type: integer
+      format: int64
+      description: いいね数
+      example: 42
+    isLiked:
+      type: boolean
+      description: リクエストユーザーがいいね済みかどうか
+      example: false
     imageUrl:
       type: string
       description: 表示用の画像URL
@@ -354,6 +376,22 @@ PatchStockRequest:
     objectKey:
       type: string
       description: S3/RustFSのオブジェクトキー
+
+LikeResponse:
+  type: object
+  required:
+    - likeCount
+    - isLiked
+  properties:
+    likeCount:
+      type: integer
+      format: int64
+      description: いいね数
+      example: 43
+    isLiked:
+      type: boolean
+      description: リクエストユーザーがいいね済みかどうか
+      example: true
 
 UpdateSakeResponse:
   type: object

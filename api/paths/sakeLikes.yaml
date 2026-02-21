@@ -1,0 +1,81 @@
+post:
+  tags:
+    - Likes
+  summary: いいねをつける
+  description: 酒にいいねをつけます。X-Like-Tokenヘッダーが必須です。
+  operationId: createSakeLike
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+      description: いいね対象の酒ID
+    - name: X-Like-Token
+      in: header
+      required: true
+      schema:
+        type: string
+        maxLength: 255
+      description: 匿名ユーザー識別用トークン(UUID v4)
+  responses:
+    "200":
+      description: いいね成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/sake.yaml#/LikeResponse"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "404":
+      $ref: "../components/responses/common.yaml#/NotFound"
+    "429":
+      description: レート制限超過
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/common.yaml#/ErrorResponse"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
+
+delete:
+  tags:
+    - Likes
+  summary: いいねを外す
+  description: 酒のいいねを外します。X-Like-Tokenヘッダーが必須です。
+  operationId: deleteSakeLike
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+      description: いいね解除対象の酒ID
+    - name: X-Like-Token
+      in: header
+      required: true
+      schema:
+        type: string
+        maxLength: 255
+      description: 匿名ユーザー識別用トークン(UUID v4)
+  responses:
+    "200":
+      description: いいね解除成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/sake.yaml#/LikeResponse"
+    "400":
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    "404":
+      $ref: "../components/responses/common.yaml#/NotFound"
+    "429":
+      description: レート制限超過
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/common.yaml#/ErrorResponse"
+    "500":
+      $ref: "../components/responses/common.yaml#/InternalServerError"
