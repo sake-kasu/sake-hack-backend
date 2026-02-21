@@ -14,14 +14,17 @@ import (
 
 // SakeServerImpl 酒関連のServerInterface実装
 type SakeServerImpl struct {
-	listSakesUC      usecase.ListSakesUsecaseInterface
-	getSakeDetailUC  usecase.GetSakeDetailUsecaseInterface
-	createStockUC    usecase.CreateStockUsecaseInterface
-	updateStockUC    usecase.UpdateStockUsecaseInterface
-	deleteStockUC    usecase.DeleteStockUsecaseInterface
-	patchStockUC     usecase.PatchStockUsecaseInterface
+	listSakesUC       usecase.ListSakesUsecaseInterface
+	getSakeDetailUC   usecase.GetSakeDetailUsecaseInterface
+	createStockUC     usecase.CreateStockUsecaseInterface
+	updateStockUC     usecase.UpdateStockUsecaseInterface
+	deleteStockUC     usecase.DeleteStockUsecaseInterface
+	patchStockUC      usecase.PatchStockUsecaseInterface
 	createUploadUrlUC usecase.CreateUploadUrlUsecaseInterface
-	converter        *sakeConverter
+	listKindsUC       usecase.ListKindsUsecaseInterface
+	listBreweriesUC   usecase.ListBreweriesUsecaseInterface
+	listDrinkStylesUC usecase.ListDrinkStylesUsecaseInterface
+	converter         *sakeConverter
 }
 
 // NewSakeServerImpl コンストラクタ
@@ -33,17 +36,23 @@ func NewSakeServerImpl(
 	deleteStockUC usecase.DeleteStockUsecaseInterface,
 	patchStockUC usecase.PatchStockUsecaseInterface,
 	createUploadUrlUC usecase.CreateUploadUrlUsecaseInterface,
+	listKindsUC usecase.ListKindsUsecaseInterface,
+	listBreweriesUC usecase.ListBreweriesUsecaseInterface,
+	listDrinkStylesUC usecase.ListDrinkStylesUsecaseInterface,
 	urlResolver port.URLResolver,
 ) *SakeServerImpl {
 	return &SakeServerImpl{
-		listSakesUC:      listSakesUC,
-		getSakeDetailUC:  getSakeDetailUC,
-		createStockUC:    createStockUC,
-		updateStockUC:    updateStockUC,
-		deleteStockUC:    deleteStockUC,
-		patchStockUC:     patchStockUC,
+		listSakesUC:       listSakesUC,
+		getSakeDetailUC:   getSakeDetailUC,
+		createStockUC:     createStockUC,
+		updateStockUC:     updateStockUC,
+		deleteStockUC:     deleteStockUC,
+		patchStockUC:      patchStockUC,
 		createUploadUrlUC: createUploadUrlUC,
-		converter:        newSakeConverter(urlResolver),
+		listKindsUC:       listKindsUC,
+		listBreweriesUC:   listBreweriesUC,
+		listDrinkStylesUC: listDrinkStylesUC,
+		converter:         newSakeConverter(urlResolver),
 	}
 }
 
@@ -255,6 +264,64 @@ func (s *SakeServerImpl) CreateStockUploadUrl(c *gin.Context, id int32) {
 		UploadUrl: output.UploadURL,
 		ObjectKey: output.ObjectKey,
 	})
+}
+
+// ListKinds 酒の種類一覧取得
+// (GET /kinds)
+func (s *SakeServerImpl) ListKinds(c *gin.Context) {
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, nil)()
+
+	output, err := s.listKindsUC.Execute(ctx)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, s.converter.toListKindsResponse(output))
+}
+
+// ListBreweries 酒造一覧取得
+// (GET /breweries)
+func (s *SakeServerImpl) ListBreweries(c *gin.Context, params generated.ListBreweriesParams) {
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, params)()
+
+	if err := validateListBreweriesParams(params); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	limit := int32(50)
+	if params.Limit != nil {
+		limit = *params.Limit
+	}
+
+	output, err := s.listBreweriesUC.Execute(ctx, usecase.ListBreweriesInput{
+		Keyword: params.Keyword,
+		Limit:   limit,
+	})
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, s.converter.toListBreweriesResponse(output))
+}
+
+// ListDrinkStyles 飲み方一覧取得
+// (GET /drink-styles)
+func (s *SakeServerImpl) ListDrinkStyles(c *gin.Context) {
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, nil)()
+
+	output, err := s.listDrinkStylesUC.Execute(ctx)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, s.converter.toListDrinkStylesResponse(output))
 }
 
 // toListSakesInput パラメータをListSakesInputに変換する
