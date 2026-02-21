@@ -46,6 +46,26 @@ func validateListParams(offset, limit, typeID, breweryID *int32) error {
 	return nil
 }
 
+// validateListBreweriesParams はListBreweriesのパラメータをバリデーションする
+func validateListBreweriesParams(params generated.ListBreweriesParams) error {
+	verr := apperror.NewValidationError("リクエストパラメータが不正です")
+
+	if params.Keyword != nil && len(*params.Keyword) > 100 {
+		verr = verr.AddField("keyword", "キーワードは100文字以内である必要があります")
+	}
+
+	if params.Limit != nil {
+		if err := validate.Var(*params.Limit, "min=1,max=100"); err != nil {
+			verr = verr.AddField("limit", "取得件数は1以上100以下である必要があります")
+		}
+	}
+
+	if verr.HasErrors() {
+		return verr
+	}
+	return nil
+}
+
 // validateCreateSakeRequest はCreateSakeRequestをバリデーションする
 func validateCreateSakeRequest(req generated.CreateSakeRequest) error {
 	verr := apperror.NewValidationError("在庫登録リクエストが不正です")
