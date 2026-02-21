@@ -15,6 +15,7 @@ type Config struct {
 	JWT      JWTConfig
 	CORS     CORSConfig
 	Logger   LoggerConfig
+	Storage  StorageConfig
 }
 
 // Load は設定を読み込む
