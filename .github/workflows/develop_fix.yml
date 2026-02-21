@@ -1,0 +1,81 @@
+name: Develop Fix Branch Pipeline
+
+on:
+  push:
+    branches:
+      - develop_fix
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push-image:
+    name: Build & Push Docker Image (develop_fix)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=long
+            type=raw,value=develop_fix
+            type=raw,value=latest
+            type=raw,value=git-${{ github.sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image pushed successfully
+        run: |
+          echo "✅ develop_fix のイメージをContainer Registryにプッシュしました"
+          echo "pushed tags:"
+          echo "${{ steps.meta.outputs.tags }}"
+
+      - name: Notify helm repo (backend)
+        env:
+          HELM_REPO_DISPATCH_TOKEN: ${{ secrets.HELM_REPO_DISPATCH_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${HELM_REPO_DISPATCH_TOKEN:-}" ]; then
+            echo "⚠️ HELM_REPO_DISPATCH_TOKEN が未設定のため、helmリポジトリ通知をスキップします"
+            exit 0
+          fi
+
+          TAG="git-${GITHUB_SHA}"
+
+          curl -sS -L -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${HELM_REPO_DISPATCH_TOKEN}" \
+            https://api.github.com/repos/sake-kasu/sake-hack-helm/dispatches \
+            -d "{\"event_type\":\"backend-image-pushed\",\"client_payload\":{\"service\":\"backend\",\"tag\":\"${TAG}\"}}"
+
+          echo "✅ helmリポジトリへbackendタグ更新イベントを送信しました: ${TAG}"
