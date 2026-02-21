@@ -7,7 +7,7 @@ info:
   contact:
     name: Sake Hack Team
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8080/api
     description: Local development server
 
 paths:
@@ -19,6 +19,8 @@ paths:
     $ref: "./paths/stocks.yaml"
   /stocks/{id}:
     $ref: "./paths/stockDetail.yaml"
+  /stocks/{id}/upload-url:
+    $ref: "./paths/stockUploadUrl.yaml"
 
 components:
   securitySchemes:
