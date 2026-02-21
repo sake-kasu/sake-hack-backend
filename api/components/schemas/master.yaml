@@ -1,0 +1,38 @@
+ListKindsResponse:
+  type: object
+  properties:
+    data:
+      type: array
+      items:
+        $ref: "./sake.yaml#/SakeKind"
+      description: 酒の種類一覧
+    errors:
+      type: array
+      items:
+        $ref: "./common.yaml#/APIError"
+
+ListBreweriesResponse:
+  type: object
+  properties:
+    data:
+      type: array
+      items:
+        $ref: "./sake.yaml#/Brewery"
+      description: 酒造一覧
+    errors:
+      type: array
+      items:
+        $ref: "./common.yaml#/APIError"
+
+ListDrinkStylesResponse:
+  type: object
+  properties:
+    data:
+      type: array
+      items:
+        $ref: "./sake.yaml#/DrinkStyle"
+      description: 飲み方一覧
+    errors:
+      type: array
+      items:
+        $ref: "./common.yaml#/APIError"
