@@ -153,6 +153,9 @@ func (s *Server) setupRoutes() {
 	deleteStockUC := sakeUsecase.NewDeleteStockUsecase(sakeRepo)
 	patchStockUC := sakeUsecase.NewPatchStockUsecase(sakeRepo)
 	createUploadUrlUC := sakeUsecase.NewCreateUploadUrlUsecase(s3Client)
+	listKindsUC := sakeUsecase.NewListKindsUsecase(sakeQuery)
+	listBreweriesUC := sakeUsecase.NewListBreweriesUsecase(sakeQuery)
+	listDrinkStylesUC := sakeUsecase.NewListDrinkStylesUsecase(sakeQuery)
 
 	sakeServer := sakePresentation.NewSakeServerImpl(
 		listSakesUC,
@@ -162,6 +165,9 @@ func (s *Server) setupRoutes() {
 		deleteStockUC,
 		patchStockUC,
 		createUploadUrlUC,
+		listKindsUC,
+		listBreweriesUC,
+		listDrinkStylesUC,
 		s3Client,
 	)
 
