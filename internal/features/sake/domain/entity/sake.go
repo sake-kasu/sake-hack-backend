@@ -66,6 +66,8 @@ type SakeListItem struct {
 	Category  SakeCategory
 	Name      string
 	ObjectKey *string
+	LikeCount int64
+	IsLiked   bool
 }
 
 // SakeDetail 酒の詳細情報
@@ -82,6 +84,8 @@ type SakeDetail struct {
 	DrinkStyles     []DrinkStyle
 	Price           int32
 	ObjectKey       *string
+	LikeCount       int64
+	IsLiked         bool
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
