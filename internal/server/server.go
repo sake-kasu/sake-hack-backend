@@ -11,6 +11,9 @@ import (
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
 	"github.com/sake-kasu/sake-hack-backend/internal/config"
 	"github.com/sake-kasu/sake-hack-backend/internal/database"
+	likeUsecase "github.com/sake-kasu/sake-hack-backend/internal/features/like/application/usecase"
+	likeInfraRepo "github.com/sake-kasu/sake-hack-backend/internal/features/like/infrastructure/repository"
+	likePresentation "github.com/sake-kasu/sake-hack-backend/internal/features/like/presentation"
 	sakeUsecase "github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
 	sakeInfraQuery "github.com/sake-kasu/sake-hack-backend/internal/features/sake/infrastructure/query"
 	sakeInfraRepo "github.com/sake-kasu/sake-hack-backend/internal/features/sake/infrastructure/repository"
@@ -130,6 +133,12 @@ type HealthCheckDatabaseResponse struct {
 	Valkey   string `json:"valkey,omitempty"`
 }
 
+// compositeServer は複数のFeature ServerImplをembeddingで統合する
+type compositeServer struct {
+	*sakePresentation.SakeServerImpl
+	*likePresentation.LikeServerImpl
+}
+
 // setupRoutes はルートを設定する
 func (s *Server) setupRoutes() {
 	// ヘルスチェックエンドポイント
@@ -171,11 +180,34 @@ func (s *Server) setupRoutes() {
 		s3Client,
 	)
 
+	// Like Feature
+	likeRepo := likeInfraRepo.NewLikeRepository(s.postgresPool)
+	toggleLikeUC := likeUsecase.NewToggleLikeUsecase(likeRepo)
+	removeLikeUC := likeUsecase.NewRemoveLikeUsecase(likeRepo)
+
+	likeServer := likePresentation.NewLikeServerImpl(
+		toggleLikeUC,
+		removeLikeUC,
+	)
+
+	// CompositeServer(複数Feature Serverの統合)
+	composite := &compositeServer{
+		SakeServerImpl: sakeServer,
+		LikeServerImpl: likeServer,
+	}
+
 	// APIグループを作成(/apiプレフィックス)
 	apiGroup := s.router.Group("/api")
 
+	// レート制限ミドルウェア
+	apiGroup.Use(middleware.RateLimiter(s.valkeyClient, middleware.RateLimitConfig{
+		Enabled:     s.config.RateLimit.Enabled,
+		MaxRequests: s.config.RateLimit.MaxRequests,
+		Window:      s.config.RateLimit.Window,
+	}))
+
 	// OpenAPI ServerInterfaceをGinに登録
-	generated.RegisterHandlers(apiGroup, sakeServer)
+	generated.RegisterHandlers(apiGroup, composite)
 }
 
 // handleHealth はヘルスチェックハンドラ

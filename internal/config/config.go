@@ -9,13 +9,14 @@ import (
 
 // Config はアプリケーション全体の設定
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	Cache    CacheConfig
-	JWT      JWTConfig
-	CORS     CORSConfig
-	Logger   LoggerConfig
-	Storage  StorageConfig
+	Server    ServerConfig
+	Database  DatabaseConfig
+	Cache     CacheConfig
+	JWT       JWTConfig
+	CORS      CORSConfig
+	Logger    LoggerConfig
+	Storage   StorageConfig
+	RateLimit RateLimitConfig
 }
 
 // Load は設定を読み込む
