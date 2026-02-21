@@ -21,7 +21,7 @@ type CreateStockInput struct {
 	Memo            *string
 	DrinkStyles     []entity.DrinkStyle
 	Price           int32
-	ImageUrl        *string
+	ObjectKey       *string
 }
 
 // CreateStockOutput 在庫登録の出力
@@ -63,7 +63,7 @@ func (u *CreateStockUsecase) Execute(ctx context.Context, input CreateStockInput
 		Memo:            input.Memo,
 		DrinkStyles:     input.DrinkStyles,
 		Price:           input.Price,
-		ImageUrl:        input.ImageUrl,
+		ObjectKey:       input.ObjectKey,
 	})
 	if err != nil {
 		return nil, err
