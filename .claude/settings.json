@@ -45,5 +45,13 @@
   },
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(make test:*)",
+      "Bash(make lint:*)",
+      "Bash(make gosec-scan:*)",
+      "Bash(make build:*)"
+    ]
   }
 }
