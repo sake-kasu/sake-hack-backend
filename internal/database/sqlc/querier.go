@@ -10,11 +10,15 @@ import (
 
 type Querier interface {
 	CountSakes(ctx context.Context, arg CountSakesParams) (int64, error)
+	CreateLike(ctx context.Context, arg CreateLikeParams) error
 	CreateSake(ctx context.Context, arg CreateSakeParams) (CreateSakeRow, error)
+	DeleteLike(ctx context.Context, arg DeleteLikeParams) (int64, error)
 	DeleteSake(ctx context.Context, id int32) (int64, error)
 	DeleteSakeDrinkStyles(ctx context.Context, sakeID int32) error
+	ExistsLike(ctx context.Context, arg ExistsLikeParams) (bool, error)
 	GetDrinkStylesBySakeID(ctx context.Context, sakeID int32) ([]GetDrinkStylesBySakeIDRow, error)
-	GetSakeDetailByID(ctx context.Context, id int32) (GetSakeDetailByIDRow, error)
+	GetLikeCount(ctx context.Context, sakeID int32) (int64, error)
+	GetSakeDetailByID(ctx context.Context, arg GetSakeDetailByIDParams) (GetSakeDetailByIDRow, error)
 	GetSakeKindByName(ctx context.Context, name string) (GetSakeKindByNameRow, error)
 	InsertSakeDrinkStyle(ctx context.Context, arg InsertSakeDrinkStyleParams) error
 	ListBreweries(ctx context.Context, arg ListBreweriesParams) ([]ListBreweriesRow, error)

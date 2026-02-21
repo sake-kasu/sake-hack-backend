@@ -165,12 +165,22 @@ SELECT
     b.origin_country AS brewery_origin_country,
     b.origin_region AS brewery_origin_region,
     b.latitude AS brewery_latitude,
-    b.longitude AS brewery_longitude
+    b.longitude AS brewery_longitude,
+    (SELECT COUNT(*) FROM likes l WHERE l.sake_id = s.id) AS like_count,
+    (CASE
+        WHEN $2::VARCHAR IS NULL THEN false
+        ELSE EXISTS(SELECT 1 FROM likes l WHERE l.sake_id = s.id AND l.token = $2)
+    END)::BOOLEAN AS is_liked
 FROM sakes s
 INNER JOIN sake_kinds sk ON s.kind_id = sk.id
 INNER JOIN breweries b ON s.brewery_id = b.id
 WHERE s.id = $1
 `
+
+type GetSakeDetailByIDParams struct {
+	ID        int32   `db:"id" json:"id"`
+	LikeToken *string `db:"like_token" json:"like_token"`
+}
 
 type GetSakeDetailByIDRow struct {
 	ID                   int32              `db:"id" json:"id"`
@@ -193,10 +203,12 @@ type GetSakeDetailByIDRow struct {
 	BreweryOriginRegion  *string            `db:"brewery_origin_region" json:"brewery_origin_region"`
 	BreweryLatitude      *float64           `db:"brewery_latitude" json:"brewery_latitude"`
 	BreweryLongitude     *float64           `db:"brewery_longitude" json:"brewery_longitude"`
+	LikeCount            int64              `db:"like_count" json:"like_count"`
+	IsLiked              bool               `db:"is_liked" json:"is_liked"`
 }
 
-func (q *Queries) GetSakeDetailByID(ctx context.Context, id int32) (GetSakeDetailByIDRow, error) {
-	row := q.db.QueryRow(ctx, getSakeDetailByID, id)
+func (q *Queries) GetSakeDetailByID(ctx context.Context, arg GetSakeDetailByIDParams) (GetSakeDetailByIDRow, error) {
+	row := q.db.QueryRow(ctx, getSakeDetailByID, arg.ID, arg.LikeToken)
 	var i GetSakeDetailByIDRow
 	err := row.Scan(
 		&i.ID,
@@ -219,6 +231,8 @@ func (q *Queries) GetSakeDetailByID(ctx context.Context, id int32) (GetSakeDetai
 		&i.BreweryOriginRegion,
 		&i.BreweryLatitude,
 		&i.BreweryLongitude,
+		&i.LikeCount,
+		&i.IsLiked,
 	)
 	return i, err
 }
@@ -260,20 +274,26 @@ SELECT
     s.id,
     s.category,
     s.name,
-    s.object_key
+    s.object_key,
+    (SELECT COUNT(*) FROM likes l WHERE l.sake_id = s.id) AS like_count,
+    (CASE
+        WHEN $3::VARCHAR IS NULL THEN false
+        ELSE EXISTS(SELECT 1 FROM likes l WHERE l.sake_id = s.id AND l.token = $3)
+    END)::BOOLEAN AS is_liked
 FROM sakes s
 WHERE
-    ($3::INTEGER IS NULL OR s.kind_id = $3)
-    AND ($4::INTEGER IS NULL OR s.brewery_id = $4)
+    ($4::INTEGER IS NULL OR s.kind_id = $4)
+    AND ($5::INTEGER IS NULL OR s.brewery_id = $5)
 ORDER BY s.created_at DESC
 LIMIT $1 OFFSET $2
 `
 
 type ListSakesParams struct {
-	Limit     int32  `db:"limit" json:"limit"`
-	Offset    int32  `db:"offset" json:"offset"`
-	KindID    *int32 `db:"kind_id" json:"kind_id"`
-	BreweryID *int32 `db:"brewery_id" json:"brewery_id"`
+	Limit     int32   `db:"limit" json:"limit"`
+	Offset    int32   `db:"offset" json:"offset"`
+	LikeToken *string `db:"like_token" json:"like_token"`
+	KindID    *int32  `db:"kind_id" json:"kind_id"`
+	BreweryID *int32  `db:"brewery_id" json:"brewery_id"`
 }
 
 type ListSakesRow struct {
@@ -281,12 +301,15 @@ type ListSakesRow struct {
 	Category  SakeCategory `db:"category" json:"category"`
 	Name      string       `db:"name" json:"name"`
 	ObjectKey *string      `db:"object_key" json:"object_key"`
+	LikeCount int64        `db:"like_count" json:"like_count"`
+	IsLiked   bool         `db:"is_liked" json:"is_liked"`
 }
 
 func (q *Queries) ListSakes(ctx context.Context, arg ListSakesParams) ([]ListSakesRow, error) {
 	rows, err := q.db.Query(ctx, listSakes,
 		arg.Limit,
 		arg.Offset,
+		arg.LikeToken,
 		arg.KindID,
 		arg.BreweryID,
 	)
@@ -302,6 +325,8 @@ func (q *Queries) ListSakes(ctx context.Context, arg ListSakesParams) ([]ListSak
 			&i.Category,
 			&i.Name,
 			&i.ObjectKey,
+			&i.LikeCount,
+			&i.IsLiked,
 		); err != nil {
 			return nil, err
 		}
