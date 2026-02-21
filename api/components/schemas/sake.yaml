@@ -24,6 +24,8 @@ SakeCategory:
     - AWAMORI
     - RIQUEUR
     - SPIRITS
+    - FRUIT_WINE
+    - NON_ALCOHOL
     - OTHER
 
 SakeName:
