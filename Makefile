@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate tbls-install tbls-doc tbls-diff tbls-lint
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps setup submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate tbls-install tbls-doc tbls-diff tbls-lint
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -152,6 +152,9 @@ deps: ## 依存関係を整理
 	@go mod tidy
 	@go mod download
 
+setup: ## ローカル開発環境を初期構築(.env作成、Compose起動、RustFSバケット作成、マイグレーション)
+	@./scripts/setup.sh
+
 # サブモジュール
 submodule-init: ## サブモジュールを初期化
 	@echo "🔧 サブモジュールを初期化しています..."
@@ -245,4 +248,3 @@ tbls-doc: ## DBスキーマドキュメント生成+ER図をブラウザで表�
 	@npx @liam-hq/cli erd build --input db/docs/schema.json --format=tbls --output-dir db/docs/erd
 	@echo "✅ db/docs/ に生成しました。ER図を表示します..."
 	@npx serve db/docs/erd
-
