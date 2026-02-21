@@ -190,6 +190,8 @@ api-bundle: ## OpenAPI仕様をバンドル
 api-gendoc: ## APIドキュメントを生成
 	@echo "📚 APIドキュメントを生成しています..."
 	@npx @redocly/cli build-docs api/openapi.yaml -o api/docs/index.html
+	@echo "🌐 APIドキュメントを配信しています(http-server の出力URLを確認してください)..."
+	@npx http-server api/docs
 
 migrate-install: ## golang-migrateのインストール
 	@echo "golang-migrate をインストールしています..."
