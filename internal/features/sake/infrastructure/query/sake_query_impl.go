@@ -51,15 +51,11 @@ func (q *sakeQueryImpl) List(ctx context.Context, filter appQuery.ListSakesFilte
 
 	items := make([]entity.SakeListItem, 0, len(rows))
 	for _, row := range rows {
-		imagePreview := ""
-		if row.ImageUrl != nil {
-			imagePreview = *row.ImageUrl
-		}
 		items = append(items, entity.SakeListItem{
-			ID:           row.ID,
-			Category:     entity.SakeCategory(row.Category),
-			Name:         row.Name,
-			ImagePreview: imagePreview,
+			ID:        row.ID,
+			Category:  entity.SakeCategory(row.Category),
+			Name:      row.Name,
+			ObjectKey: row.ObjectKey,
 		})
 	}
 
@@ -125,7 +121,7 @@ func (q *sakeQueryImpl) GetDetail(ctx context.Context, id int32) (*entity.SakeDe
 		Memo:            row.Memo,
 		DrinkStyles:     drinkStyles,
 		Price:           row.Price,
-		ImageUrl:        row.ImageUrl,
+		ObjectKey:       row.ObjectKey,
 		CreatedAt:       row.CreatedAt.Time,
 		UpdatedAt:       row.UpdatedAt.Time,
 	}, nil

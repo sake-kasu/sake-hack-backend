@@ -35,7 +35,7 @@ func (r *sakeRepositoryImpl) Create(ctx context.Context, input repository.Create
 		logger.LogDatabaseError(ctx, "BEGIN", "sakes", err, nil)
 		return nil, apperror.DatabaseError("トランザクション開始に失敗しました", err)
 	}
-	defer tx.Rollback(ctx) //nolint:errcheck
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	qtx := r.queries.WithTx(tx)
 
@@ -60,7 +60,7 @@ func (r *sakeRepositoryImpl) Create(ctx context.Context, input repository.Create
 		RemainingVolume: input.RemainingVolume,
 		Memo:            input.Memo,
 		Price:           input.Price,
-		ImageUrl:        input.ImageUrl,
+		ObjectKey:       input.ObjectKey,
 	})
 	if err != nil {
 		logger.LogDatabaseError(ctx, "INSERT", "sakes", err, map[string]interface{}{"input": input})
@@ -76,16 +76,11 @@ func (r *sakeRepositoryImpl) Create(ctx context.Context, input repository.Create
 		return nil, apperror.DatabaseError("トランザクションのコミットに失敗しました", err)
 	}
 
-	imagePreview := ""
-	if row.ImageUrl != nil {
-		imagePreview = *row.ImageUrl
-	}
-
 	return &entity.SakeListItem{
-		ID:           row.ID,
-		Category:     entity.SakeCategory(row.Category),
-		Name:         row.Name,
-		ImagePreview: imagePreview,
+		ID:        row.ID,
+		Category:  entity.SakeCategory(row.Category),
+		Name:      row.Name,
+		ObjectKey: row.ObjectKey,
 	}, nil
 }
 
@@ -98,7 +93,7 @@ func (r *sakeRepositoryImpl) Update(ctx context.Context, input repository.Update
 		logger.LogDatabaseError(ctx, "BEGIN", "sakes", err, nil)
 		return nil, apperror.DatabaseError("トランザクション開始に失敗しました", err)
 	}
-	defer tx.Rollback(ctx) //nolint:errcheck
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	qtx := r.queries.WithTx(tx)
 
@@ -124,7 +119,7 @@ func (r *sakeRepositoryImpl) Update(ctx context.Context, input repository.Update
 		RemainingVolume: input.RemainingVolume,
 		Memo:            input.Memo,
 		Price:           input.Price,
-		ImageUrl:        input.ImageUrl,
+		ObjectKey:       input.ObjectKey,
 	})
 	if err != nil {
 		logger.LogDatabaseError(ctx, "UPDATE", "sakes", err, map[string]interface{}{"sake_id": input.ID})
@@ -140,17 +135,30 @@ func (r *sakeRepositoryImpl) Update(ctx context.Context, input repository.Update
 		return nil, apperror.DatabaseError("トランザクションのコミットに失敗しました", err)
 	}
 
-	imagePreview := ""
-	if row.ImageUrl != nil {
-		imagePreview = *row.ImageUrl
-	}
-
 	return &entity.SakeListItem{
-		ID:           row.ID,
-		Category:     entity.SakeCategory(row.Category),
-		Name:         row.Name,
-		ImagePreview: imagePreview,
+		ID:        row.ID,
+		Category:  entity.SakeCategory(row.Category),
+		Name:      row.Name,
+		ObjectKey: row.ObjectKey,
 	}, nil
+}
+
+// UpdateObjectKey 酒のオブジェクトキーを更新する
+func (r *sakeRepositoryImpl) UpdateObjectKey(ctx context.Context, id int32, objectKey string) error {
+	defer logger.TraceMethodAuto(ctx, map[string]interface{}{"sake_id": id, "object_key": objectKey})()
+
+	rowsAffected, err := r.queries.UpdateSakeObjectKey(ctx, sqlc.UpdateSakeObjectKeyParams{
+		ID:        id,
+		ObjectKey: &objectKey,
+	})
+	if err != nil {
+		logger.LogDatabaseError(ctx, "UPDATE", "sakes", err, map[string]interface{}{"sake_id": id})
+		return apperror.DatabaseError("オブジェクトキーの更新に失敗しました", err)
+	}
+	if rowsAffected == 0 {
+		return apperror.NotFoundError("酒が見つかりません").WithDetails("sake_id", id)
+	}
+	return nil
 }
 
 // Delete 酒を削除する
