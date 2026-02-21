@@ -79,16 +79,52 @@ func (m *MockDeleteStockUsecase) Execute(ctx context.Context, id int32) error {
 	return args.Error(0)
 }
 
+// MockPatchStockUsecase は在庫部分更新のモック
+type MockPatchStockUsecase struct {
+	mock.Mock
+}
+
+func (m *MockPatchStockUsecase) Execute(ctx context.Context, input usecase.PatchStockInput) error {
+	args := m.Called(ctx, input)
+	return args.Error(0)
+}
+
+// MockCreateUploadUrlUsecase は画像アップロードURL発行のモック
+type MockCreateUploadUrlUsecase struct {
+	mock.Mock
+}
+
+func (m *MockCreateUploadUrlUsecase) Execute(ctx context.Context, input usecase.CreateUploadUrlInput) (*usecase.CreateUploadUrlOutput, error) {
+	args := m.Called(ctx, input)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*usecase.CreateUploadUrlOutput), args.Error(1)
+}
+
+// MockURLResolver はURLResolverのモック
+type MockURLResolver struct {
+	mock.Mock
+}
+
+func (m *MockURLResolver) ResolveURL(ctx context.Context, objectKey string) (string, error) {
+	args := m.Called(ctx, objectKey)
+	return args.String(0), args.Error(1)
+}
+
 // --- Helper ---
 
-func newTestServer() (*SakeServerImpl, *MockListSakesUsecase, *MockGetSakeDetailUsecase, *MockCreateStockUsecase, *MockUpdateStockUsecase, *MockDeleteStockUsecase) {
+func newTestServer() (*SakeServerImpl, *MockListSakesUsecase, *MockGetSakeDetailUsecase, *MockCreateStockUsecase, *MockUpdateStockUsecase, *MockDeleteStockUsecase, *MockPatchStockUsecase, *MockCreateUploadUrlUsecase, *MockURLResolver) {
 	listUC := new(MockListSakesUsecase)
 	detailUC := new(MockGetSakeDetailUsecase)
 	createUC := new(MockCreateStockUsecase)
 	updateUC := new(MockUpdateStockUsecase)
 	deleteUC := new(MockDeleteStockUsecase)
-	server := NewSakeServerImpl(listUC, detailUC, createUC, updateUC, deleteUC)
-	return server, listUC, detailUC, createUC, updateUC, deleteUC
+	patchUC := new(MockPatchStockUsecase)
+	uploadUrlUC := new(MockCreateUploadUrlUsecase)
+	urlResolver := new(MockURLResolver)
+	server := NewSakeServerImpl(listUC, detailUC, createUC, updateUC, deleteUC, patchUC, uploadUrlUC, urlResolver)
+	return server, listUC, detailUC, createUC, updateUC, deleteUC, patchUC, uploadUrlUC, urlResolver
 }
 
 func newRouter(server *SakeServerImpl) *gin.Engine {
@@ -100,16 +136,21 @@ func newRouter(server *SakeServerImpl) *gin.Engine {
 
 // --- ListSakes Tests ---
 
+// テスト: 酒一覧の正常取得(デフォルトパラメータ)
 func TestListSakes_Success(t *testing.T) {
-	server, listUC, _, _, _, _ := newTestServer()
+	server, listUC, _, _, _, _, _, _, urlResolver := newTestServer()
+	objectKey := "sakes/abc123.jpg"
+
+	// URLResolverのモック設定: object_keyから署名付きURLに変換
+	urlResolver.On("ResolveURL", mock.Anything, objectKey).Return("https://signed-url.example.com/sakes/abc123.jpg", nil)
 
 	expectedOutput := &usecase.ListSakesOutput{
 		Sakes: []entity.SakeListItem{
 			{
-				ID:           1,
-				Category:     entity.SakeCategoryJapaneseSake,
-				Name:         "獺祭 純米大吟醸50",
-				ImagePreview: "https://example.com/image.jpg",
+				ID:        1,
+				Category:  entity.SakeCategoryJapaneseSake,
+				Name:      "獺祭 純米大吟醸50",
+				ObjectKey: &objectKey,
 			},
 		},
 		Pagination: entity.Pagination{Total: 100, Offset: 0, Limit: 20},
@@ -134,14 +175,17 @@ func TestListSakes_Success(t *testing.T) {
 	assert.Equal(t, int32(1), (*response.Data)[0].Id)
 	assert.Equal(t, "獺祭 純米大吟醸50", (*response.Data)[0].Name)
 	assert.Equal(t, generated.SakeCategory("JAPANESE_SAKE"), (*response.Data)[0].Category)
-	assert.Equal(t, "https://example.com/image.jpg", (*response.Data)[0].ImagePreview)
+	// imagePreviewには署名付きURLが返される
+	assert.Equal(t, "https://signed-url.example.com/sakes/abc123.jpg", (*response.Data)[0].ImagePreview)
 	assert.NotNil(t, response.Meta)
 	assert.Equal(t, int64(100), response.Meta.Total)
 	listUC.AssertExpectations(t)
+	urlResolver.AssertExpectations(t)
 }
 
+// テスト: offsetが負数の場合のバリデーションエラー
 func TestListSakes_ValidationError_OffsetLessThan0(t *testing.T) {
-	server, listUC, _, _, _, _ := newTestServer()
+	server, listUC, _, _, _, _, _, _, _ := newTestServer()
 	router := newRouter(server)
 
 	req := httptest.NewRequest(http.MethodGet, "/sakes?offset=-1", nil)
@@ -152,6 +196,7 @@ func TestListSakes_ValidationError_OffsetLessThan0(t *testing.T) {
 	listUC.AssertNotCalled(t, "Execute")
 }
 
+// テスト: limitの範囲外(0以下、100超)
 func TestListSakes_ValidationError_LimitOutOfRange(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -163,7 +208,7 @@ func TestListSakes_ValidationError_LimitOutOfRange(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server, listUC, _, _, _, _ := newTestServer()
+			server, listUC, _, _, _, _, _, _, _ := newTestServer()
 			router := newRouter(server)
 
 			req := httptest.NewRequest(http.MethodGet, tt.query, nil)
@@ -176,8 +221,9 @@ func TestListSakes_ValidationError_LimitOutOfRange(t *testing.T) {
 	}
 }
 
+// テスト: typeIdが0以下の場合のバリデーションエラー
 func TestListSakes_ValidationError_TypeIdLessThan1(t *testing.T) {
-	server, listUC, _, _, _, _ := newTestServer()
+	server, listUC, _, _, _, _, _, _, _ := newTestServer()
 	router := newRouter(server)
 
 	req := httptest.NewRequest(http.MethodGet, "/sakes?typeId=0", nil)
@@ -188,8 +234,9 @@ func TestListSakes_ValidationError_TypeIdLessThan1(t *testing.T) {
 	listUC.AssertNotCalled(t, "Execute")
 }
 
+// テスト: breweryIdが0以下の場合のバリデーションエラー
 func TestListSakes_ValidationError_BreweryIdLessThan1(t *testing.T) {
-	server, listUC, _, _, _, _ := newTestServer()
+	server, listUC, _, _, _, _, _, _, _ := newTestServer()
 	router := newRouter(server)
 
 	req := httptest.NewRequest(http.MethodGet, "/sakes?breweryId=0", nil)
@@ -200,8 +247,9 @@ func TestListSakes_ValidationError_BreweryIdLessThan1(t *testing.T) {
 	listUC.AssertNotCalled(t, "Execute")
 }
 
+// テスト: ユースケースエラー発生時のレスポンス
 func TestListSakes_UsecaseError(t *testing.T) {
-	server, listUC, _, _, _, _ := newTestServer()
+	server, listUC, _, _, _, _, _, _, _ := newTestServer()
 
 	listUC.On("Execute", mock.Anything, mock.Anything).Return(
 		nil,
@@ -223,8 +271,9 @@ func TestListSakes_UsecaseError(t *testing.T) {
 	listUC.AssertExpectations(t)
 }
 
+// テスト: デフォルトパラメータの確認(offset=0, limit=20)
 func TestListSakes_DefaultValues(t *testing.T) {
-	server, listUC, _, _, _, _ := newTestServer()
+	server, listUC, _, _, _, _, _, _, _ := newTestServer()
 
 	listUC.On("Execute", mock.Anything, mock.MatchedBy(func(input usecase.ListSakesInput) bool {
 		return input.Offset == 0 && input.Limit == 20 && input.KindID == nil && input.BreweryID == nil
@@ -244,10 +293,15 @@ func TestListSakes_DefaultValues(t *testing.T) {
 
 // --- GetSakeDetail Tests ---
 
+// テスト: 酒詳細の正常取得
 func TestGetSakeDetail_Success(t *testing.T) {
-	server, _, detailUC, _, _, _ := newTestServer()
+	server, _, detailUC, _, _, _, _, _, urlResolver := newTestServer()
 	now := time.Now().Truncate(time.Second)
 	description := "5-10度に冷やして"
+	objectKey := "sakes/detail123.jpg"
+
+	// URLResolverのモック設定
+	urlResolver.On("ResolveURL", mock.Anything, objectKey).Return("https://signed-url.example.com/sakes/detail123.jpg", nil)
 
 	detailUC.On("Execute", mock.Anything, int32(1)).Return(&usecase.GetSakeDetailOutput{
 		Detail: &entity.SakeDetail{
@@ -265,6 +319,7 @@ func TestGetSakeDetail_Success(t *testing.T) {
 			DrinkStyles: []entity.DrinkStyle{
 				{ID: 1, Name: "冷酒", Description: &description},
 			},
+			ObjectKey: &objectKey,
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
@@ -285,11 +340,16 @@ func TestGetSakeDetail_Success(t *testing.T) {
 	assert.Equal(t, "獺祭", response.Name.Name)
 	assert.Equal(t, float32(16.0), response.Abv)
 	assert.Len(t, response.DrinkStyles, 1)
+	// imageUrlには署名付きURLが返される
+	assert.NotNil(t, response.ImageUrl)
+	assert.Equal(t, "https://signed-url.example.com/sakes/detail123.jpg", *response.ImageUrl)
 	detailUC.AssertExpectations(t)
+	urlResolver.AssertExpectations(t)
 }
 
+// テスト: 存在しない酒IDの場合
 func TestGetSakeDetail_NotFound(t *testing.T) {
-	server, _, detailUC, _, _, _ := newTestServer()
+	server, _, detailUC, _, _, _, _, _, _ := newTestServer()
 
 	detailUC.On("Execute", mock.Anything, int32(999)).Return(
 		nil,
@@ -307,8 +367,9 @@ func TestGetSakeDetail_NotFound(t *testing.T) {
 
 // --- ListStocks Tests ---
 
+// テスト: 在庫一覧の正常取得
 func TestListStocks_Success(t *testing.T) {
-	server, listUC, _, _, _, _ := newTestServer()
+	server, listUC, _, _, _, _, _, _, _ := newTestServer()
 
 	listUC.On("Execute", mock.Anything, mock.MatchedBy(func(input usecase.ListSakesInput) bool {
 		return input.Offset == 0 && input.Limit == 20
@@ -328,24 +389,24 @@ func TestListStocks_Success(t *testing.T) {
 
 // --- CreateStock Tests ---
 
+// テスト: 在庫登録の正常処理
 func TestCreateStock_Success(t *testing.T) {
-	server, _, _, createUC, _, _ := newTestServer()
+	server, _, _, createUC, _, _, _, _, _ := newTestServer()
 
 	createUC.On("Execute", mock.Anything, mock.Anything).Return(&usecase.CreateStockOutput{
 		Sake: &entity.SakeListItem{
-			ID:           1,
-			Category:     entity.SakeCategoryJapaneseSake,
-			Name:         "獺祭",
-			ImagePreview: "",
+			ID:       1,
+			Category: entity.SakeCategoryJapaneseSake,
+			Name:     "獺祭",
 		},
 	}, nil)
 
 	body := generated.CreateSakeRequest{
-		Category: generated.SakeCategoryJAPANESESAKE,
-		Kind:     generated.SakeKind{Id: 0, Name: "純米大吟醸"},
-		Brewery:  generated.Brewery{Id: 0, Name: "旭酒造", OriginCountry: "日本"},
-		Name:     generated.SakeName{Name: "獺祭", Phonetic: "だっさい"},
-		Abv:      16.0,
+		Category:        generated.SakeCategoryJAPANESESAKE,
+		Kind:            generated.SakeKind{Id: 0, Name: "純米大吟醸"},
+		Brewery:         generated.Brewery{Id: 0, Name: "旭酒造", OriginCountry: "日本"},
+		Name:            generated.SakeName{Name: "獺祭", Phonetic: "だっさい"},
+		Abv:             16.0,
 		PurchaseVolume:  720,
 		RemainingVolume: 500,
 		Price:           3000,
@@ -369,15 +430,16 @@ func TestCreateStock_Success(t *testing.T) {
 	createUC.AssertExpectations(t)
 }
 
+// テスト: 酒名欠如時のバリデーションエラー
 func TestCreateStock_ValidationError_MissingName(t *testing.T) {
-	server, _, _, createUC, _, _ := newTestServer()
+	server, _, _, createUC, _, _, _, _, _ := newTestServer()
 
 	body := generated.CreateSakeRequest{
-		Category: generated.SakeCategoryJAPANESESAKE,
-		Kind:     generated.SakeKind{Name: "純米"},
-		Brewery:  generated.Brewery{Name: "旭酒造", OriginCountry: "日本"},
-		Name:     generated.SakeName{Name: "", Phonetic: ""},
-		Abv:      16.0,
+		Category:        generated.SakeCategoryJAPANESESAKE,
+		Kind:            generated.SakeKind{Name: "純米"},
+		Brewery:         generated.Brewery{Name: "旭酒造", OriginCountry: "日本"},
+		Name:            generated.SakeName{Name: "", Phonetic: ""},
+		Abv:             16.0,
 		PurchaseVolume:  720,
 		RemainingVolume: 500,
 		Price:           3000,
@@ -395,8 +457,9 @@ func TestCreateStock_ValidationError_MissingName(t *testing.T) {
 	createUC.AssertNotCalled(t, "Execute")
 }
 
+// テスト: 不正JSONの場合
 func TestCreateStock_InvalidJSON(t *testing.T) {
-	server, _, _, createUC, _, _ := newTestServer()
+	server, _, _, createUC, _, _, _, _, _ := newTestServer()
 
 	router := newRouter(server)
 	req := httptest.NewRequest(http.MethodPost, "/stocks", bytes.NewReader([]byte("invalid json")))
@@ -410,8 +473,9 @@ func TestCreateStock_InvalidJSON(t *testing.T) {
 
 // --- GetStockDetail Tests ---
 
+// テスト: 在庫詳細の正常取得
 func TestGetStockDetail_Success(t *testing.T) {
-	server, _, detailUC, _, _, _ := newTestServer()
+	server, _, detailUC, _, _, _, _, _, _ := newTestServer()
 	now := time.Now().Truncate(time.Second)
 
 	detailUC.On("Execute", mock.Anything, int32(1)).Return(&usecase.GetSakeDetailOutput{
@@ -448,8 +512,9 @@ func TestGetStockDetail_Success(t *testing.T) {
 
 // --- UpdateStock Tests ---
 
+// テスト: 在庫更新の正常処理
 func TestUpdateStock_Success(t *testing.T) {
-	server, _, detailUC, _, updateUC, _ := newTestServer()
+	server, _, detailUC, _, updateUC, _, _, _, _ := newTestServer()
 	now := time.Now().Truncate(time.Second)
 
 	updateUC.On("Execute", mock.Anything, mock.Anything).Return(&usecase.UpdateStockOutput{
@@ -503,8 +568,9 @@ func TestUpdateStock_Success(t *testing.T) {
 	detailUC.AssertExpectations(t)
 }
 
+// テスト: 存在しない酒IDの更新
 func TestUpdateStock_NotFound(t *testing.T) {
-	server, _, _, _, updateUC, _ := newTestServer()
+	server, _, _, _, updateUC, _, _, _, _ := newTestServer()
 
 	updateUC.On("Execute", mock.Anything, mock.Anything).Return(
 		nil,
@@ -536,8 +602,9 @@ func TestUpdateStock_NotFound(t *testing.T) {
 
 // --- DeleteStock Tests ---
 
+// テスト: 在庫削除の正常処理
 func TestDeleteStock_Success(t *testing.T) {
-	server, _, _, _, _, deleteUC := newTestServer()
+	server, _, _, _, _, deleteUC, _, _, _ := newTestServer()
 
 	deleteUC.On("Execute", mock.Anything, int32(1)).Return(nil)
 
@@ -550,8 +617,9 @@ func TestDeleteStock_Success(t *testing.T) {
 	deleteUC.AssertExpectations(t)
 }
 
+// テスト: 存在しない酒IDの削除
 func TestDeleteStock_NotFound(t *testing.T) {
-	server, _, _, _, _, deleteUC := newTestServer()
+	server, _, _, _, _, deleteUC, _, _, _ := newTestServer()
 
 	deleteUC.On("Execute", mock.Anything, int32(999)).Return(
 		apperror.NotFoundError("酒が見つかりません"),
@@ -566,8 +634,289 @@ func TestDeleteStock_NotFound(t *testing.T) {
 	deleteUC.AssertExpectations(t)
 }
 
+// --- PatchStock Tests ---
+
+// テスト: 在庫部分更新の正常処理(objectKey更新後にSakeDetailを返す)
+func TestPatchStock_Success(t *testing.T) {
+	server, _, detailUC, _, _, _, patchUC, _, urlResolver := newTestServer()
+	now := time.Now().Truncate(time.Second)
+
+	objectKey := "sakes/1/test-uuid.jpg"
+
+	patchUC.On("Execute", mock.Anything, usecase.PatchStockInput{
+		ID:        1,
+		ObjectKey: objectKey,
+	}).Return(nil)
+
+	urlResolver.On("ResolveURL", mock.Anything, objectKey).Return("https://signed-url.example.com/sakes/1/test-uuid.jpg", nil)
+	detailUC.On("Execute", mock.Anything, int32(1)).Return(&usecase.GetSakeDetailOutput{
+		Detail: &entity.SakeDetail{
+			ID:              1,
+			Category:        entity.SakeCategoryJapaneseSake,
+			Kind:            entity.SakeKind{ID: 1, Name: "純米大吟醸"},
+			Brewery:         entity.Brewery{ID: 1, Name: "旭酒造", OriginCountry: "日本"},
+			Name:            entity.SakeName{Name: "獺祭", Phonetic: "だっさい"},
+			Abv:             16.0,
+			PurchaseVolume:  720,
+			RemainingVolume: 500,
+			Price:           3000,
+			DrinkStyles:     []entity.DrinkStyle{},
+			ObjectKey:       &objectKey,
+			CreatedAt:       now,
+			UpdatedAt:       now,
+		},
+	}, nil)
+
+	body := generated.PatchStockRequest{ObjectKey: "sakes/1/test-uuid.jpg"}
+	bodyBytes, _ := json.Marshal(body)
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPatch, "/stocks/1", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response generated.SakeDetail
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, int32(1), response.Id)
+	patchUC.AssertExpectations(t)
+	detailUC.AssertExpectations(t)
+}
+
+// テスト: objectKey空文字のバリデーションエラー
+func TestPatchStock_ValidationError_MissingObjectKey(t *testing.T) {
+	server, _, _, _, _, _, patchUC, _, _ := newTestServer()
+
+	body := generated.PatchStockRequest{ObjectKey: ""}
+	bodyBytes, _ := json.Marshal(body)
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPatch, "/stocks/1", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	patchUC.AssertNotCalled(t, "Execute")
+}
+
+// テスト: objectKeyにパストラバーサルが含まれる場合のバリデーションエラー
+func TestPatchStock_ValidationError_PathTraversal(t *testing.T) {
+	server, _, _, _, _, _, patchUC, _, _ := newTestServer()
+
+	body := generated.PatchStockRequest{ObjectKey: "sakes/1/../../../etc/passwd"}
+	bodyBytes, _ := json.Marshal(body)
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPatch, "/stocks/1", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	patchUC.AssertNotCalled(t, "Execute")
+}
+
+// テスト: objectKeyのプレフィックスが不正な場合のバリデーションエラー
+func TestPatchStock_ValidationError_InvalidPrefix(t *testing.T) {
+	server, _, _, _, _, _, patchUC, _, _ := newTestServer()
+
+	body := generated.PatchStockRequest{ObjectKey: "invalid/path/image.jpg"}
+	bodyBytes, _ := json.Marshal(body)
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPatch, "/stocks/1", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	patchUC.AssertNotCalled(t, "Execute")
+}
+
+// テスト: 存在しない酒IDの部分更新
+func TestPatchStock_NotFound(t *testing.T) {
+	server, _, _, _, _, _, patchUC, _, _ := newTestServer()
+
+	patchUC.On("Execute", mock.Anything, mock.Anything).Return(
+		apperror.NotFoundError("酒が見つかりません"),
+	)
+
+	body := generated.PatchStockRequest{ObjectKey: "sakes/999/test-uuid.jpg"}
+	bodyBytes, _ := json.Marshal(body)
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPatch, "/stocks/999", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	patchUC.AssertExpectations(t)
+}
+
+// テスト: 不正JSONの場合
+func TestPatchStock_InvalidJSON(t *testing.T) {
+	server, _, _, _, _, _, patchUC, _, _ := newTestServer()
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPatch, "/stocks/1", bytes.NewReader([]byte("invalid")))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	patchUC.AssertNotCalled(t, "Execute")
+}
+
+// --- CreateStockUploadUrl Tests ---
+
+// テスト: 画像アップロードURL発行の正常処理
+func TestCreateStockUploadUrl_Success(t *testing.T) {
+	server, _, _, _, _, _, _, uploadUrlUC, _ := newTestServer()
+
+	uploadUrlUC.On("Execute", mock.Anything, usecase.CreateUploadUrlInput{
+		SakeID:      1,
+		ContentType: "image/jpeg",
+		Filename:    "photo.jpg",
+	}).Return(&usecase.CreateUploadUrlOutput{
+		UploadURL: "https://s3.example.com/presigned-url",
+		ObjectKey: "sakes/1/uuid-value.jpg",
+	}, nil)
+
+	body := generated.PresignedUrlRequest{
+		ContentType: "image/jpeg",
+		Filename:    "photo.jpg",
+	}
+	bodyBytes, _ := json.Marshal(body)
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPost, "/stocks/1/upload-url", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response generated.PresignedUrlResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "https://s3.example.com/presigned-url", response.UploadUrl)
+	assert.Equal(t, "sakes/1/uuid-value.jpg", response.ObjectKey)
+	uploadUrlUC.AssertExpectations(t)
+}
+
+// テスト: Content-Type未指定のバリデーションエラー
+func TestCreateStockUploadUrl_ValidationError_MissingContentType(t *testing.T) {
+	server, _, _, _, _, _, _, uploadUrlUC, _ := newTestServer()
+
+	body := generated.PresignedUrlRequest{
+		ContentType: "",
+		Filename:    "photo.jpg",
+	}
+	bodyBytes, _ := json.Marshal(body)
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPost, "/stocks/1/upload-url", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	uploadUrlUC.AssertNotCalled(t, "Execute")
+}
+
+// テスト: 許可されていないContent-Typeのバリデーションエラー
+func TestCreateStockUploadUrl_ValidationError_InvalidContentType(t *testing.T) {
+	server, _, _, _, _, _, _, uploadUrlUC, _ := newTestServer()
+
+	body := generated.PresignedUrlRequest{
+		ContentType: "application/pdf",
+		Filename:    "doc.pdf",
+	}
+	bodyBytes, _ := json.Marshal(body)
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPost, "/stocks/1/upload-url", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	uploadUrlUC.AssertNotCalled(t, "Execute")
+}
+
+// テスト: ファイル名未指定のバリデーションエラー
+func TestCreateStockUploadUrl_ValidationError_MissingFilename(t *testing.T) {
+	server, _, _, _, _, _, _, uploadUrlUC, _ := newTestServer()
+
+	body := generated.PresignedUrlRequest{
+		ContentType: "image/png",
+		Filename:    "",
+	}
+	bodyBytes, _ := json.Marshal(body)
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPost, "/stocks/1/upload-url", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	uploadUrlUC.AssertNotCalled(t, "Execute")
+}
+
+// テスト: ファイル名にパストラバーサルが含まれる場合のバリデーションエラー
+func TestCreateStockUploadUrl_ValidationError_FilenamePathTraversal(t *testing.T) {
+	server, _, _, _, _, _, _, uploadUrlUC, _ := newTestServer()
+
+	body := generated.PresignedUrlRequest{
+		ContentType: "image/jpeg",
+		Filename:    "../../../etc/passwd",
+	}
+	bodyBytes, _ := json.Marshal(body)
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPost, "/stocks/1/upload-url", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	uploadUrlUC.AssertNotCalled(t, "Execute")
+}
+
+// テスト: ユースケースエラー発生時のレスポンス
+func TestCreateStockUploadUrl_UsecaseError(t *testing.T) {
+	server, _, _, _, _, _, _, uploadUrlUC, _ := newTestServer()
+
+	uploadUrlUC.On("Execute", mock.Anything, mock.Anything).Return(
+		nil,
+		apperror.InternalServerError("署名付きアップロードURLの生成に失敗しました"),
+	)
+
+	body := generated.PresignedUrlRequest{
+		ContentType: "image/jpeg",
+		Filename:    "photo.jpg",
+	}
+	bodyBytes, _ := json.Marshal(body)
+
+	router := newRouter(server)
+	req := httptest.NewRequest(http.MethodPost, "/stocks/1/upload-url", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	uploadUrlUC.AssertExpectations(t)
+}
+
 // --- Error Handler Tests ---
 
+// テスト: バリデーションエラーのHTTPレスポンス変換
 func TestHandleError_ValidationError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -587,6 +936,7 @@ func TestHandleError_ValidationError(t *testing.T) {
 	assert.Equal(t, apperror.ErrCodeValidationError, (*response.Errors)[0].Code)
 }
 
+// テスト: AppErrorのHTTPレスポンス変換
 func TestHandleError_AppError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -603,6 +953,7 @@ func TestHandleError_AppError(t *testing.T) {
 	assert.Equal(t, apperror.ErrCodeNotFound, (*response.Errors)[0].Code)
 }
 
+// テスト: 予期しないエラーのHTTPレスポンス変換
 func TestHandleError_UnexpectedError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -621,8 +972,9 @@ func TestHandleError_UnexpectedError(t *testing.T) {
 
 // --- Boundary Value Tests ---
 
+// テスト: offset最小値(0)での正常取得
 func TestListSakes_BoundaryValue_OffsetMinimum(t *testing.T) {
-	server, listUC, _, _, _, _ := newTestServer()
+	server, listUC, _, _, _, _, _, _, _ := newTestServer()
 
 	listUC.On("Execute", mock.Anything, mock.MatchedBy(func(input usecase.ListSakesInput) bool {
 		return input.Offset == 0
@@ -640,8 +992,9 @@ func TestListSakes_BoundaryValue_OffsetMinimum(t *testing.T) {
 	listUC.AssertExpectations(t)
 }
 
+// テスト: limit最小値(1)での正常取得
 func TestListSakes_BoundaryValue_LimitMinimum(t *testing.T) {
-	server, listUC, _, _, _, _ := newTestServer()
+	server, listUC, _, _, _, _, _, _, _ := newTestServer()
 
 	listUC.On("Execute", mock.Anything, mock.MatchedBy(func(input usecase.ListSakesInput) bool {
 		return input.Limit == 1
@@ -659,8 +1012,9 @@ func TestListSakes_BoundaryValue_LimitMinimum(t *testing.T) {
 	listUC.AssertExpectations(t)
 }
 
+// テスト: limit最大値(100)での正常取得
 func TestListSakes_BoundaryValue_LimitMaximum(t *testing.T) {
-	server, listUC, _, _, _, _ := newTestServer()
+	server, listUC, _, _, _, _, _, _, _ := newTestServer()
 
 	listUC.On("Execute", mock.Anything, mock.MatchedBy(func(input usecase.ListSakesInput) bool {
 		return input.Limit == 100
