@@ -33,6 +33,30 @@ func (m *MockSakeQuery) GetDetail(ctx context.Context, id int32) (*entity.SakeDe
 	return args.Get(0).(*entity.SakeDetail), args.Error(1)
 }
 
+func (m *MockSakeQuery) ListKinds(ctx context.Context) ([]entity.SakeKind, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]entity.SakeKind), args.Error(1)
+}
+
+func (m *MockSakeQuery) ListBreweries(ctx context.Context, keyword *string, limit int32) ([]entity.Brewery, error) {
+	args := m.Called(ctx, keyword, limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]entity.Brewery), args.Error(1)
+}
+
+func (m *MockSakeQuery) ListDrinkStyles(ctx context.Context) ([]entity.DrinkStyle, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]entity.DrinkStyle), args.Error(1)
+}
+
 func TestListSakesUsecase_Execute_Success(t *testing.T) {
 	mockQuery := new(MockSakeQuery)
 	uc := NewListSakesUsecase(mockQuery)
