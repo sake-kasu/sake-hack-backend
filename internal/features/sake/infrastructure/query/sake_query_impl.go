@@ -126,3 +126,74 @@ func (q *sakeQueryImpl) GetDetail(ctx context.Context, id int32) (*entity.SakeDe
 		UpdatedAt:       row.UpdatedAt.Time,
 	}, nil
 }
+
+// ListKinds 酒の種類一覧を取得
+func (q *sakeQueryImpl) ListKinds(ctx context.Context) ([]entity.SakeKind, error) {
+	defer logger.TraceMethodAuto(ctx, nil)()
+
+	rows, err := q.queries.ListKinds(ctx)
+	if err != nil {
+		logger.LogDatabaseError(ctx, "SELECT", "sake_kinds", err, nil)
+		return nil, apperror.DatabaseError("酒の種類一覧の取得に失敗しました", err)
+	}
+
+	items := make([]entity.SakeKind, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, entity.SakeKind{
+			ID:   row.ID,
+			Name: row.Name,
+		})
+	}
+
+	return items, nil
+}
+
+// ListBreweries 酒造一覧を取得
+func (q *sakeQueryImpl) ListBreweries(ctx context.Context, keyword *string, limit int32) ([]entity.Brewery, error) {
+	defer logger.TraceMethodAuto(ctx, map[string]interface{}{"keyword": keyword, "limit": limit})()
+
+	rows, err := q.queries.ListBreweries(ctx, sqlc.ListBreweriesParams{
+		Keyword: keyword,
+		Limit:   limit,
+	})
+	if err != nil {
+		logger.LogDatabaseError(ctx, "SELECT", "breweries", err, map[string]interface{}{"keyword": keyword, "limit": limit})
+		return nil, apperror.DatabaseError("酒造一覧の取得に失敗しました", err)
+	}
+
+	items := make([]entity.Brewery, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, entity.Brewery{
+			ID:            row.ID,
+			Name:          row.Name,
+			OriginCountry: row.OriginCountry,
+			OriginRegion:  row.OriginRegion,
+			Latitude:      row.Latitude,
+			Longitude:     row.Longitude,
+		})
+	}
+
+	return items, nil
+}
+
+// ListDrinkStyles 飲み方一覧を取得
+func (q *sakeQueryImpl) ListDrinkStyles(ctx context.Context) ([]entity.DrinkStyle, error) {
+	defer logger.TraceMethodAuto(ctx, nil)()
+
+	rows, err := q.queries.ListDrinkStyles(ctx)
+	if err != nil {
+		logger.LogDatabaseError(ctx, "SELECT", "drink_styles", err, nil)
+		return nil, apperror.DatabaseError("飲み方一覧の取得に失敗しました", err)
+	}
+
+	items := make([]entity.DrinkStyle, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, entity.DrinkStyle{
+			ID:          row.ID,
+			Name:        row.Name,
+			Description: row.Description,
+		})
+	}
+
+	return items, nil
+}
