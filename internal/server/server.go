@@ -15,6 +15,7 @@ import (
 	sakeInfraQuery "github.com/sake-kasu/sake-hack-backend/internal/features/sake/infrastructure/query"
 	sakeInfraRepo "github.com/sake-kasu/sake-hack-backend/internal/features/sake/infrastructure/repository"
 	sakePresentation "github.com/sake-kasu/sake-hack-backend/internal/features/sake/presentation"
+	storageExternal "github.com/sake-kasu/sake-hack-backend/internal/features/storage/infrastructure/external"
 	"github.com/sake-kasu/sake-hack-backend/internal/logger"
 	"github.com/sake-kasu/sake-hack-backend/internal/middleware"
 	"github.com/valkey-io/valkey-go"
@@ -134,24 +135,34 @@ func (s *Server) setupRoutes() {
 	// ヘルスチェックエンドポイント
 	s.router.GET("/health", s.handleHealth)
 
-	// Query + Repository
+	// S3クライアント初期化
+	ctx := context.Background()
+	s3Client, err := storageExternal.NewS3Client(ctx, s.config.Storage)
+	if err != nil {
+		logger.Get().Fatal("S3クライアントの初期化に失敗しました", zap.Error(err))
+	}
+
+	// Sake Feature
 	sakeQuery := sakeInfraQuery.NewSakeQuery(s.postgresPool)
 	sakeRepo := sakeInfraRepo.NewSakeRepository(s.postgresPool)
 
-	// Usecase
 	listSakesUC := sakeUsecase.NewListSakesUsecase(sakeQuery)
 	getSakeDetailUC := sakeUsecase.NewGetSakeDetailUsecase(sakeQuery)
 	createStockUC := sakeUsecase.NewCreateStockUsecase(sakeRepo)
 	updateStockUC := sakeUsecase.NewUpdateStockUsecase(sakeRepo)
 	deleteStockUC := sakeUsecase.NewDeleteStockUsecase(sakeRepo)
+	patchStockUC := sakeUsecase.NewPatchStockUsecase(sakeRepo)
+	createUploadUrlUC := sakeUsecase.NewCreateUploadUrlUsecase(s3Client)
 
-	// Presentation
 	sakeServer := sakePresentation.NewSakeServerImpl(
 		listSakesUC,
 		getSakeDetailUC,
 		createStockUC,
 		updateStockUC,
 		deleteStockUC,
+		patchStockUC,
+		createUploadUrlUC,
+		s3Client,
 	)
 
 	// APIグループを作成(/apiプレフィックス)
