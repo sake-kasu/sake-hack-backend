@@ -3,7 +3,12 @@ SELECT
     s.id,
     s.category,
     s.name,
-    s.object_key
+    s.object_key,
+    (SELECT COUNT(*) FROM likes l WHERE l.sake_id = s.id) AS like_count,
+    (CASE
+        WHEN sqlc.narg('like_token')::VARCHAR IS NULL THEN false
+        ELSE EXISTS(SELECT 1 FROM likes l WHERE l.sake_id = s.id AND l.token = sqlc.narg('like_token'))
+    END)::BOOLEAN AS is_liked
 FROM sakes s
 WHERE
     (sqlc.narg('kind_id')::INTEGER IS NULL OR s.kind_id = sqlc.narg('kind_id'))
@@ -39,7 +44,12 @@ SELECT
     b.origin_country AS brewery_origin_country,
     b.origin_region AS brewery_origin_region,
     b.latitude AS brewery_latitude,
-    b.longitude AS brewery_longitude
+    b.longitude AS brewery_longitude,
+    (SELECT COUNT(*) FROM likes l WHERE l.sake_id = s.id) AS like_count,
+    (CASE
+        WHEN sqlc.narg('like_token')::VARCHAR IS NULL THEN false
+        ELSE EXISTS(SELECT 1 FROM likes l WHERE l.sake_id = s.id AND l.token = sqlc.narg('like_token'))
+    END)::BOOLEAN AS is_liked
 FROM sakes s
 INNER JOIN sake_kinds sk ON s.kind_id = sk.id
 INNER JOIN breweries b ON s.brewery_id = b.id
