@@ -119,6 +119,15 @@ type ErrorResponse struct {
 	Errors *[]APIError `json:"errors,omitempty"`
 }
 
+// LikeResponse defines model for LikeResponse.
+type LikeResponse struct {
+	// IsLiked リクエストユーザーがいいね済みかどうか
+	IsLiked bool `json:"isLiked"`
+
+	// LikeCount いいね数
+	LikeCount int64 `json:"likeCount"`
+}
+
 // ListBreweriesResponse defines model for ListBreweriesResponse.
 type ListBreweriesResponse struct {
 	// Data 酒造一覧
@@ -182,6 +191,12 @@ type Sake struct {
 	// ImagePreview 画像URL formatは実装次第
 	ImagePreview string `json:"imagePreview"`
 
+	// IsLiked リクエストユーザーがいいね済みかどうか
+	IsLiked bool `json:"isLiked"`
+
+	// LikeCount いいね数
+	LikeCount int64 `json:"likeCount"`
+
 	// Name 酒名
 	Name string `json:"name"`
 }
@@ -206,8 +221,14 @@ type SakeDetail struct {
 	Id int32 `json:"id"`
 
 	// ImageUrl 表示用の画像URL
-	ImageUrl *string  `json:"imageUrl,omitempty"`
-	Kind     SakeKind `json:"kind"`
+	ImageUrl *string `json:"imageUrl,omitempty"`
+
+	// IsLiked リクエストユーザーがいいね済みかどうか
+	IsLiked bool     `json:"isLiked"`
+	Kind    SakeKind `json:"kind"`
+
+	// LikeCount いいね数
+	LikeCount int64 `json:"likeCount"`
 
 	// Memo 感想
 	Memo *string  `json:"memo"`
@@ -315,6 +336,27 @@ type ListSakesParams struct {
 
 	// BreweryId 酒造IDでフィルタ
 	BreweryId *int32 `form:"breweryId,omitempty" json:"breweryId,omitempty"`
+
+	// XLikeToken 匿名ユーザー識別用トークン(いいね状態判定用)
+	XLikeToken *string `json:"X-Like-Token,omitempty"`
+}
+
+// GetSakeDetailParams defines parameters for GetSakeDetail.
+type GetSakeDetailParams struct {
+	// XLikeToken 匿名ユーザー識別用トークン(いいね状態判定用)
+	XLikeToken *string `json:"X-Like-Token,omitempty"`
+}
+
+// DeleteSakeLikeParams defines parameters for DeleteSakeLike.
+type DeleteSakeLikeParams struct {
+	// XLikeToken 匿名ユーザー識別用トークン(UUID v4)
+	XLikeToken string `json:"X-Like-Token"`
+}
+
+// CreateSakeLikeParams defines parameters for CreateSakeLike.
+type CreateSakeLikeParams struct {
+	// XLikeToken 匿名ユーザー識別用トークン(UUID v4)
+	XLikeToken string `json:"X-Like-Token"`
 }
 
 // ListStocksParams defines parameters for ListStocks.
@@ -330,6 +372,9 @@ type ListStocksParams struct {
 
 	// BreweryId 酒造IDでフィルタ
 	BreweryId *int32 `form:"breweryId,omitempty" json:"breweryId,omitempty"`
+
+	// XLikeToken 匿名ユーザー識別用トークン(いいね状態判定用)
+	XLikeToken *string `json:"X-Like-Token,omitempty"`
 }
 
 // CreateStockJSONRequestBody defines body for CreateStock for application/json ContentType.
@@ -360,7 +405,13 @@ type ServerInterface interface {
 	ListSakes(c *gin.Context, params ListSakesParams)
 	// 酒詳細取得
 	// (GET /sakes/{id})
-	GetSakeDetail(c *gin.Context, id int32)
+	GetSakeDetail(c *gin.Context, id int32, params GetSakeDetailParams)
+	// いいねを外す
+	// (DELETE /sakes/{id}/likes)
+	DeleteSakeLike(c *gin.Context, id int32, params DeleteSakeLikeParams)
+	// いいねをつける
+	// (POST /sakes/{id}/likes)
+	CreateSakeLike(c *gin.Context, id int32, params CreateSakeLikeParams)
 	// 在庫一覧取得
 	// (GET /stocks)
 	ListStocks(c *gin.Context, params ListStocksParams)
@@ -493,6 +544,27 @@ func (siw *ServerInterfaceWrapper) ListSakes(c *gin.Context) {
 		return
 	}
 
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Like-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Like-Token")]; found {
+		var XLikeToken string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Like-Token, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Like-Token", valueList[0], &XLikeToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Like-Token: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XLikeToken = &XLikeToken
+
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -517,6 +589,30 @@ func (siw *ServerInterfaceWrapper) GetSakeDetail(c *gin.Context) {
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSakeDetailParams
+
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Like-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Like-Token")]; found {
+		var XLikeToken string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Like-Token, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Like-Token", valueList[0], &XLikeToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Like-Token: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XLikeToken = &XLikeToken
+
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -524,7 +620,109 @@ func (siw *ServerInterfaceWrapper) GetSakeDetail(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.GetSakeDetail(c, id)
+	siw.Handler.GetSakeDetail(c, id, params)
+}
+
+// DeleteSakeLike operation middleware
+func (siw *ServerInterfaceWrapper) DeleteSakeLike(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int32
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteSakeLikeParams
+
+	headers := c.Request.Header
+
+	// ------------- Required header parameter "X-Like-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Like-Token")]; found {
+		var XLikeToken string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Like-Token, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Like-Token", valueList[0], &XLikeToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Like-Token: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XLikeToken = XLikeToken
+
+	} else {
+		siw.ErrorHandler(c, fmt.Errorf("Header parameter X-Like-Token is required, but not found"), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.DeleteSakeLike(c, id, params)
+}
+
+// CreateSakeLike operation middleware
+func (siw *ServerInterfaceWrapper) CreateSakeLike(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int32
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateSakeLikeParams
+
+	headers := c.Request.Header
+
+	// ------------- Required header parameter "X-Like-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Like-Token")]; found {
+		var XLikeToken string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Like-Token, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Like-Token", valueList[0], &XLikeToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Like-Token: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XLikeToken = XLikeToken
+
+	} else {
+		siw.ErrorHandler(c, fmt.Errorf("Header parameter X-Like-Token is required, but not found"), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.CreateSakeLike(c, id, params)
 }
 
 // ListStocks operation middleware
@@ -565,6 +763,27 @@ func (siw *ServerInterfaceWrapper) ListStocks(c *gin.Context) {
 	if err != nil {
 		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter breweryId: %w", err), http.StatusBadRequest)
 		return
+	}
+
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Like-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Like-Token")]; found {
+		var XLikeToken string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Like-Token, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Like-Token", valueList[0], &XLikeToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Like-Token: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XLikeToken = &XLikeToken
+
 	}
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -742,6 +961,8 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.GET(options.BaseURL+"/kinds", wrapper.ListKinds)
 	router.GET(options.BaseURL+"/sakes", wrapper.ListSakes)
 	router.GET(options.BaseURL+"/sakes/:id", wrapper.GetSakeDetail)
+	router.DELETE(options.BaseURL+"/sakes/:id/likes", wrapper.DeleteSakeLike)
+	router.POST(options.BaseURL+"/sakes/:id/likes", wrapper.CreateSakeLike)
 	router.GET(options.BaseURL+"/stocks", wrapper.ListStocks)
 	router.POST(options.BaseURL+"/stocks", wrapper.CreateStock)
 	router.DELETE(options.BaseURL+"/stocks/:id", wrapper.DeleteStock)
@@ -754,61 +975,67 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
