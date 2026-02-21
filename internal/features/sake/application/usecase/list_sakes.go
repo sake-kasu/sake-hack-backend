@@ -12,6 +12,7 @@ import (
 type ListSakesInput struct {
 	KindID    *int32
 	BreweryID *int32
+	LikeToken *string
 	Offset    int32
 	Limit     int32
 }
@@ -54,6 +55,7 @@ func (u *ListSakesUsecase) Execute(ctx context.Context, input ListSakesInput) (*
 	sakes, pagination, err := u.sakeQuery.List(ctx, query.ListSakesFilter{
 		KindID:    input.KindID,
 		BreweryID: input.BreweryID,
+		LikeToken: input.LikeToken,
 		Offset:    offset,
 		Limit:     limit,
 	})

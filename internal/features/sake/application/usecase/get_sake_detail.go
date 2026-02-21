@@ -13,9 +13,15 @@ type GetSakeDetailOutput struct {
 	Detail *entity.SakeDetail
 }
 
+// GetSakeDetailInput 酒詳細取得の入力パラメータ
+type GetSakeDetailInput struct {
+	ID        int32
+	LikeToken *string
+}
+
 // GetSakeDetailUsecaseInterface 酒詳細取得ユースケースのインターフェイス
 type GetSakeDetailUsecaseInterface interface {
-	Execute(ctx context.Context, id int32) (*GetSakeDetailOutput, error)
+	Execute(ctx context.Context, input GetSakeDetailInput) (*GetSakeDetailOutput, error)
 }
 
 // GetSakeDetailUsecase 酒詳細取得ユースケース
@@ -29,10 +35,10 @@ func NewGetSakeDetailUsecase(sakeQuery query.SakeQuery) *GetSakeDetailUsecase {
 }
 
 // Execute 酒の詳細を取得する
-func (u *GetSakeDetailUsecase) Execute(ctx context.Context, id int32) (*GetSakeDetailOutput, error) {
-	defer logger.TraceMethodAuto(ctx, id)()
+func (u *GetSakeDetailUsecase) Execute(ctx context.Context, input GetSakeDetailInput) (*GetSakeDetailOutput, error) {
+	defer logger.TraceMethodAuto(ctx, input)()
 
-	detail, err := u.sakeQuery.GetDetail(ctx, id)
+	detail, err := u.sakeQuery.GetDetail(ctx, input.ID, input.LikeToken)
 	if err != nil {
 		return nil, err
 	}
