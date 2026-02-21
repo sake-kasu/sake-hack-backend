@@ -1,6 +1,6 @@
 FROM node:24.11.1-slim
 
-ENV GO_VERSION=1.25.4
+ENV GO_VERSION=1.26.0
 
 RUN apt-get update && \
   apt-get install -y \
