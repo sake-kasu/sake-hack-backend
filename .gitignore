@@ -49,3 +49,6 @@ api/openapi.bundled.yaml
 # Security scan reports
 gosec-report.json
 api/docs/index.html
+
+# tbls
+db/docs

@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate tbls-install tbls-doc tbls-diff tbls-lint
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -231,3 +231,18 @@ sqlc-generate: ## SQLからGoコードを生成
 	@sqlc generate
 
 generate: api-generate sqlc-generate ## 全コード生成(OpenAPI + SQLC)
+
+# DBドキュメント(tbls)
+tbls-install: ## tblsのインストール
+	@echo "Installing tbls..."
+	@go install github.com/k1LoW/tbls@latest
+
+tbls-doc: ## DBスキーマドキュメント生成+ER図をブラウザで表示
+	@echo "📊 DBドキュメントを生成しています..."
+	@mkdir -p db/docs
+	@tbls doc "$(DB_URL)" --force
+	@sed -i '' 's/"public\./"/' db/docs/schema.json
+	@npx @liam-hq/cli erd build --input db/docs/schema.json --format=tbls --output-dir db/docs/erd
+	@echo "✅ db/docs/ に生成しました。ER図を表示します..."
+	@npx serve db/docs/erd
+

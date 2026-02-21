@@ -1,0 +1,32 @@
+# 出力先
+docPath: db/docs
+
+# ER図の設定
+er:
+  format: mermaid
+  comment: true
+
+# 除外テーブル(マイグレーション管理・PostGIS系)
+exclude:
+  - schema_migrations
+  - spatial_ref_sys
+  - tiger.*
+  - topology.*
+
+# Lint設定(スキーマ品質チェック)
+lint:
+  requireTableComment:
+    enabled: true
+  requireColumnComment:
+    enabled: true
+    exclude:
+      - created_at
+      - updated_at
+  requireIndexComment:
+    enabled: false
+  unrelatedTable:
+    enabled: true
+    exclude:
+      - schema_migrations
+  requireForeignKeyIndex:
+    enabled: true
