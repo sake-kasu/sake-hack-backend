@@ -20,6 +20,7 @@ type Querier interface {
 	GetLikeCount(ctx context.Context, sakeID int32) (int64, error)
 	GetSakeDetailByID(ctx context.Context, arg GetSakeDetailByIDParams) (GetSakeDetailByIDRow, error)
 	GetSakeKindByName(ctx context.Context, name string) (GetSakeKindByNameRow, error)
+	GetSakeObjectKey(ctx context.Context, id int32) (*string, error)
 	InsertSakeDrinkStyle(ctx context.Context, arg InsertSakeDrinkStyleParams) error
 	ListBreweries(ctx context.Context, arg ListBreweriesParams) ([]ListBreweriesRow, error)
 	ListDrinkStyles(ctx context.Context) ([]ListDrinkStylesRow, error)

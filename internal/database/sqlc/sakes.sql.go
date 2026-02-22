@@ -253,6 +253,17 @@ func (q *Queries) GetSakeKindByName(ctx context.Context, name string) (GetSakeKi
 	return i, err
 }
 
+const getSakeObjectKey = `-- name: GetSakeObjectKey :one
+SELECT object_key FROM sakes WHERE id = $1
+`
+
+func (q *Queries) GetSakeObjectKey(ctx context.Context, id int32) (*string, error) {
+	row := q.db.QueryRow(ctx, getSakeObjectKey, id)
+	var object_key *string
+	err := row.Scan(&object_key)
+	return object_key, err
+}
+
 const insertSakeDrinkStyle = `-- name: InsertSakeDrinkStyle :exec
 INSERT INTO sake_drink_styles (sake_id, drink_style_id)
 VALUES ($1, $2)
