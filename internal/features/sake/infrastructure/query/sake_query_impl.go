@@ -135,6 +135,22 @@ func (q *sakeQueryImpl) GetDetail(ctx context.Context, id int32, likeToken *stri
 	}, nil
 }
 
+// GetObjectKey 酒のオブジェクトキーを取得する
+func (q *sakeQueryImpl) GetObjectKey(ctx context.Context, id int32) (*string, error) {
+	defer logger.TraceMethodAuto(ctx, id)()
+
+	objectKey, err := q.queries.GetSakeObjectKey(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperror.NotFoundError("酒が見つかりません").WithDetails("sake_id", id)
+		}
+		logger.LogDatabaseError(ctx, "SELECT", "sakes", err, map[string]interface{}{"sake_id": id})
+		return nil, apperror.DatabaseError("オブジェクトキーの取得に失敗しました", err)
+	}
+
+	return objectKey, nil
+}
+
 // ListKinds 酒の種類一覧を取得
 func (q *sakeQueryImpl) ListKinds(ctx context.Context) ([]entity.SakeKind, error) {
 	defer logger.TraceMethodAuto(ctx, nil)()
