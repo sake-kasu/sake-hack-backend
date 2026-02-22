@@ -2,12 +2,29 @@ package config
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// clearEnv は環境変数を全てクリアし、テスト終了時に元の状態に復元する
+func clearEnv(t *testing.T) {
+	t.Helper()
+	original := os.Environ()
+	os.Clearenv()
+	t.Cleanup(func() {
+		os.Clearenv()
+		for _, kv := range original {
+			parts := strings.SplitN(kv, "=", 2)
+			if len(parts) == 2 {
+				_ = os.Setenv(parts[0], parts[1])
+			}
+		}
+	})
+}
 
 // TestLoad_WithEnvironmentVariables は環境変数から設定を読み込むテスト
 func TestLoad_WithEnvironmentVariables(t *testing.T) {
@@ -110,22 +127,23 @@ func TestLoad_WithEnvironmentVariables(t *testing.T) {
 
 // TestLoad_WithDefaultValues はデフォルト値を使用するテスト
 func TestLoad_WithDefaultValues(t *testing.T) {
+	// 環境変数を全てクリアし、テスト終了時に元の状態に復元する
+	// (ローカルのシェル変数や.envの影響を排除するため)
+	clearEnv(t)
+
 	// .envファイルが読み込まれないように、一時ディレクトリに移動
 	tmpDir := t.TempDir()
 	originalWd, err := os.Getwd()
 	require.NoError(t, err)
-	defer func() {
-		err := os.Chdir(originalWd)
-		require.NoError(t, err)
-	}()
+	t.Cleanup(func() {
+		_ = os.Chdir(originalWd)
+	})
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
 
 	// 必須環境変数のみ設定
 	t.Setenv("DB_PASSWORD", "test_password")
 	t.Setenv("JWT_SECRET", "test_secret")
-	// CACHE_PASSWORDを明示的に空文字列に設定
-	t.Setenv("CACHE_PASSWORD", "")
 
 	// テスト実行
 	cfg, err := Load()
@@ -211,8 +229,8 @@ func TestLoad_MissingRequiredFields(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// 環境変数をクリア
-			os.Clearenv()
+			// 環境変数をクリアし、テスト終了時に元の状態に復元する
+			clearEnv(t)
 
 			// テストごとの環境変数設定
 			tt.setup(t)
