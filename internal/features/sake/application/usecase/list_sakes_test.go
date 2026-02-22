@@ -49,6 +49,14 @@ func (m *MockSakeQuery) ListBreweries(ctx context.Context, keyword *string, limi
 	return args.Get(0).([]entity.Brewery), args.Error(1)
 }
 
+func (m *MockSakeQuery) GetObjectKey(ctx context.Context, id int32) (*string, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*string), args.Error(1)
+}
+
 func (m *MockSakeQuery) ListDrinkStyles(ctx context.Context) ([]entity.DrinkStyle, error) {
 	args := m.Called(ctx)
 	if args.Get(0) == nil {
