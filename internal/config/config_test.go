@@ -167,7 +167,7 @@ func TestLoad_WithDefaultValues(t *testing.T) {
 
 	assert.Equal(t, []string{"http://localhost:3000", "http://localhost:8080"}, cfg.CORS.AllowedOrigins)
 	assert.Equal(t, []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"}, cfg.CORS.AllowedMethods)
-	assert.Equal(t, []string{"Origin", "Content-Type", "Accept", "Authorization"}, cfg.CORS.AllowedHeaders)
+	assert.Equal(t, []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Like-Token"}, cfg.CORS.AllowedHeaders)
 	assert.Equal(t, []string{"Content-Length"}, cfg.CORS.ExposedHeaders)
 	assert.True(t, cfg.CORS.AllowCredentials)
 	assert.Equal(t, 43200, cfg.CORS.MaxAge)
