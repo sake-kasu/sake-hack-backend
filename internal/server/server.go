@@ -49,6 +49,7 @@ func New(
 	// グローバルミドルウェア設定
 	router.Use(gin.Recovery())
 	router.Use(middleware.RequestID())
+	router.Use(middleware.AccessLogger(middleware.AccessLoggerConfig{}))
 	router.Use(middleware.CORS(middleware.CORSConfig{
 		AllowedOrigins:   cfg.CORS.AllowedOrigins,
 		AllowedMethods:   cfg.CORS.AllowedMethods,
