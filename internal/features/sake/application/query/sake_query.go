@@ -19,6 +19,7 @@ type ListSakesFilter struct {
 type SakeQuery interface {
 	List(ctx context.Context, filter ListSakesFilter) ([]entity.SakeListItem, entity.Pagination, error)
 	GetDetail(ctx context.Context, id int32, likeToken *string) (*entity.SakeDetail, error)
+	GetObjectKey(ctx context.Context, id int32) (*string, error)
 	ListKinds(ctx context.Context) ([]entity.SakeKind, error)
 	ListBreweries(ctx context.Context, keyword *string, limit int32) ([]entity.Brewery, error)
 	ListDrinkStyles(ctx context.Context) ([]entity.DrinkStyle, error)
