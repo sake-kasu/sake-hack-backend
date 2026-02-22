@@ -104,6 +104,7 @@ func (conv *sakeConverter) toSakeDetailResponse(ctx context.Context, detail *ent
 		Price:           detail.Price,
 		LikeCount:       detail.LikeCount,
 		IsLiked:         detail.IsLiked,
+		ObjectKey:       detail.ObjectKey,
 		ImageUrl:        &imageURL,
 		CreatedAt:       detail.CreatedAt,
 		UpdatedAt:       detail.UpdatedAt,
