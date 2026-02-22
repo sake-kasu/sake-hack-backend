@@ -18,6 +18,7 @@ var _ interface {
 	GeneratePresignedPutURL(ctx context.Context, objectKey string, contentType string) (string, error)
 	GeneratePresignedGetURL(ctx context.Context, objectKey string) (string, error)
 	ResolveURL(ctx context.Context, objectKey string) (string, error)
+	DeleteObject(ctx context.Context, objectKey string) error
 } = (*S3Client)(nil)
 
 // S3Client はS3/RustFS互換のストレージクライアント
@@ -101,4 +102,16 @@ func (c *S3Client) GeneratePresignedGetURL(ctx context.Context, objectKey string
 // sake featureのURLResolverインターフェースを暗黙的に満たす
 func (c *S3Client) ResolveURL(ctx context.Context, objectKey string) (string, error) {
 	return c.GeneratePresignedGetURL(ctx, objectKey)
+}
+
+// DeleteObject はオブジェクトキーに対応するファイルをストレージから削除する
+func (c *S3Client) DeleteObject(ctx context.Context, objectKey string) error {
+	_, err := c.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(c.bucketName),
+		Key:    aws.String(objectKey),
+	})
+	if err != nil {
+		return fmt.Errorf("ファイルの削除に失敗しました: %w", err)
+	}
+	return nil
 }
