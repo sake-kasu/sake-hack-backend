@@ -194,9 +194,14 @@ SakeDetail:
       type: boolean
       description: リクエストユーザーがいいね済みかどうか
       example: false
+    objectKey:
+      type: string
+      nullable: true
+      description: S3/RustFSのオブジェクトキー
     imageUrl:
       type: string
-      description: 表示用の画像URL
+      nullable: true
+      description: 表示用の画像URL(プリサインドURL)
     createdAt:
       type: string
       format: date-time
