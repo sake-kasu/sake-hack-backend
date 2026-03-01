@@ -253,14 +253,11 @@ CreateSakeRequest:
   type: object
   required:
     - category
-    - kind
-    - brewery
     - name
     - abv
     - purchaseVolume
     - remainingVolume
     - memo
-    - drinkStyles
     - price
   properties:
     category:
@@ -325,14 +322,11 @@ UpdateSakeRequest:
   type: object
   required:
     - category
-    - kind
-    - brewery
     - name
     - abv
     - purchaseVolume
     - remainingVolume
     - memo
-    - drinkStyles
     - price
   properties:
     category:
