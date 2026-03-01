@@ -39,12 +39,21 @@ func (r *sakeRepositoryImpl) Create(ctx context.Context, input repository.Create
 
 	qtx := r.queries.WithTx(tx)
 
-	breweryID, err := r.upsertBrewery(ctx, qtx, input.Brewery)
+	brewery := input.Brewery
+	if brewery.Name == "" {
+		brewery.Name = "未設定"
+		brewery.OriginCountry = "未設定"
+	}
+	breweryID, err := r.upsertBrewery(ctx, qtx, brewery)
 	if err != nil {
 		return nil, err
 	}
 
-	kindID, err := r.upsertSakeKind(ctx, qtx, input.Kind)
+	kind := input.Kind
+	if kind.Name == "" {
+		kind.Name = "未設定"
+	}
+	kindID, err := r.upsertSakeKind(ctx, qtx, kind)
 	if err != nil {
 		return nil, err
 	}
@@ -97,12 +106,21 @@ func (r *sakeRepositoryImpl) Update(ctx context.Context, input repository.Update
 
 	qtx := r.queries.WithTx(tx)
 
-	breweryID, err := r.upsertBrewery(ctx, qtx, input.Brewery)
+	brewery := input.Brewery
+	if brewery.Name == "" {
+		brewery.Name = "未設定"
+		brewery.OriginCountry = "未設定"
+	}
+	breweryID, err := r.upsertBrewery(ctx, qtx, brewery)
 	if err != nil {
 		return nil, err
 	}
 
-	kindID, err := r.upsertSakeKind(ctx, qtx, input.Kind)
+	kind := input.Kind
+	if kind.Name == "" {
+		kind.Name = "未設定"
+	}
+	kindID, err := r.upsertSakeKind(ctx, qtx, kind)
 	if err != nil {
 		return nil, err
 	}
