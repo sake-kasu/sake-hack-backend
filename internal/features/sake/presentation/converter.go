@@ -171,29 +171,42 @@ func (conv *sakeConverter) toCreateSakeResponse(ctx context.Context, item *entit
 
 // toCreateStockInput CreateSakeRequestをCreateStockInputに変換
 func toCreateStockInput(req generated.CreateSakeRequest) usecase.CreateStockInput {
-	drinkStyles := make([]entity.DrinkStyle, 0, len(req.DrinkStyles))
-	for _, ds := range req.DrinkStyles {
-		drinkStyles = append(drinkStyles, entity.DrinkStyle{
-			ID:          ds.Id,
-			Name:        ds.Name,
-			Description: ds.Description,
-		})
+	var drinkStyles []entity.DrinkStyle
+	if req.DrinkStyles != nil {
+		drinkStyles = make([]entity.DrinkStyle, 0, len(*req.DrinkStyles))
+		for _, ds := range *req.DrinkStyles {
+			drinkStyles = append(drinkStyles, entity.DrinkStyle{
+				ID:          ds.Id,
+				Name:        ds.Name,
+				Description: ds.Description,
+			})
+		}
 	}
 
-	return usecase.CreateStockInput{
-		Category: entity.SakeCategory(req.Category),
-		Kind: entity.SakeKind{
+	var kind entity.SakeKind
+	if req.Kind != nil {
+		kind = entity.SakeKind{
 			ID:   req.Kind.Id,
 			Name: req.Kind.Name,
-		},
-		Brewery: entity.Brewery{
+		}
+	}
+
+	var brewery entity.Brewery
+	if req.Brewery != nil {
+		brewery = entity.Brewery{
 			ID:            req.Brewery.Id,
 			Name:          req.Brewery.Name,
 			OriginCountry: req.Brewery.OriginCountry,
 			OriginRegion:  req.Brewery.OriginRegion,
 			Latitude:      req.Brewery.Latitude,
 			Longitude:     req.Brewery.Longitude,
-		},
+		}
+	}
+
+	return usecase.CreateStockInput{
+		Category: entity.SakeCategory(req.Category),
+		Kind:     kind,
+		Brewery:  brewery,
 		Name: entity.SakeName{
 			Name:     req.Name.Name,
 			Phonetic: req.Name.Phonetic,
@@ -210,30 +223,43 @@ func toCreateStockInput(req generated.CreateSakeRequest) usecase.CreateStockInpu
 
 // toUpdateStockInput UpdateSakeRequestをUpdateStockInputに変換
 func toUpdateStockInput(id int32, req generated.UpdateSakeRequest) usecase.UpdateStockInput {
-	drinkStyles := make([]entity.DrinkStyle, 0, len(req.DrinkStyles))
-	for _, ds := range req.DrinkStyles {
-		drinkStyles = append(drinkStyles, entity.DrinkStyle{
-			ID:          ds.Id,
-			Name:        ds.Name,
-			Description: ds.Description,
-		})
+	var drinkStyles []entity.DrinkStyle
+	if req.DrinkStyles != nil {
+		drinkStyles = make([]entity.DrinkStyle, 0, len(*req.DrinkStyles))
+		for _, ds := range *req.DrinkStyles {
+			drinkStyles = append(drinkStyles, entity.DrinkStyle{
+				ID:          ds.Id,
+				Name:        ds.Name,
+				Description: ds.Description,
+			})
+		}
 	}
 
-	return usecase.UpdateStockInput{
-		ID:       id,
-		Category: entity.SakeCategory(req.Category),
-		Kind: entity.SakeKind{
+	var kind entity.SakeKind
+	if req.Kind != nil {
+		kind = entity.SakeKind{
 			ID:   req.Kind.Id,
 			Name: req.Kind.Name,
-		},
-		Brewery: entity.Brewery{
+		}
+	}
+
+	var brewery entity.Brewery
+	if req.Brewery != nil {
+		brewery = entity.Brewery{
 			ID:            req.Brewery.Id,
 			Name:          req.Brewery.Name,
 			OriginCountry: req.Brewery.OriginCountry,
 			OriginRegion:  req.Brewery.OriginRegion,
 			Latitude:      req.Brewery.Latitude,
 			Longitude:     req.Brewery.Longitude,
-		},
+		}
+	}
+
+	return usecase.UpdateStockInput{
+		ID:       id,
+		Category: entity.SakeCategory(req.Category),
+		Kind:     kind,
+		Brewery:  brewery,
 		Name: entity.SakeName{
 			Name:     req.Name.Name,
 			Phonetic: req.Name.Phonetic,
