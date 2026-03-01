@@ -74,18 +74,6 @@ func validateCreateSakeRequest(req generated.CreateSakeRequest) error {
 		verr = verr.AddField("name.name", "酒名は必須です")
 	}
 
-	if req.Brewery.Name == "" {
-		verr = verr.AddField("brewery.name", "酒造名は必須です")
-	}
-
-	if req.Brewery.OriginCountry == "" {
-		verr = verr.AddField("brewery.originCountry", "所在国は必須です")
-	}
-
-	if req.Kind.Name == "" {
-		verr = verr.AddField("kind.name", "酒の種類名は必須です")
-	}
-
 	if req.Abv < 0 || req.Abv > 100 {
 		verr = verr.AddField("abv", "アルコール度数は0以上100以下である必要があります")
 	}
@@ -176,18 +164,6 @@ func validateUpdateSakeRequest(req generated.UpdateSakeRequest) error {
 
 	if req.Name.Name == "" {
 		verr = verr.AddField("name.name", "酒名は必須です")
-	}
-
-	if req.Brewery.Name == "" {
-		verr = verr.AddField("brewery.name", "酒造名は必須です")
-	}
-
-	if req.Brewery.OriginCountry == "" {
-		verr = verr.AddField("brewery.originCountry", "所在国は必須です")
-	}
-
-	if req.Kind.Name == "" {
-		verr = verr.AddField("kind.name", "酒の種類名は必須です")
 	}
 
 	if req.Abv < 0 || req.Abv > 100 {
