@@ -1,1 +1,0 @@
-ALTER TABLE sakes DROP CONSTRAINT IF EXISTS fk_sake_image_id;
