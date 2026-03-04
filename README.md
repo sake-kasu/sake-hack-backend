@@ -82,7 +82,7 @@ make migrate-up
 
 ```bash
 # OpenAPIからコード生成
-make api-generate
+make openapi-generate
 
 # sqlcからコード生成
 make sqlc-generate
@@ -141,10 +141,10 @@ make submodule-status   # サブモジュールの状態確認
 
 ```bash
 make api-validate       # OpenAPI仕様検証
-make api-generate       # コード生成
-make api-bundle         # OpenAPI仕様バンドル
-make api-gendoc         # APIドキュメント生成
-make api-watch          # APIドキュメント生成（リアルタイム反映）
+make openapi-generate       # コード生成
+make openapi-bundle         # OpenAPI仕様バンドル
+make openapi-gendoc         # APIドキュメント生成
+make openapi-watch          # APIドキュメント生成（リアルタイム反映）
 ```
 
 ### データベース
@@ -261,7 +261,7 @@ sake-hack-backend/
    - レスポンス: `api/components/responses/` で共通レスポンスを再利用
    - メインファイル: `api/openapi.yaml` に `$ref` で参照を追加
 2. **バリデーション**: `make api-validate`
-3. **コード生成**: `make api-generate` (自動的にバンドル → 生成)
+3. **コード生成**: `make openapi-generate` (自動的にバンドル → 生成)
 4. **パッケージ作成**: `internal/features/<feature_name>/`
 5. **実装**: Domain → Application → Infrastructure → Presentation
 6. **SQL 作成**: `db/queries/` に追加

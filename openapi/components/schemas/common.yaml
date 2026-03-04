@@ -1,0 +1,43 @@
+APIError:
+  type: object
+  required:
+    - code
+    - message
+  properties:
+    code:
+      type: string
+      example: W0001
+    message:
+      type: string
+      example: "offset: オフセットは0以上である必要があります"
+
+ErrorResponse:
+  type: object
+  required:
+    - data
+    - errors
+  properties:
+    data:
+      nullable: true
+      description: エラー時は常に null
+    errors:
+      type: array
+      items:
+        $ref: "#/APIError"
+
+SakeListMeta:
+  type: object
+  required:
+    - total
+    - offset
+    - limit
+  properties:
+    total:
+      type: integer
+      format: int64
+    offset:
+      type: integer
+      format: int32
+    limit:
+      type: integer
+      format: int32

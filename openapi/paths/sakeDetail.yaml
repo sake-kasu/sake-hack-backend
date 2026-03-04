@@ -1,0 +1,20 @@
+get:
+  tags:
+    - sakes
+  summary: 酒詳細取得
+  operationId: getSakeDetail
+  parameters:
+    - $ref: "../components/parameters/common.yaml#/SakeId"
+  responses:
+    '200':
+      description: 酒詳細取得成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/sake.yaml#/SakeDetail"
+    '400':
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    '404':
+      $ref: "../components/responses/common.yaml#/NotFound"
+    '500':
+      $ref: "../components/responses/common.yaml#/InternalServerError"

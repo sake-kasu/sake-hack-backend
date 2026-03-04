@@ -1,0 +1,229 @@
+SakeCategory:
+  type: string
+  enum:
+    - JAPANESE_SAKE
+    - SHOCHU
+    - AWAMORI
+    - BEER
+    - WINE
+    - FRUIT_WINE
+    - LIQUEUR
+    - NON_ALCOHOL
+    - OTHER
+
+Sake:
+  type: object
+  required:
+    - id
+    - category
+    - name
+    - imagePreview
+  properties:
+    id:
+      type: integer
+      format: int32
+    category:
+      $ref: "#/SakeCategory"
+    name:
+      type: string
+    imagePreview:
+      type: string
+
+ListSakesResponse:
+  type: object
+  required:
+    - data
+    - meta
+  properties:
+    data:
+      type: array
+      items:
+        $ref: "#/Sake"
+    meta:
+      $ref: "./common.yaml#/SakeListMeta"
+
+SakeKind:
+  type: object
+  required:
+    - id
+    - name
+  properties:
+    id:
+      type: integer
+      format: int32
+    name:
+      type: string
+
+Brewery:
+  type: object
+  required:
+    - id
+    - name
+    - originCountry
+  properties:
+    id:
+      type: integer
+      format: int32
+    name:
+      type: string
+    originCountry:
+      type: string
+    originRegion:
+      type: string
+      nullable: true
+    latitude:
+      type: number
+      format: double
+      nullable: true
+    longitude:
+      type: number
+      format: double
+      nullable: true
+
+SakeName:
+  type: object
+  required:
+    - name
+    - phonetic
+  properties:
+    name:
+      type: string
+    phonetic:
+      type: string
+
+DrinkStyle:
+  type: object
+  required:
+    - id
+    - name
+  properties:
+    id:
+      type: integer
+      format: int32
+    name:
+      type: string
+    description:
+      type: string
+      nullable: true
+
+SakeDetail:
+  type: object
+  required:
+    - id
+    - category
+    - kind
+    - brewery
+    - name
+    - abv
+    - purchaseVolume
+    - remainingVolume
+    - drinkStyles
+    - price
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: integer
+      format: int32
+    category:
+      $ref: "#/SakeCategory"
+    kind:
+      $ref: "#/SakeKind"
+    brewery:
+      $ref: "#/Brewery"
+    name:
+      $ref: "#/SakeName"
+    abv:
+      type: number
+      format: float
+      minimum: 0
+      maximum: 100
+    purchaseVolume:
+      type: number
+      format: float
+      minimum: 0
+    remainingVolume:
+      type: number
+      format: float
+      minimum: 0
+    memo:
+      type: string
+      nullable: true
+    drinkStyles:
+      type: array
+      items:
+        $ref: "#/DrinkStyle"
+    price:
+      type: integer
+      format: int32
+      minimum: 0
+    imageUrl:
+      type: string
+      nullable: true
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateSakeRequest:
+  type: object
+  required:
+    - category
+    - kind
+    - brewery
+    - name
+    - abv
+    - purchaseVolume
+    - remainingVolume
+    - price
+    - drinkStyles
+  properties:
+    category:
+      $ref: "#/SakeCategory"
+    kind:
+      $ref: "#/SakeKind"
+    brewery:
+      $ref: "#/Brewery"
+    name:
+      $ref: "#/SakeName"
+    abv:
+      type: number
+      format: float
+      minimum: 0
+      maximum: 100
+    purchaseVolume:
+      type: number
+      format: float
+      minimum: 0
+    remainingVolume:
+      type: number
+      format: float
+      minimum: 0
+    memo:
+      type: string
+      nullable: true
+    drinkStyles:
+      type: array
+      items:
+        $ref: "#/DrinkStyle"
+    price:
+      type: integer
+      format: int32
+      minimum: 0
+    imageUrl:
+      type: string
+      nullable: true
+
+UpdateSakeRequest:
+  allOf:
+    - $ref: "#/CreateSakeRequest"
+
+CreateSakeResponse:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: "#/Sake"

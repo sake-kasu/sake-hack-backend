@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate openapi-generate openapi-bundle openapi-gendoc openapi-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -171,7 +171,7 @@ api-validate: ## OpenAPI仕様を検証
 	@echo "✅ OpenAPI仕様を検証しています..."
 	@npx @redocly/cli lint api/openapi.yaml --config api/redocly.yaml
 
-api-generate: ## OpenAPI仕様からコードを自動生成
+openapi-generate: ## OpenAPI仕様からコードを自動生成
 	@echo "🤖 OpenAPI仕様からコードを生成しています..."
 	@echo "📦 Step 1: OpenAPI仕様をバンドルしています..."
 	@npx @redocly/cli bundle api/openapi.yaml -o api/openapi.bundled.yaml
@@ -180,21 +180,20 @@ api-generate: ## OpenAPI仕様からコードを自動生成
 	@go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest \
 		-config api/oapi-codegen.yaml api/openapi.bundled.yaml
 
-api-bundle: ## OpenAPI仕様をバンドル
+openapi-bundle: ## OpenAPI仕様をバンドル
 	@echo "📦 OpenAPI仕様をバンドルしています..."
 	@npx @redocly/cli bundle api/openapi.yaml -o api/openapi.bundled.yaml
 
-api-gendoc: ## APIドキュメントを生成
+openapi-gendoc: ## APIドキュメントを生成
 	@echo "📚 APIドキュメントを生成しています..."
-	@npx @redocly/cli build-docs api/openapi.yaml -o api/docs/index.html
-
-api-watch: ## APIドキュメントを監視して自動更新
+	@npx @redocly/cli build-docs openapi/openapi.yaml -o openapi/docs/index.html
+openapi-watch: ## APIドキュメントを監視して自動更新
 	@echo "👀 APIファイルを監視しています..."
 	@echo "📝 変更を検知すると自動的にドキュメントを再生成します"
 	@echo "🌐 ドキュメント: http://localhost:8080"
 	@npx concurrently -n "watch,serve" -c "blue,green" \
-		"npx nodemon --watch api --ext yaml,json --exec 'make api-gendoc'" \
-		"cd api/docs && python3 -m http.server 8080"
+		"npx nodemon --watch openapi --ext yaml,json --exec 'make openapi-gendoc'" \
+		"cd openapi/docs && python3 -m http.server 8080"
 
 migrate-install: ## golang-migrateのインストール
 	@echo "golang-migrate をインストールしています..."
@@ -238,4 +237,4 @@ sqlc-generate: ## SQLからGoコードを生成
 	@echo "🔧 SQLからGoコードを生成しています..."
 	@sqlc generate
 
-generate: api-generate sqlc-generate ## 全コード生成(OpenAPI + SQLC)
+generate: openapi-generate sqlc-generate ## 全コード生成(OpenAPI + SQLC)

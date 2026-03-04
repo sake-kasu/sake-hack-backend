@@ -1,0 +1,20 @@
+BadRequest:
+  description: リクエスト不正
+  content:
+    application/json:
+      schema:
+        $ref: "../schemas/common.yaml#/ErrorResponse"
+
+NotFound:
+  description: 対象が見つからない
+  content:
+    application/json:
+      schema:
+        $ref: "../schemas/common.yaml#/ErrorResponse"
+
+InternalServerError:
+  description: サーバー内部エラー
+  content:
+    application/json:
+      schema:
+        $ref: "../schemas/common.yaml#/ErrorResponse"
