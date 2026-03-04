@@ -6,7 +6,7 @@ BadRequest:
         $ref: "../schemas/common.yaml#/ErrorResponse"
 
 NotFound:
-  description: 対象が見つからない
+  description: リソースが見つからない
   content:
     application/json:
       schema:
@@ -14,6 +14,28 @@ NotFound:
 
 InternalServerError:
   description: サーバー内部エラー
+  content:
+    application/json:
+      schema:
+        $ref: "../schemas/common.yaml#/ErrorResponse"
+
+Unauthorized:
+  description: 認証失敗
+  content:
+    application/json:
+      schema:
+        $ref: "../schemas/common.yaml#/ErrorResponse"
+
+Forbidden:
+  description: 権限エラー
+  content:
+    application/json:
+      schema:
+        $ref: "../schemas/common.yaml#/ErrorResponse"
+
+
+Conflict:
+  description: リソースの競合エラー
   content:
     application/json:
       schema:
