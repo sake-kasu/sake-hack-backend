@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate openapi-generate openapi-bundle openapi-gendoc openapi-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status openapi-generate openapi-gendoc openapi-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -167,10 +167,6 @@ submodule-status: ## サブモジュールの状態を確認
 	@git submodule status
 
 # API開発(OpenAPI仕様から自動生成)
-api-validate: ## OpenAPI仕様を検証
-	@echo "✅ OpenAPI仕様を検証しています..."
-	@npx @redocly/cli lint api/openapi.yaml --config api/redocly.yaml
-
 openapi-generate: ## OpenAPI仕様からコードを自動生成
 	@echo "🤖 OpenAPI仕様からコードを生成しています..."
 	@echo "📦 Step 1: OpenAPI仕様をバンドルしています..."
@@ -179,10 +175,6 @@ openapi-generate: ## OpenAPI仕様からコードを自動生成
 	@mkdir -p api/generated
 	@go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest \
 		-config api/oapi-codegen.yaml api/openapi.bundled.yaml
-
-openapi-bundle: ## OpenAPI仕様をバンドル
-	@echo "📦 OpenAPI仕様をバンドルしています..."
-	@npx @redocly/cli bundle api/openapi.yaml -o api/openapi.bundled.yaml
 
 openapi-gendoc: ## APIドキュメントを生成
 	@echo "📚 APIドキュメントを生成しています..."

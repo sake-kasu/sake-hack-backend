@@ -33,7 +33,7 @@ make test / make cover / make lint / make gosec-scan
 make deps  # go mod tidy
 
 # API開発(OpenAPI仕様から自動生成)
-make api-validate / make openapi-generate / make openapi-bundle / make openapi-gendoc
+make openapi-generate / make openapi-gendoc
 
 # データベース開発
 make sqlc-generate                # sqlcコード生成
@@ -93,7 +93,7 @@ db/
 
 **手順**:
 
-1. **API 仕様**: `api/paths/*.yaml`, `api/components/schemas/*.yaml`定義 → `make api-validate` → `make openapi-generate`
+1. **API 仕様**: `api/paths/*.yaml`, `api/components/schemas/*.yaml`定義 → `make openapi-generate`
 2. **パッケージ作成**: `mkdir -p internal/features/<name>/{application/{query,usecase,port},domain/{entity,repository},infrastructure/{query,repository,external},presentation}`
 3. **DB 設計**:
    - マイグレーション作成: `make db-migrate-create NAME=create_xxx_table`
@@ -499,7 +499,7 @@ unwrapped := errors.Unwrap(appErr)
 
 **新機能追加**:
 
-- OpenAPI 定義 → `make api-validate` → `make openapi-generate` → マイグレーション作成(`make db-migrate-create`) → SQL クエリ定義 → `make sqlc-generate` → 機能パッケージ作成 → 4 層実装(Domain→Application→Infrastructure→Presentation) → テスト作成 → DI 登録(`cmd/server/main.go` or `internal/server/server.go`) → `make test/cover/lint/gosec-scan/build`
+- OpenAPI 定義 → `make openapi-generate` → マイグレーション作成(`make db-migrate-create`) → SQL クエリ定義 → `make sqlc-generate` → 機能パッケージ作成 → 4 層実装(Domain→Application→Infrastructure→Presentation) → テスト作成 → DI 登録(`cmd/server/main.go` or `internal/server/server.go`) → `make test/cover/lint/gosec-scan/build`
 
 **コーディング**:
 
