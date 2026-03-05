@@ -1,6 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TYPE sake_category AS ENUM (
+CREATE TYPE sake_category_type AS ENUM (
     'JAPANESE_SAKE',
     'SHOCHU',
     'AWAMORI',
@@ -12,15 +12,15 @@ CREATE TYPE sake_category AS ENUM (
     'OTHER'
 );
 
-CREATE TYPE user_role AS ENUM ('SHOP', 'USER');
+CREATE TYPE role_type AS ENUM ('SHOP', 'USER');
 
-CREATE TYPE match_status AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED');
+CREATE TYPE match_status_type AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED');
 
 CREATE TABLE sakes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL,
     phonetic VARCHAR(100),
-    category sake_category NOT NULL,
+    category sake_category_type NOT NULL,
     alcohol_percentage NUMERIC(4, 1) CHECK (alcohol_percentage >= 0 AND alcohol_percentage <= 100),
     volume_max INTEGER CHECK (volume_max > 0),
     volume_remain INTEGER CHECK (volume_remain >= 0 AND volume_remain <= 100),
@@ -52,7 +52,7 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     display_name VARCHAR(100),
-    role user_role NOT NULL DEFAULT 'USER',
+    role role_type NOT NULL DEFAULT 'USER',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_users_email ON users(email);
@@ -92,7 +92,7 @@ CREATE TABLE match_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     from_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     to_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    status match_status NOT NULL DEFAULT 'PENDING',
+    status match_status_type NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_match_requests_not_self CHECK (from_user_id <> to_user_id)
