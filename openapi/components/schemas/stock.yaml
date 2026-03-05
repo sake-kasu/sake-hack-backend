@@ -107,6 +107,8 @@ Stock:
     - sakeId
     - category
     - name
+    - phonetic
+    - firstImageKey
     - likeCount
   properties:
     sakeId:
@@ -158,7 +160,14 @@ StockDetail:
   required:
     - sakeId
     - name
+    - phonetic
     - category
+    - alcoholPercentage
+    - volumeMax
+    - volumeRemain
+    - region
+    - price
+    - memo
     - tags
     - images
     - likeCount
@@ -208,41 +217,15 @@ CreateStockRequest:
   required:
     - name
     - category
+    - phonetic
+    - alcoholPercentage
+    - volumeMax
+    - volumeRemain
+    - region
+    - price
+    - memo
     - tagNames
     - imageKeys
-  properties:
-    name:
-      $ref: "#/SakeName"
-    phonetic:
-      $ref: "#/SakePhonetic"
-    category:
-      $ref: "#/SakeCategory"
-    alcoholPercentage:
-      $ref: "#/SakeAlcoholPercentage"
-    volumeMax:
-      $ref: "#/SakeVolumeMax"
-    volumeRemain:
-      $ref: "#/SakeVolumeRemain"
-    region:
-      $ref: "#/SakeRegion"
-    price:
-      $ref: "#/SakePrice"
-    memo:
-      $ref: "#/SakeMemo"
-    tagNames:
-      type: array
-      items:
-        $ref: "#/SakeTagName"
-      description: タグ名前一覧
-    imageKeys:
-      type: array
-      items:
-        $ref: "#/SakeImageKey"
-      description: 表示順で指定する画像キー配列
-
-UpdateStockRequest:
-  type: object
-  description: 在庫更新時に送信するお酒情報（未指定項目は変更しない）
   properties:
     name:
       $ref: "#/SakeName"

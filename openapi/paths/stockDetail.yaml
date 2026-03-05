@@ -31,7 +31,7 @@ put:
     content:
       application/json:
         schema:
-          $ref: "../components/schemas/stock.yaml#/UpdateStockRequest"
+          $ref: "../components/schemas/stock.yaml#/CreateStockRequest"
   responses:
     '200':
       description: 在庫更新成功

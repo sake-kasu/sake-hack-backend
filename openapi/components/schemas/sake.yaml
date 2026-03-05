@@ -5,6 +5,8 @@ Sake:
     - sakeId
     - category
     - name
+    - phonetic
+    - firstImageKey
     - likeCount
   properties:
     sakeId:
@@ -56,7 +58,11 @@ SakeDetail:
   required:
     - sakeId
     - name
+    - phonetic
     - category
+    - alcoholPercentage
+    - region
+    - memo
     - tags
     - images
     - likeCount

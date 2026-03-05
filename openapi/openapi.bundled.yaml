@@ -188,7 +188,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateStockRequest'
+              $ref: '#/components/schemas/CreateStockRequest'
       responses:
         '200':
           description: 在庫更新成功
@@ -414,7 +414,6 @@ components:
     ErrorResponse:
       type: object
       required:
-        - data
         - errors
       properties:
         data:
@@ -599,8 +598,8 @@ components:
       description: 在庫登録時に送信するお酒情報
       required:
         - name
-        - phonetic
         - category
+        - phonetic
         - alcoholPercentage
         - volumeMax
         - volumeRemain
@@ -694,35 +693,3 @@ components:
           $ref: '#/components/schemas/DateTime'
         updatedAt:
           $ref: '#/components/schemas/DateTime'
-    UpdateStockRequest:
-      type: object
-      description: 在庫更新時に送信するお酒情報（未指定項目は変更しない）
-      properties:
-        name:
-          $ref: '#/components/schemas/SakeName'
-        phonetic:
-          $ref: '#/components/schemas/SakePhonetic'
-        category:
-          $ref: '#/components/schemas/SakeCategory'
-        alcoholPercentage:
-          $ref: '#/components/schemas/SakeAlcoholPercentage'
-        volumeMax:
-          $ref: '#/components/schemas/SakeVolumeMax'
-        volumeRemain:
-          $ref: '#/components/schemas/SakeVolumeRemain'
-        region:
-          $ref: '#/components/schemas/SakeRegion'
-        price:
-          $ref: '#/components/schemas/SakePrice'
-        memo:
-          $ref: '#/components/schemas/SakeMemo'
-        tagNames:
-          type: array
-          items:
-            $ref: '#/components/schemas/SakeTagName'
-          description: タグ名前一覧
-        imageKeys:
-          type: array
-          items:
-            $ref: '#/components/schemas/SakeImageKey'
-          description: 表示順で指定する画像キー配列

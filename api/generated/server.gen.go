@@ -139,7 +139,7 @@ type DateTime = time.Time
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
 	// Data エラー時は常に null
-	Data *map[string]interface{} `json:"data"`
+	Data *map[string]interface{} `json:"data,omitempty"`
 
 	// Errors 発生したエラー情報の一覧
 	Errors []APIError `json:"errors"`
@@ -370,42 +370,6 @@ type StockDetail struct {
 	VolumeRemain *SakeVolumeRemain `json:"volumeRemain"`
 }
 
-// UpdateStockRequest 在庫更新時に送信するお酒情報（未指定項目は変更しない）
-type UpdateStockRequest struct {
-	// AlcoholPercentage アルコール度数
-	AlcoholPercentage *SakeAlcoholPercentage `json:"alcoholPercentage,omitempty"`
-
-	// Category 酒カテゴリ
-	Category *SakeCategory `json:"category,omitempty"`
-
-	// ImageKeys 表示順で指定する画像キー配列
-	ImageKeys *[]SakeImageKey `json:"imageKeys,omitempty"`
-
-	// Memo メモ
-	Memo *SakeMemo `json:"memo,omitempty"`
-
-	// Name 酒名
-	Name *SakeName `json:"name,omitempty"`
-
-	// Phonetic ふりがな
-	Phonetic *SakePhonetic `json:"phonetic,omitempty"`
-
-	// Price 価格（円）
-	Price *SakePrice `json:"price,omitempty"`
-
-	// Region 産地
-	Region *SakeRegion `json:"region,omitempty"`
-
-	// TagNames タグ名前一覧
-	TagNames *[]SakeTagName `json:"tagNames,omitempty"`
-
-	// VolumeMax 最大容量（ml）
-	VolumeMax *SakeVolumeMax `json:"volumeMax,omitempty"`
-
-	// VolumeRemain 残量（%）
-	VolumeRemain *SakeVolumeRemain `json:"volumeRemain,omitempty"`
-}
-
 // LikeToken defines model for LikeToken.
 type LikeToken = string
 
@@ -482,7 +446,7 @@ type ListStocksParams struct {
 type CreateStockJSONRequestBody = CreateStockRequest
 
 // UpdateStockJSONRequestBody defines body for UpdateStock for application/json ContentType.
-type UpdateStockJSONRequestBody = UpdateStockRequest
+type UpdateStockJSONRequestBody = CreateStockRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
