@@ -1,66 +1,25 @@
-SakeCategory:
-  type: string
-  description: お酒のカテゴリ区分
-  enum:
-    - JAPANESE_SAKE
-    - SHOCHU
-    - AWAMORI
-    - BEER
-    - WINE
-    - FRUIT_WINE
-    - LIQUEUR
-    - NON_ALCOHOL
-    - OTHER
-
-SakeImage:
-  type: object
-  required:
-    - id
-    - sakeId
-    - imageKey
-    - sortOrder
-    - createdAt
-  properties:
-    id:
-      type: string
-      format: uuid
-    sakeId:
-      type: string
-      format: uuid
-    imageKey:
-      type: string
-    sortOrder:
-      type: integer
-      format: int32
-      minimum: 0
-    createdAt:
-      type: string
-      format: date-time
-
 Sake:
   type: object
-  description: お酒一覧表示向けの基本情報
+  description: 酒情報
   required:
-    - id
+    - sakeId
     - category
     - name
+    - phonetic
+    - firstImageKey
   properties:
-    id:
-      type: string
-      format: uuid
+    sakeId:
+      $ref: "./common.yaml#/SakeID"
     category:
-      $ref: "#/SakeCategory"
+      $ref: "./stock.yaml#/SakeCategory"
     name:
-      type: string
-      maxLength: 50
+      $ref: "./stock.yaml#/SakeName"
     phonetic:
-      type: string
-      nullable: true
-      maxLength: 100
+      $ref: "./stock.yaml#/SakePhonetic"
     firstImageKey:
       type: string
       nullable: true
-      description: 先頭画像のキー（存在する場合）
+      description: サムネイル画像のキー（存在する場合）
 
 ListSakesResponse:
   type: object
@@ -73,157 +32,64 @@ ListSakesResponse:
       type: array
       items:
         $ref: "#/Sake"
+      description: 酒一覧情報
     meta:
       allOf:
         - $ref: "./common.yaml#/SakeListMeta"
+      description: ページネーション情報
 
 SakeTag:
   type: object
   required:
-    - id
+    - tagId
     - tag
   properties:
-    id:
-      type: string
-      format: uuid
+    tagId:
+      $ref: "#/SakeTagID"
     tag:
-      type: string
-      maxLength: 50
+      $ref: "#/SakeTagName"
 
 SakeDetail:
   type: object
   description: お酒の詳細情報
   required:
-    - id
+    - sakeId
     - name
+    - phonetic
     - category
+    - alcoholPercentage
+    - region
+    - memo
+    - tags
+    - images
     - createdAt
     - updatedAt
   properties:
-    id:
-      type: string
-      format: uuid
+    sakeId:
+      $ref: "./common.yaml#/SakeID"
     name:
-      type: string
-      maxLength: 50
+      $ref: "./stock.yaml#/SakeName"
     phonetic:
-      type: string
-      nullable: true
-      maxLength: 100
+      $ref: "./stock.yaml#/SakePhonetic"
     category:
-      $ref: "#/SakeCategory"
+      $ref: "./stock.yaml#/SakeCategory"
     alcoholPercentage:
-      type: number
-      format: float
-      nullable: true
-      minimum: 0
-      maximum: 100
-    volumeMax:
-      type: integer
-      format: int32
-      nullable: true
-      minimum: 1
-    volumeRemain:
-      type: integer
-      format: int32
-      nullable: true
-      minimum: 0
-      maximum: 100
+      $ref: "./stock.yaml#/SakeAlcoholPercentage"
     region:
-      type: string
-      nullable: true
-      maxLength: 100
-    price:
-      type: integer
-      format: int32
-      nullable: true
-      minimum: 0
+      $ref: "./stock.yaml#/SakeRegion"
     memo:
-      type: string
-      nullable: true
-      maxLength: 500
+      $ref: "./stock.yaml#/SakeMemo"
     tags:
       type: array
       items:
-        $ref: "#/SakeTag"
+        $ref: "./stock.yaml#/SakeTag"
+      description: タグ情報（名前昇順に配列）
     images:
       type: array
       items:
-        $ref: "#/SakeImage"
+        $ref: "./stock.yaml#/SakeImage"
+      description: 画像情報（表示順に配列）
     createdAt:
-      type: string
-      format: date-time
+      $ref: "./common.yaml#/DateTime"
     updatedAt:
-      type: string
-      format: date-time
-
-CreateSakeRequest:
-  type: object
-  description: 在庫登録時に送信するお酒情報
-  required:
-    - name
-    - category
-  properties:
-    name:
-      type: string
-      maxLength: 50
-    phonetic:
-      type: string
-      nullable: true
-      maxLength: 100
-    category:
-      $ref: "#/SakeCategory"
-    alcoholPercentage:
-      type: number
-      format: float
-      nullable: true
-      minimum: 0
-      maximum: 100
-    volumeMax:
-      type: integer
-      format: int32
-      nullable: true
-      minimum: 1
-    volumeRemain:
-      type: integer
-      format: int32
-      nullable: true
-      minimum: 0
-      maximum: 100
-    region:
-      type: string
-      nullable: true
-      maxLength: 100
-    price:
-      type: integer
-      format: int32
-      nullable: true
-      minimum: 0
-    memo:
-      type: string
-      nullable: true
-      maxLength: 500
-    tags:
-      type: array
-      items:
-        type: string
-        maxLength: 50
-    imageKeys:
-      type: array
-      description: 表示順で指定する画像キー配列
-      items:
-        type: string
-
-UpdateSakeRequest:
-  allOf:
-    - $ref: "#/CreateSakeRequest"
-
-CreateSakeResponse:
-  type: object
-  description: 在庫登録APIのレスポンス
-  required:
-    - data
-  properties:
-    data:
-      allOf:
-        - $ref: "#/Sake"
+      $ref: "./common.yaml#/DateTime"

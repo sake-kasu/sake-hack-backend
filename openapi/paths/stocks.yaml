@@ -12,7 +12,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/sake.yaml#/ListSakesResponse"
+            $ref: "../components/schemas/stock.yaml#/ListStockResponse"
     '400':
       $ref: "../components/responses/common.yaml#/BadRequest"
     '500':
@@ -28,14 +28,14 @@ post:
     content:
       application/json:
         schema:
-          $ref: "../components/schemas/sake.yaml#/CreateSakeRequest"
+          $ref: "../components/schemas/stock.yaml#/CreateStockRequest"
   responses:
     '201':
       description: 在庫登録成功
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/sake.yaml#/CreateSakeResponse"
+            $ref: "../components/schemas/stock.yaml#/StockDetail"
     '400':
       $ref: "../components/responses/common.yaml#/BadRequest"
     '500':

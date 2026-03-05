@@ -9,19 +9,42 @@ servers:
   - url: http://localhost:8080/api
     description: Local development server
 
+security: []
+
 tags:
+  - name: health
+    description: ヘルスチェックAPI
   - name: sakes
     description: 酒関連API
   - name: stocks
     description: 在庫管理API
 
+
 paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: ヘルスチェック
+      operationId: healthCheck
+      responses:
+        '200':
+          description: ヘルスチェック成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+        '500':
+          $ref: "./components/responses/common.yaml#/InternalServerError"
   /sakes:
     $ref: "./paths/sakes.yaml"
-  /sakes/{id}:
+  /sakes/{sakeId}:
     $ref: "./paths/sakeDetail.yaml"
   /stocks:
     $ref: "./paths/stocks.yaml"
-  /stocks/{id}:
+  /stocks/{sakeId}:
     $ref: "./paths/stockDetail.yaml"
-

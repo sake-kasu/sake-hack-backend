@@ -1,0 +1,284 @@
+SakeCategory:
+  type: string
+  description: 酒カテゴリ
+  enum:
+    - JAPANESE_SAKE
+    - SHOCHU
+    - AWAMORI
+    - BEER
+    - WINE
+    - FRUIT_WINE
+    - LIQUEUR
+    - NON_ALCOHOL
+    - OTHER
+
+SakeName:
+  type: string
+  maxLength: 50
+  description: 酒名
+
+SakePhonetic:
+  type: string
+  nullable: true
+  maxLength: 100
+  description: ふりがな
+
+SakeAlcoholPercentage:
+  type: number
+  format: float
+  nullable: true
+  minimum: 0
+  maximum: 100
+  description: アルコール度数
+
+SakeVolumeMax:
+  type: integer
+  nullable: true
+  minimum: 1
+  description: 最大容量（ml）
+
+SakeVolumeRemain:
+  type: integer
+  nullable: true
+  minimum: 0
+  maximum: 100
+  description: 残量（%）
+
+SakeRegion:
+  type: string
+  nullable: true
+  maxLength: 100
+  description: 産地
+
+SakePrice:
+  type: integer
+  nullable: true
+  minimum: 0
+  description: 価格（円）
+
+SakeMemo:
+  type: string
+  nullable: true
+  maxLength: 500
+  description: メモ
+  example: "このお酒は特別な日に飲むために買ったものです。"
+
+SakeImageKey:
+  type: string
+  description: 画像オブジェクトキー（S3などのストレージ上で一意な識別子）
+  example: "sakes/123e4567-e89b-12d3-a456-426614174000/image1.jpg"
+
+SakeSortOrder:
+  type: integer
+  minimum: 0
+  description: 画像表示順（0から始まる連番）
+  example: 0
+
+SakeTagID:
+  type: string
+  format: uuid
+  description: タグID
+
+SakeTagName:
+  type: string
+  maxLength: 50
+  description: タグ名
+
+SakeImage:
+  type: object
+  required:
+    - imageId
+    - imageKey
+    - sortOrder
+  properties:
+    imageId:
+      type: string
+      format: uuid
+      description: 酒イメージID
+    imageKey:
+      $ref: "#/SakeImageKey"
+    sortOrder:
+      $ref: "#/SakeSortOrder"
+
+Stock:
+  type: object
+  description: 在庫情報
+  required:
+    - sakeId
+    - category
+    - name
+    - phonetic
+    - firstImageKey
+  properties:
+    sakeId:
+      $ref: "./common.yaml#/SakeID"
+    category:
+      $ref: "#/SakeCategory"
+    name:
+      $ref: "#/SakeName"
+    phonetic:
+      $ref: "#/SakePhonetic"
+    firstImageKey:
+      type: string
+      nullable: true
+      description: サムネイル画像のキー（存在する場合）
+
+ListStockResponse:
+  type: object
+  description: 在庫一覧取得APIのレスポンス
+  required:
+    - data
+    - meta
+  properties:
+    data:
+      type: array
+      items:
+        $ref: "#/Stock"
+      description: 在庫一覧情報
+    meta:
+      allOf:
+        - $ref: "./common.yaml#/SakeListMeta"
+      description: ページネーション情報
+
+SakeTag:
+  type: object
+  required:
+    - tagId
+    - tagName
+  properties:
+    tagId:
+      $ref: "#/SakeTagID"
+    tagName:
+      $ref: "#/SakeTagName"
+
+StockDetail:
+  type: object
+  description: 在庫の詳細情報
+  required:
+    - sakeId
+    - name
+    - phonetic
+    - category
+    - alcoholPercentage
+    - volumeMax
+    - volumeRemain
+    - region
+    - price
+    - memo
+    - tags
+    - images
+    - createdAt
+    - updatedAt
+  properties:
+    sakeId:
+      $ref: "./common.yaml#/SakeID"
+    name:
+      $ref: "#/SakeName"
+    phonetic:
+      $ref: "#/SakePhonetic"
+    category:
+      $ref: "#/SakeCategory"
+    alcoholPercentage:
+      $ref: "#/SakeAlcoholPercentage"
+    volumeMax:
+      $ref: "#/SakeVolumeMax"
+    volumeRemain:
+      $ref: "#/SakeVolumeRemain"
+    region:
+      $ref: "#/SakeRegion"
+    price:
+      $ref: "#/SakePrice"
+    memo:
+      $ref: "#/SakeMemo"
+    tags:
+      type: array
+      items:
+        $ref: "#/SakeTag"
+      description: タグ情報（名前昇順に配列）
+    images:
+      type: array
+      items:
+        $ref: "#/SakeImage"
+      description: 画像情報（表示順に配列）
+    createdAt:
+      $ref: "./common.yaml#/DateTime"
+    updatedAt:
+      $ref: "./common.yaml#/DateTime"
+
+CreateStockRequest:
+  type: object
+  description: 在庫登録時に送信するお酒情報
+  required:
+    - name
+    - phonetic
+    - category
+    - alcoholPercentage
+    - volumeMax
+    - volumeRemain
+    - region
+    - price
+    - memo
+    - tagNames
+    - imageKeys
+  properties:
+    name:
+      $ref: "#/SakeName"
+    phonetic:
+      $ref: "#/SakePhonetic"
+    category:
+      $ref: "#/SakeCategory"
+    alcoholPercentage:
+      $ref: "#/SakeAlcoholPercentage"
+    volumeMax:
+      $ref: "#/SakeVolumeMax"
+    volumeRemain:
+      $ref: "#/SakeVolumeRemain"
+    region:
+      $ref: "#/SakeRegion"
+    price:
+      $ref: "#/SakePrice"
+    memo:
+      $ref: "#/SakeMemo"
+    tagNames:
+      type: array
+      items:
+        $ref: "#/SakeTagName"
+      description: タグ名前一覧
+    imageKeys:
+      type: array
+      items:
+        $ref: "#/SakeImageKey"
+      description: 表示順で指定する画像キー配列
+
+UpdateStockRequest:
+  type: object
+  description: 在庫更新時に送信するお酒情報（未指定項目は変更しない）
+  properties:
+    name:
+      $ref: "#/SakeName"
+    phonetic:
+      $ref: "#/SakePhonetic"
+    category:
+      $ref: "#/SakeCategory"
+    alcoholPercentage:
+      $ref: "#/SakeAlcoholPercentage"
+    volumeMax:
+      $ref: "#/SakeVolumeMax"
+    volumeRemain:
+      $ref: "#/SakeVolumeRemain"
+    region:
+      $ref: "#/SakeRegion"
+    price:
+      $ref: "#/SakePrice"
+    memo:
+      $ref: "#/SakeMemo"
+    tagNames:
+      type: array
+      items:
+        $ref: "#/SakeTagName"
+      description: タグ名前一覧
+    imageKeys:
+      type: array
+      items:
+        $ref: "#/SakeImageKey"
+      description: 表示順で指定する画像キー配列

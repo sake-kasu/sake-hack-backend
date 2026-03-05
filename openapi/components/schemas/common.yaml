@@ -20,6 +20,7 @@ ErrorResponse:
     - errors
   properties:
     data:
+      type: object
       nullable: true
       description: エラー時は常に null
     errors:
@@ -44,3 +45,13 @@ SakeListMeta:
     limit:
       type: integer
       description: 応答で適用された取得件数上限
+
+SakeID:
+  type: string
+  format: uuid
+  description: 酒ID
+
+DateTime:
+  type: string
+  format: date-time
+  description: 日時

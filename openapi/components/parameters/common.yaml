@@ -5,7 +5,6 @@ Offset:
   description: スキップする件数
   schema:
     type: integer
-    format: int32
     minimum: 0
 
 Limit:
@@ -15,24 +14,14 @@ Limit:
   description: 取得件数
   schema:
     type: integer
-    format: int32
     minimum: 1
     maximum: 100
 
 SakeId:
-  name: id
+  name: sakeId
   in: path
   required: true
   description: 酒ID
-  schema:
-    type: string
-    format: uuid
-
-StockId:
-  name: id
-  in: path
-  required: true
-  description: 在庫ID
   schema:
     type: string
     format: uuid
