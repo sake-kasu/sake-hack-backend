@@ -16,6 +16,8 @@ tags:
     description: ヘルスチェックAPI
   - name: sakes
     description: 酒関連API
+  - name: likes
+    description: いいねAPI
   - name: stocks
     description: 在庫管理API
 
@@ -41,6 +43,8 @@ paths:
     $ref: "./paths/sakes.yaml"
   /sakes/{sakeId}:
     $ref: "./paths/sakeDetail.yaml"
+  /sakes/{sakeId}/likes:
+    $ref: "./paths/sakeLikes.yaml"
   /stocks:
     $ref: "./paths/stocks.yaml"
   /stocks/{sakeId}:

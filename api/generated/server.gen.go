@@ -146,37 +146,7 @@ type ErrorResponse struct {
 }
 
 // LikeCount いいね件数
-type LikeCount struct {
-	// LikeCount 対象のお酒に付いているいいね件数
-	LikeCount int `json:"likeCount"`
-
-	// SakeId 酒ID
-	SakeId SakeID `json:"sakeId"`
-}
-
-// LikeCountResponse いいね件数取得APIのレスポンス
-type LikeCountResponse struct {
-	// Data いいね件数
-	Data LikeCount `json:"data"`
-}
-
-// LikeStatus いいね状態
-type LikeStatus struct {
-	// LikeCount 対象のお酒に付いているいいね件数
-	LikeCount int `json:"likeCount"`
-
-	// Liked 指定トークンで現在いいね済みかどうか
-	Liked bool `json:"liked"`
-
-	// SakeId 酒ID
-	SakeId SakeID `json:"sakeId"`
-}
-
-// LikeStatusResponse いいね登録・解除APIのレスポンス
-type LikeStatusResponse struct {
-	// Data いいね状態
-	Data LikeStatus `json:"data"`
-}
+type LikeCount = int
 
 // ListSakesResponse お酒一覧取得APIのレスポンス
 type ListSakesResponse struct {
@@ -203,6 +173,9 @@ type Sake struct {
 
 	// FirstImageKey サムネイル画像のキー（存在する場合）
 	FirstImageKey *string `json:"firstImageKey"`
+
+	// LikeCount いいね件数
+	LikeCount LikeCount `json:"likeCount"`
 
 	// Name 酒名
 	Name SakeName `json:"name"`
@@ -233,6 +206,9 @@ type SakeDetail struct {
 
 	// Images 画像情報（表示順に配列）
 	Images []SakeImage `json:"images"`
+
+	// LikeCount いいね件数
+	LikeCount LikeCount `json:"likeCount"`
 
 	// Memo メモ
 	Memo *SakeMemo `json:"memo"`
@@ -333,6 +309,9 @@ type Stock struct {
 	// FirstImageKey サムネイル画像のキー（存在する場合）
 	FirstImageKey *string `json:"firstImageKey"`
 
+	// LikeCount いいね件数
+	LikeCount LikeCount `json:"likeCount"`
+
 	// Name 酒名
 	Name SakeName `json:"name"`
 
@@ -356,6 +335,9 @@ type StockDetail struct {
 
 	// Images 画像情報（表示順に配列）
 	Images []SakeImage `json:"images"`
+
+	// LikeCount いいね件数
+	LikeCount LikeCount `json:"likeCount"`
 
 	// Memo メモ
 	Memo *SakeMemo `json:"memo"`
@@ -519,9 +501,6 @@ type ServerInterface interface {
 	// いいね登録
 	// (POST /sakes/{sakeId}/likes)
 	CreateSakeLike(c *gin.Context, sakeId SakeId, params CreateSakeLikeParams)
-	// いいね件数取得
-	// (GET /sakes/{sakeId}/likes/count)
-	GetSakeLikeCount(c *gin.Context, sakeId SakeId)
 	// 在庫一覧取得
 	// (GET /stocks)
 	ListStocks(c *gin.Context, params ListStocksParams)
@@ -735,30 +714,6 @@ func (siw *ServerInterfaceWrapper) CreateSakeLike(c *gin.Context) {
 	siw.Handler.CreateSakeLike(c, sakeId, params)
 }
 
-// GetSakeLikeCount operation middleware
-func (siw *ServerInterfaceWrapper) GetSakeLikeCount(c *gin.Context) {
-
-	var err error
-
-	// ------------- Path parameter "sakeId" -------------
-	var sakeId SakeId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "sakeId", c.Param("sakeId"), &sakeId, runtime.BindStyledParameterOptions{Explode: false, Required: true, Type: "string", Format: "uuid"})
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter sakeId: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetSakeLikeCount(c, sakeId)
-}
-
 // ListStocks operation middleware
 func (siw *ServerInterfaceWrapper) ListStocks(c *gin.Context) {
 
@@ -924,7 +879,6 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.GET(options.BaseURL+"/sakes/:sakeId", wrapper.GetSakeDetail)
 	router.DELETE(options.BaseURL+"/sakes/:sakeId/likes", wrapper.DeleteSakeLike)
 	router.POST(options.BaseURL+"/sakes/:sakeId/likes", wrapper.CreateSakeLike)
-	router.GET(options.BaseURL+"/sakes/:sakeId/likes/count", wrapper.GetSakeLikeCount)
 	router.GET(options.BaseURL+"/stocks", wrapper.ListStocks)
 	router.POST(options.BaseURL+"/stocks", wrapper.CreateStock)
 	router.DELETE(options.BaseURL+"/stocks/:sakeId", wrapper.DeleteStock)

@@ -1,0 +1,4 @@
+LikeCount:
+  type: integer
+  minimum: 0
+  description: いいね件数

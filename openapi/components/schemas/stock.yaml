@@ -107,8 +107,7 @@ Stock:
     - sakeId
     - category
     - name
-    - phonetic
-    - firstImageKey
+    - likeCount
   properties:
     sakeId:
       $ref: "./common.yaml#/SakeID"
@@ -122,6 +121,8 @@ Stock:
       type: string
       nullable: true
       description: サムネイル画像のキー（存在する場合）
+    likeCount:
+      $ref: "./like.yaml#/LikeCount"
 
 ListStockResponse:
   type: object
@@ -157,16 +158,10 @@ StockDetail:
   required:
     - sakeId
     - name
-    - phonetic
     - category
-    - alcoholPercentage
-    - volumeMax
-    - volumeRemain
-    - region
-    - price
-    - memo
     - tags
     - images
+    - likeCount
     - createdAt
     - updatedAt
   properties:
@@ -200,6 +195,8 @@ StockDetail:
       items:
         $ref: "#/SakeImage"
       description: 画像情報（表示順に配列）
+    likeCount:
+      $ref: "./like.yaml#/LikeCount"
     createdAt:
       $ref: "./common.yaml#/DateTime"
     updatedAt:
@@ -210,14 +207,7 @@ CreateStockRequest:
   description: 在庫登録時に送信するお酒情報
   required:
     - name
-    - phonetic
     - category
-    - alcoholPercentage
-    - volumeMax
-    - volumeRemain
-    - region
-    - price
-    - memo
     - tagNames
     - imageKeys
   properties:

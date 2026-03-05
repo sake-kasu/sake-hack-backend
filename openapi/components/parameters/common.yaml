@@ -25,3 +25,12 @@ SakeId:
   schema:
     type: string
     format: uuid
+
+LikeToken:
+  name: X-Like-Token
+  in: header
+  required: true
+  description: 匿名ユーザー識別用の一時トークン（UUID推奨）
+  schema:
+    type: string
+    minLength: 1

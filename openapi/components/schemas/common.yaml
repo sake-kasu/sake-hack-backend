@@ -16,7 +16,6 @@ APIError:
 ErrorResponse:
   type: object
   required:
-    - data
     - errors
   properties:
     data:

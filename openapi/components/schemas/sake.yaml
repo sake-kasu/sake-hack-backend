@@ -5,8 +5,7 @@ Sake:
     - sakeId
     - category
     - name
-    - phonetic
-    - firstImageKey
+    - likeCount
   properties:
     sakeId:
       $ref: "./common.yaml#/SakeID"
@@ -20,6 +19,8 @@ Sake:
       type: string
       nullable: true
       description: サムネイル画像のキー（存在する場合）
+    likeCount:
+      $ref: "./like.yaml#/LikeCount"
 
 ListSakesResponse:
   type: object
@@ -55,13 +56,10 @@ SakeDetail:
   required:
     - sakeId
     - name
-    - phonetic
     - category
-    - alcoholPercentage
-    - region
-    - memo
     - tags
     - images
+    - likeCount
     - createdAt
     - updatedAt
   properties:
@@ -89,6 +87,8 @@ SakeDetail:
       items:
         $ref: "./stock.yaml#/SakeImage"
       description: 画像情報（表示順に配列）
+    likeCount:
+      $ref: "./like.yaml#/LikeCount"
     createdAt:
       $ref: "./common.yaml#/DateTime"
     updatedAt:

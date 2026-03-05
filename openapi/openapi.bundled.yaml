@@ -14,6 +14,8 @@ tags:
     description: ヘルスチェックAPI
   - name: sakes
     description: 酒関連API
+  - name: likes
+    description: いいねAPI
   - name: stocks
     description: 在庫管理API
 paths:
@@ -27,65 +29,12 @@ paths:
         '200':
           description: ヘルスチェック成功
           content:
-            application/json:
+            text/plain:
               schema:
-                type: object
-                required:
-                  - status
-                  - timestamp
-                  - database
-                properties:
-                  status:
-                    type: string
-                    example: ok
-                  timestamp:
-                    type: string
-                    format: date-time
-                    description: 応答生成時刻(UTC)
-                  database:
-                    type: object
-                    properties:
-                      postgres:
-                        type: string
-                        enum:
-                          - ok
-                          - error
-                      valkey:
-                        type: string
-                        enum:
-                          - ok
-                          - error
+                type: string
+                example: ok
         '503':
-          description: 依存サービス異常(Degraded)
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - timestamp
-                  - database
-                properties:
-                  status:
-                    type: string
-                    example: degraded
-                  timestamp:
-                    type: string
-                    format: date-time
-                    description: 応答生成時刻(UTC)
-                  database:
-                    type: object
-                    properties:
-                      postgres:
-                        type: string
-                        enum:
-                          - ok
-                          - error
-                      valkey:
-                        type: string
-                        enum:
-                          - ok
-                          - error
+          $ref: '#/components/responses/ServiceUnavailable'
   /sakes:
     get:
       tags:
@@ -121,6 +70,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SakeDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /sakes/{sakeId}/likes:
+    post:
+      tags:
+        - likes
+      summary: いいね登録
+      operationId: createSakeLike
+      parameters:
+        - $ref: '#/components/parameters/SakeId'
+        - $ref: '#/components/parameters/LikeToken'
+      responses:
+        '204':
+          description: いいね登録成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - likes
+      summary: いいね解除
+      operationId: deleteSakeLike
+      parameters:
+        - $ref: '#/components/parameters/SakeId'
+        - $ref: '#/components/parameters/LikeToken'
+      responses:
+        '204':
+          description: いいね解除成功
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -233,6 +219,62 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 components:
+  responses:
+    ServiceUnavailable:
+      description: サービス利用不可（503）
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - status
+              - timestamp
+              - database
+            properties:
+              status:
+                type: string
+                example: degraded
+              timestamp:
+                type: string
+                format: date-time
+                description: 応答生成時刻(UTC)
+              database:
+                type: object
+                properties:
+                  postgres:
+                    type: string
+                    enum:
+                      - ok
+                      - error
+                  valkey:
+                    type: string
+                    enum:
+                      - ok
+                      - error
+    BadRequest:
+      description: リクエスト不正（400）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: サーバー内部エラー（500）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: リソースが見つからない（404）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: リソースの競合エラー（409）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   parameters:
     Offset:
       name: offset
@@ -259,6 +301,14 @@ components:
       schema:
         type: string
         format: uuid
+    LikeToken:
+      name: X-Like-Token
+      in: header
+      required: true
+      description: 匿名ユーザー識別用の一時トークン（UUID推奨）
+      schema:
+        type: string
+        minLength: 1
   schemas:
     SakeID:
       type: string
@@ -286,6 +336,10 @@ components:
       nullable: true
       maxLength: 100
       description: ふりがな
+    LikeCount:
+      type: integer
+      minimum: 0
+      description: いいね件数
     Sake:
       type: object
       description: 酒情報
@@ -295,6 +349,7 @@ components:
         - name
         - phonetic
         - firstImageKey
+        - likeCount
       properties:
         sakeId:
           $ref: '#/components/schemas/SakeID'
@@ -308,6 +363,8 @@ components:
           type: string
           nullable: true
           description: サムネイル画像のキー（存在する場合）
+        likeCount:
+          $ref: '#/components/schemas/LikeCount'
     SakeListMeta:
       type: object
       required:
@@ -446,6 +503,7 @@ components:
         - memo
         - tags
         - images
+        - likeCount
         - createdAt
         - updatedAt
       properties:
@@ -473,6 +531,8 @@ components:
           items:
             $ref: '#/components/schemas/SakeImage'
           description: 画像情報（表示順に配列）
+        likeCount:
+          $ref: '#/components/schemas/LikeCount'
         createdAt:
           $ref: '#/components/schemas/DateTime'
         updatedAt:
@@ -486,6 +546,7 @@ components:
         - name
         - phonetic
         - firstImageKey
+        - likeCount
       properties:
         sakeId:
           $ref: '#/components/schemas/SakeID'
@@ -499,6 +560,8 @@ components:
           type: string
           nullable: true
           description: サムネイル画像のキー（存在する場合）
+        likeCount:
+          $ref: '#/components/schemas/LikeCount'
     ListStockResponse:
       type: object
       description: 在庫一覧取得APIのレスポンス
@@ -591,6 +654,7 @@ components:
         - memo
         - tags
         - images
+        - likeCount
         - createdAt
         - updatedAt
       properties:
@@ -624,6 +688,8 @@ components:
           items:
             $ref: '#/components/schemas/SakeImage'
           description: 画像情報（表示順に配列）
+        likeCount:
+          $ref: '#/components/schemas/LikeCount'
         createdAt:
           $ref: '#/components/schemas/DateTime'
         updatedAt:
@@ -660,22 +726,3 @@ components:
           items:
             $ref: '#/components/schemas/SakeImageKey'
           description: 表示順で指定する画像キー配列
-  responses:
-    BadRequest:
-      description: リクエスト不正
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalServerError:
-      description: サーバー内部エラー
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: リソースが見つからない
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
