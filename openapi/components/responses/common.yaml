@@ -1,33 +1,61 @@
 BadRequest:
-  description: リクエスト不正
+  description: リクエスト不正（400）
   content:
     application/json:
       schema:
         $ref: "../schemas/common.yaml#/ErrorResponse"
 
 NotFound:
-  description: リソースが見つからない
+  description: リソースが見つからない（404）
   content:
     application/json:
       schema:
         $ref: "../schemas/common.yaml#/ErrorResponse"
 
 InternalServerError:
-  description: サーバー内部エラー
+  description: サーバー内部エラー（500）
   content:
     application/json:
       schema:
         $ref: "../schemas/common.yaml#/ErrorResponse"
 
+ServiceUnavailable:
+  description: サービス利用不可（503）
+  content:
+    application/json:
+      schema:
+        type: object
+        required:
+          - status
+          - timestamp
+          - database
+        properties:
+          status:
+            type: string
+            example: degraded
+          timestamp:
+            type: string
+            format: date-time
+            description: 応答生成時刻(UTC)
+          database:
+            type: object
+            properties:
+              postgres:
+                type: string
+                enum: [ok, error]
+              valkey:
+                type: string
+                enum: [ok, error]
+
 Unauthorized:
-  description: 認証失敗
+  description: 認証失敗（401）
   content:
     application/json:
       schema:
         $ref: "../schemas/common.yaml#/ErrorResponse"
 
 Forbidden:
-  description: 権限エラー
+  description: 権限エラー（403）
   content:
     application/json:
       schema:
@@ -35,7 +63,7 @@ Forbidden:
 
 
 Conflict:
-  description: リソースの競合エラー
+  description: リソースの競合エラー（409）
   content:
     application/json:
       schema:

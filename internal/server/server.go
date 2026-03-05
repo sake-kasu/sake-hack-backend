@@ -131,8 +131,11 @@ type HealthCheckDatabaseResponse struct {
 
 // setupRoutes はルートを設定する
 func (s *Server) setupRoutes() {
+	// APIグループを作成(/apiプレフィックス)
+	apiGroup := s.router.Group("/api")
+
 	// ヘルスチェックエンドポイント
-	s.router.GET("/health", s.handleHealth)
+	apiGroup.GET("/health", s.handleHealth)
 
 	// Query + Repository
 	sakeQuery := sakeInfraQuery.NewSakeQuery(s.postgresPool)
@@ -153,9 +156,6 @@ func (s *Server) setupRoutes() {
 		updateStockUC,
 		deleteStockUC,
 	)
-
-	// APIグループを作成(/apiプレフィックス)
-	apiGroup := s.router.Group("/api")
 
 	// OpenAPI ServerInterfaceをGinに登録
 	generated.RegisterHandlers(apiGroup, sakeServer)
@@ -196,5 +196,10 @@ func (s *Server) handleHealth(c *gin.Context) {
 		statusCode = http.StatusServiceUnavailable
 	}
 
-	c.JSON(statusCode, response)
+	if statusCode == http.StatusOK {
+		c.String(http.StatusOK, "ok")
+		return
+	}
+
+	c.JSON(http.StatusServiceUnavailable, response)
 }

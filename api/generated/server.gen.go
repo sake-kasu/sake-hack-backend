@@ -52,6 +52,42 @@ func (e SakeCategory) Valid() bool {
 	}
 }
 
+// Defines values for ServiceUnavailableDatabasePostgres.
+const (
+	ServiceUnavailableDatabasePostgresError ServiceUnavailableDatabasePostgres = "error"
+	ServiceUnavailableDatabasePostgresOk    ServiceUnavailableDatabasePostgres = "ok"
+)
+
+// Valid indicates whether the value is a known member of the ServiceUnavailableDatabasePostgres enum.
+func (e ServiceUnavailableDatabasePostgres) Valid() bool {
+	switch e {
+	case ServiceUnavailableDatabasePostgresError:
+		return true
+	case ServiceUnavailableDatabasePostgresOk:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ServiceUnavailableDatabaseValkey.
+const (
+	ServiceUnavailableDatabaseValkeyError ServiceUnavailableDatabaseValkey = "error"
+	ServiceUnavailableDatabaseValkeyOk    ServiceUnavailableDatabaseValkey = "ok"
+)
+
+// Valid indicates whether the value is a known member of the ServiceUnavailableDatabaseValkey enum.
+func (e ServiceUnavailableDatabaseValkey) Valid() bool {
+	switch e {
+	case ServiceUnavailableDatabaseValkeyError:
+		return true
+	case ServiceUnavailableDatabaseValkeyOk:
+		return true
+	default:
+		return false
+	}
+}
+
 // APIError defines model for APIError.
 type APIError struct {
 	// Code アプリケーション側で定義したエラーコード
@@ -107,6 +143,39 @@ type ErrorResponse struct {
 
 	// Errors 発生したエラー情報の一覧
 	Errors []APIError `json:"errors"`
+}
+
+// LikeCount いいね件数
+type LikeCount struct {
+	// LikeCount 対象のお酒に付いているいいね件数
+	LikeCount int `json:"likeCount"`
+
+	// SakeId 酒ID
+	SakeId SakeID `json:"sakeId"`
+}
+
+// LikeCountResponse いいね件数取得APIのレスポンス
+type LikeCountResponse struct {
+	// Data いいね件数
+	Data LikeCount `json:"data"`
+}
+
+// LikeStatus いいね状態
+type LikeStatus struct {
+	// LikeCount 対象のお酒に付いているいいね件数
+	LikeCount int `json:"likeCount"`
+
+	// Liked 指定トークンで現在いいね済みかどうか
+	Liked bool `json:"liked"`
+
+	// SakeId 酒ID
+	SakeId SakeID `json:"sakeId"`
+}
+
+// LikeStatusResponse いいね登録・解除APIのレスポンス
+type LikeStatusResponse struct {
+	// Data いいね状態
+	Data LikeStatus `json:"data"`
 }
 
 // ListSakesResponse お酒一覧取得APIのレスポンス
@@ -355,6 +424,9 @@ type UpdateStockRequest struct {
 	VolumeRemain *SakeVolumeRemain `json:"volumeRemain,omitempty"`
 }
 
+// LikeToken defines model for LikeToken.
+type LikeToken = string
+
 // Limit defines model for Limit.
 type Limit = int
 
@@ -367,11 +439,32 @@ type SakeId = openapi_types.UUID
 // BadRequest defines model for BadRequest.
 type BadRequest = ErrorResponse
 
+// Conflict defines model for Conflict.
+type Conflict = ErrorResponse
+
 // InternalServerError defines model for InternalServerError.
 type InternalServerError = ErrorResponse
 
 // NotFound defines model for NotFound.
 type NotFound = ErrorResponse
+
+// ServiceUnavailable defines model for ServiceUnavailable.
+type ServiceUnavailable struct {
+	Database struct {
+		Postgres *ServiceUnavailableDatabasePostgres `json:"postgres,omitempty"`
+		Valkey   *ServiceUnavailableDatabaseValkey   `json:"valkey,omitempty"`
+	} `json:"database"`
+	Status string `json:"status"`
+
+	// Timestamp 応答生成時刻(UTC)
+	Timestamp time.Time `json:"timestamp"`
+}
+
+// ServiceUnavailableDatabasePostgres defines model for ServiceUnavailable.Database.Postgres.
+type ServiceUnavailableDatabasePostgres string
+
+// ServiceUnavailableDatabaseValkey defines model for ServiceUnavailable.Database.Valkey.
+type ServiceUnavailableDatabaseValkey string
 
 // ListSakesParams defines parameters for ListSakes.
 type ListSakesParams struct {
@@ -380,6 +473,18 @@ type ListSakesParams struct {
 
 	// Limit 取得件数
 	Limit Limit `form:"limit" json:"limit"`
+}
+
+// DeleteSakeLikeParams defines parameters for DeleteSakeLike.
+type DeleteSakeLikeParams struct {
+	// XLikeToken 匿名ユーザー識別用の一時トークン（UUID推奨）
+	XLikeToken LikeToken `json:"X-Like-Token"`
+}
+
+// CreateSakeLikeParams defines parameters for CreateSakeLike.
+type CreateSakeLikeParams struct {
+	// XLikeToken 匿名ユーザー識別用の一時トークン（UUID推奨）
+	XLikeToken LikeToken `json:"X-Like-Token"`
 }
 
 // ListStocksParams defines parameters for ListStocks.
@@ -408,6 +513,15 @@ type ServerInterface interface {
 	// 酒詳細取得
 	// (GET /sakes/{sakeId})
 	GetSakeDetail(c *gin.Context, sakeId SakeId)
+	// いいね解除
+	// (DELETE /sakes/{sakeId}/likes)
+	DeleteSakeLike(c *gin.Context, sakeId SakeId, params DeleteSakeLikeParams)
+	// いいね登録
+	// (POST /sakes/{sakeId}/likes)
+	CreateSakeLike(c *gin.Context, sakeId SakeId, params CreateSakeLikeParams)
+	// いいね件数取得
+	// (GET /sakes/{sakeId}/likes/count)
+	GetSakeLikeCount(c *gin.Context, sakeId SakeId)
 	// 在庫一覧取得
 	// (GET /stocks)
 	ListStocks(c *gin.Context, params ListStocksParams)
@@ -517,6 +631,132 @@ func (siw *ServerInterfaceWrapper) GetSakeDetail(c *gin.Context) {
 	}
 
 	siw.Handler.GetSakeDetail(c, sakeId)
+}
+
+// DeleteSakeLike operation middleware
+func (siw *ServerInterfaceWrapper) DeleteSakeLike(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "sakeId" -------------
+	var sakeId SakeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sakeId", c.Param("sakeId"), &sakeId, runtime.BindStyledParameterOptions{Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter sakeId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteSakeLikeParams
+
+	headers := c.Request.Header
+
+	// ------------- Required header parameter "X-Like-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Like-Token")]; found {
+		var XLikeToken LikeToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Like-Token, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Like-Token", valueList[0], &XLikeToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Like-Token: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XLikeToken = XLikeToken
+
+	} else {
+		siw.ErrorHandler(c, fmt.Errorf("Header parameter X-Like-Token is required, but not found"), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.DeleteSakeLike(c, sakeId, params)
+}
+
+// CreateSakeLike operation middleware
+func (siw *ServerInterfaceWrapper) CreateSakeLike(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "sakeId" -------------
+	var sakeId SakeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sakeId", c.Param("sakeId"), &sakeId, runtime.BindStyledParameterOptions{Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter sakeId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateSakeLikeParams
+
+	headers := c.Request.Header
+
+	// ------------- Required header parameter "X-Like-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Like-Token")]; found {
+		var XLikeToken LikeToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Like-Token, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Like-Token", valueList[0], &XLikeToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Like-Token: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XLikeToken = XLikeToken
+
+	} else {
+		siw.ErrorHandler(c, fmt.Errorf("Header parameter X-Like-Token is required, but not found"), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.CreateSakeLike(c, sakeId, params)
+}
+
+// GetSakeLikeCount operation middleware
+func (siw *ServerInterfaceWrapper) GetSakeLikeCount(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "sakeId" -------------
+	var sakeId SakeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sakeId", c.Param("sakeId"), &sakeId, runtime.BindStyledParameterOptions{Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter sakeId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetSakeLikeCount(c, sakeId)
 }
 
 // ListStocks operation middleware
@@ -682,6 +922,9 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.GET(options.BaseURL+"/health", wrapper.HealthCheck)
 	router.GET(options.BaseURL+"/sakes", wrapper.ListSakes)
 	router.GET(options.BaseURL+"/sakes/:sakeId", wrapper.GetSakeDetail)
+	router.DELETE(options.BaseURL+"/sakes/:sakeId/likes", wrapper.DeleteSakeLike)
+	router.POST(options.BaseURL+"/sakes/:sakeId/likes", wrapper.CreateSakeLike)
+	router.GET(options.BaseURL+"/sakes/:sakeId/likes/count", wrapper.GetSakeLikeCount)
 	router.GET(options.BaseURL+"/stocks", wrapper.ListStocks)
 	router.POST(options.BaseURL+"/stocks", wrapper.CreateStock)
 	router.DELETE(options.BaseURL+"/stocks/:sakeId", wrapper.DeleteStock)

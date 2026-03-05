@@ -31,15 +31,12 @@ paths:
         '200':
           description: ヘルスチェック成功
           content:
-            application/json:
+            text/plain:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-        '500':
-          $ref: "./components/responses/common.yaml#/InternalServerError"
+                type: string
+                example: ok
+        '503':
+          $ref: "./components/responses/common.yaml#/ServiceUnavailable"
   /sakes:
     $ref: "./paths/sakes.yaml"
   /sakes/{sakeId}:
