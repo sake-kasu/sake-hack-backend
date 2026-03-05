@@ -1,0 +1,681 @@
+openapi: 3.0.3
+info:
+  title: Sake Hack Backend API
+  version: 2.0.0
+  description: |
+    Sake Hack Backend API (v2)
+    実装（internal/features/sake/presentation）に準拠した仕様。
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+security: []
+tags:
+  - name: health
+    description: ヘルスチェックAPI
+  - name: sakes
+    description: 酒関連API
+  - name: stocks
+    description: 在庫管理API
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: ヘルスチェック
+      operationId: healthCheck
+      responses:
+        '200':
+          description: ヘルスチェック成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - timestamp
+                  - database
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: 応答生成時刻(UTC)
+                  database:
+                    type: object
+                    properties:
+                      postgres:
+                        type: string
+                        enum:
+                          - ok
+                          - error
+                      valkey:
+                        type: string
+                        enum:
+                          - ok
+                          - error
+        '503':
+          description: 依存サービス異常(Degraded)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - timestamp
+                  - database
+                properties:
+                  status:
+                    type: string
+                    example: degraded
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: 応答生成時刻(UTC)
+                  database:
+                    type: object
+                    properties:
+                      postgres:
+                        type: string
+                        enum:
+                          - ok
+                          - error
+                      valkey:
+                        type: string
+                        enum:
+                          - ok
+                          - error
+  /sakes:
+    get:
+      tags:
+        - sakes
+      summary: 酒一覧取得
+      operationId: listSakes
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: 酒一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSakesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /sakes/{sakeId}:
+    get:
+      tags:
+        - sakes
+      summary: 酒詳細取得
+      operationId: getSakeDetail
+      parameters:
+        - $ref: '#/components/parameters/SakeId'
+      responses:
+        '200':
+          description: 酒詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SakeDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /stocks:
+    get:
+      tags:
+        - stocks
+      summary: 在庫一覧取得
+      operationId: listStocks
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: 在庫一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListStockResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - stocks
+      summary: 在庫登録
+      operationId: createStock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStockRequest'
+      responses:
+        '201':
+          description: 在庫登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /stocks/{sakeId}:
+    get:
+      tags:
+        - stocks
+      summary: 在庫詳細取得
+      operationId: getStockDetail
+      parameters:
+        - $ref: '#/components/parameters/SakeId'
+      responses:
+        '200':
+          description: 在庫詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - stocks
+      summary: 在庫更新
+      operationId: updateStock
+      parameters:
+        - $ref: '#/components/parameters/SakeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStockRequest'
+      responses:
+        '200':
+          description: 在庫更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - stocks
+      summary: 在庫削除
+      operationId: deleteStock
+      parameters:
+        - $ref: '#/components/parameters/SakeId'
+      responses:
+        '204':
+          description: 在庫削除成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  parameters:
+    Offset:
+      name: offset
+      in: query
+      required: true
+      description: スキップする件数
+      schema:
+        type: integer
+        minimum: 0
+    Limit:
+      name: limit
+      in: query
+      required: true
+      description: 取得件数
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+    SakeId:
+      name: sakeId
+      in: path
+      required: true
+      description: 酒ID
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    SakeID:
+      type: string
+      format: uuid
+      description: 酒ID
+    SakeCategory:
+      type: string
+      description: 酒カテゴリ
+      enum:
+        - JAPANESE_SAKE
+        - SHOCHU
+        - AWAMORI
+        - BEER
+        - WINE
+        - FRUIT_WINE
+        - LIQUEUR
+        - NON_ALCOHOL
+        - OTHER
+    SakeName:
+      type: string
+      maxLength: 50
+      description: 酒名
+    SakePhonetic:
+      type: string
+      nullable: true
+      maxLength: 100
+      description: ふりがな
+    Sake:
+      type: object
+      description: 酒情報
+      required:
+        - sakeId
+        - category
+        - name
+        - phonetic
+        - firstImageKey
+      properties:
+        sakeId:
+          $ref: '#/components/schemas/SakeID'
+        category:
+          $ref: '#/components/schemas/SakeCategory'
+        name:
+          $ref: '#/components/schemas/SakeName'
+        phonetic:
+          $ref: '#/components/schemas/SakePhonetic'
+        firstImageKey:
+          type: string
+          nullable: true
+          description: サムネイル画像のキー（存在する場合）
+    SakeListMeta:
+      type: object
+      required:
+        - total
+        - offset
+        - limit
+      properties:
+        total:
+          type: integer
+          description: 条件に一致する総件数
+        offset:
+          type: integer
+          description: 応答で適用されたオフセット値
+        limit:
+          type: integer
+          description: 応答で適用された取得件数上限
+    ListSakesResponse:
+      type: object
+      description: お酒一覧取得APIのレスポンス
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sake'
+          description: 酒一覧情報
+        meta:
+          allOf:
+            - $ref: '#/components/schemas/SakeListMeta'
+          description: ページネーション情報
+    APIError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: アプリケーション側で定義したエラーコード
+          example: W0001
+        message:
+          type: string
+          description: ユーザー向けのエラー説明メッセージ
+          example: 'offset: オフセットは0以上である必要があります'
+    ErrorResponse:
+      type: object
+      required:
+        - data
+        - errors
+      properties:
+        data:
+          type: object
+          nullable: true
+          description: エラー時は常に null
+        errors:
+          type: array
+          description: 発生したエラー情報の一覧
+          items:
+            $ref: '#/components/schemas/APIError'
+    SakeAlcoholPercentage:
+      type: number
+      format: float
+      nullable: true
+      minimum: 0
+      maximum: 100
+      description: アルコール度数
+    SakeRegion:
+      type: string
+      nullable: true
+      maxLength: 100
+      description: 産地
+    SakeMemo:
+      type: string
+      nullable: true
+      maxLength: 500
+      description: メモ
+      example: このお酒は特別な日に飲むために買ったものです。
+    SakeTagID:
+      type: string
+      format: uuid
+      description: タグID
+    SakeTagName:
+      type: string
+      maxLength: 50
+      description: タグ名
+    SakeTag:
+      type: object
+      required:
+        - tagId
+        - tagName
+      properties:
+        tagId:
+          $ref: '#/components/schemas/SakeTagID'
+        tagName:
+          $ref: '#/components/schemas/SakeTagName'
+    SakeImageKey:
+      type: string
+      description: 画像オブジェクトキー（S3などのストレージ上で一意な識別子）
+      example: sakes/123e4567-e89b-12d3-a456-426614174000/image1.jpg
+    SakeSortOrder:
+      type: integer
+      minimum: 0
+      description: 画像表示順（0から始まる連番）
+      example: 0
+    SakeImage:
+      type: object
+      required:
+        - imageId
+        - imageKey
+        - sortOrder
+      properties:
+        imageId:
+          type: string
+          format: uuid
+          description: 酒イメージID
+        imageKey:
+          $ref: '#/components/schemas/SakeImageKey'
+        sortOrder:
+          $ref: '#/components/schemas/SakeSortOrder'
+    DateTime:
+      type: string
+      format: date-time
+      description: 日時
+    SakeDetail:
+      type: object
+      description: お酒の詳細情報
+      required:
+        - sakeId
+        - name
+        - phonetic
+        - category
+        - alcoholPercentage
+        - region
+        - memo
+        - tags
+        - images
+        - createdAt
+        - updatedAt
+      properties:
+        sakeId:
+          $ref: '#/components/schemas/SakeID'
+        name:
+          $ref: '#/components/schemas/SakeName'
+        phonetic:
+          $ref: '#/components/schemas/SakePhonetic'
+        category:
+          $ref: '#/components/schemas/SakeCategory'
+        alcoholPercentage:
+          $ref: '#/components/schemas/SakeAlcoholPercentage'
+        region:
+          $ref: '#/components/schemas/SakeRegion'
+        memo:
+          $ref: '#/components/schemas/SakeMemo'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/SakeTag'
+          description: タグ情報（名前昇順に配列）
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/SakeImage'
+          description: 画像情報（表示順に配列）
+        createdAt:
+          $ref: '#/components/schemas/DateTime'
+        updatedAt:
+          $ref: '#/components/schemas/DateTime'
+    Stock:
+      type: object
+      description: 在庫情報
+      required:
+        - sakeId
+        - category
+        - name
+        - phonetic
+        - firstImageKey
+      properties:
+        sakeId:
+          $ref: '#/components/schemas/SakeID'
+        category:
+          $ref: '#/components/schemas/SakeCategory'
+        name:
+          $ref: '#/components/schemas/SakeName'
+        phonetic:
+          $ref: '#/components/schemas/SakePhonetic'
+        firstImageKey:
+          type: string
+          nullable: true
+          description: サムネイル画像のキー（存在する場合）
+    ListStockResponse:
+      type: object
+      description: 在庫一覧取得APIのレスポンス
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Stock'
+          description: 在庫一覧情報
+        meta:
+          allOf:
+            - $ref: '#/components/schemas/SakeListMeta'
+          description: ページネーション情報
+    SakeVolumeMax:
+      type: integer
+      nullable: true
+      minimum: 1
+      description: 最大容量（ml）
+    SakeVolumeRemain:
+      type: integer
+      nullable: true
+      minimum: 0
+      maximum: 100
+      description: 残量（%）
+    SakePrice:
+      type: integer
+      nullable: true
+      minimum: 0
+      description: 価格（円）
+    CreateStockRequest:
+      type: object
+      description: 在庫登録時に送信するお酒情報
+      required:
+        - name
+        - phonetic
+        - category
+        - alcoholPercentage
+        - volumeMax
+        - volumeRemain
+        - region
+        - price
+        - memo
+        - tagNames
+        - imageKeys
+      properties:
+        name:
+          $ref: '#/components/schemas/SakeName'
+        phonetic:
+          $ref: '#/components/schemas/SakePhonetic'
+        category:
+          $ref: '#/components/schemas/SakeCategory'
+        alcoholPercentage:
+          $ref: '#/components/schemas/SakeAlcoholPercentage'
+        volumeMax:
+          $ref: '#/components/schemas/SakeVolumeMax'
+        volumeRemain:
+          $ref: '#/components/schemas/SakeVolumeRemain'
+        region:
+          $ref: '#/components/schemas/SakeRegion'
+        price:
+          $ref: '#/components/schemas/SakePrice'
+        memo:
+          $ref: '#/components/schemas/SakeMemo'
+        tagNames:
+          type: array
+          items:
+            $ref: '#/components/schemas/SakeTagName'
+          description: タグ名前一覧
+        imageKeys:
+          type: array
+          items:
+            $ref: '#/components/schemas/SakeImageKey'
+          description: 表示順で指定する画像キー配列
+    StockDetail:
+      type: object
+      description: 在庫の詳細情報
+      required:
+        - sakeId
+        - name
+        - phonetic
+        - category
+        - alcoholPercentage
+        - volumeMax
+        - volumeRemain
+        - region
+        - price
+        - memo
+        - tags
+        - images
+        - createdAt
+        - updatedAt
+      properties:
+        sakeId:
+          $ref: '#/components/schemas/SakeID'
+        name:
+          $ref: '#/components/schemas/SakeName'
+        phonetic:
+          $ref: '#/components/schemas/SakePhonetic'
+        category:
+          $ref: '#/components/schemas/SakeCategory'
+        alcoholPercentage:
+          $ref: '#/components/schemas/SakeAlcoholPercentage'
+        volumeMax:
+          $ref: '#/components/schemas/SakeVolumeMax'
+        volumeRemain:
+          $ref: '#/components/schemas/SakeVolumeRemain'
+        region:
+          $ref: '#/components/schemas/SakeRegion'
+        price:
+          $ref: '#/components/schemas/SakePrice'
+        memo:
+          $ref: '#/components/schemas/SakeMemo'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/SakeTag'
+          description: タグ情報（名前昇順に配列）
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/SakeImage'
+          description: 画像情報（表示順に配列）
+        createdAt:
+          $ref: '#/components/schemas/DateTime'
+        updatedAt:
+          $ref: '#/components/schemas/DateTime'
+    UpdateStockRequest:
+      type: object
+      description: 在庫更新時に送信するお酒情報（未指定項目は変更しない）
+      properties:
+        name:
+          $ref: '#/components/schemas/SakeName'
+        phonetic:
+          $ref: '#/components/schemas/SakePhonetic'
+        category:
+          $ref: '#/components/schemas/SakeCategory'
+        alcoholPercentage:
+          $ref: '#/components/schemas/SakeAlcoholPercentage'
+        volumeMax:
+          $ref: '#/components/schemas/SakeVolumeMax'
+        volumeRemain:
+          $ref: '#/components/schemas/SakeVolumeRemain'
+        region:
+          $ref: '#/components/schemas/SakeRegion'
+        price:
+          $ref: '#/components/schemas/SakePrice'
+        memo:
+          $ref: '#/components/schemas/SakeMemo'
+        tagNames:
+          type: array
+          items:
+            $ref: '#/components/schemas/SakeTagName'
+          description: タグ名前一覧
+        imageKeys:
+          type: array
+          items:
+            $ref: '#/components/schemas/SakeImageKey'
+          description: 表示順で指定する画像キー配列
+  responses:
+    BadRequest:
+      description: リクエスト不正
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: サーバー内部エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: リソースが見つからない
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

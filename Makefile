@@ -170,11 +170,11 @@ submodule-status: ## サブモジュールの状態を確認
 openapi-generate: ## OpenAPI仕様からコードを自動生成
 	@echo "🤖 OpenAPI仕様からコードを生成しています..."
 	@echo "📦 Step 1: OpenAPI仕様をバンドルしています..."
-	@npx @redocly/cli bundle api/openapi.yaml -o api/openapi.bundled.yaml
+	@npx @redocly/cli bundle openapi/openapi.yaml -o openapi/openapi.bundled.yaml
 	@echo "⚙️  Step 2: Goコードを生成しています..."
 	@mkdir -p api/generated
 	@go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest \
-		-config api/oapi-codegen.yaml api/openapi.bundled.yaml
+		-config openapi/oapi-codegen.yaml openapi/openapi.bundled.yaml
 
 openapi-gendoc: ## APIドキュメントを生成
 	@echo "📚 APIドキュメントを生成しています..."
