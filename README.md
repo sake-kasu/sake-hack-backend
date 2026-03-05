@@ -75,7 +75,7 @@ cd ..
 ### 5. マイグレーション実行
 
 ```bash
-make migrate-up
+make migrate-up DB_PORT=5434
 ```
 
 ### 6. コード生成
