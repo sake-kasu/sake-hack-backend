@@ -6,9 +6,11 @@ APIError:
   properties:
     code:
       type: string
+      description: アプリケーション側で定義したエラーコード
       example: W0001
     message:
       type: string
+      description: ユーザー向けのエラー説明メッセージ
       example: "offset: オフセットは0以上である必要があります"
 
 ErrorResponse:
@@ -22,6 +24,7 @@ ErrorResponse:
       description: エラー時は常に null
     errors:
       type: array
+      description: 発生したエラー情報の一覧
       items:
         $ref: "#/APIError"
 
@@ -34,10 +37,10 @@ SakeListMeta:
   properties:
     total:
       type: integer
-      format: int64
+      description: 条件に一致する総件数
     offset:
       type: integer
-      format: int32
+      description: 応答で適用されたオフセット値
     limit:
       type: integer
-      format: int32
+      description: 応答で適用された取得件数上限

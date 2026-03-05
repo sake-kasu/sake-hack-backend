@@ -1,5 +1,6 @@
 SakeCategory:
   type: string
+  description: お酒のカテゴリ区分
   enum:
     - JAPANESE_SAKE
     - SHOCHU
@@ -11,26 +12,59 @@ SakeCategory:
     - NON_ALCOHOL
     - OTHER
 
+SakeImage:
+  type: object
+  required:
+    - id
+    - sakeId
+    - imageKey
+    - sortOrder
+    - createdAt
+  properties:
+    id:
+      type: string
+      format: uuid
+    sakeId:
+      type: string
+      format: uuid
+    imageKey:
+      type: string
+    sortOrder:
+      type: integer
+      format: int32
+      minimum: 0
+    createdAt:
+      type: string
+      format: date-time
+
 Sake:
   type: object
+  description: お酒一覧表示向けの基本情報
   required:
     - id
     - category
     - name
-    - imagePreview
   properties:
     id:
-      type: integer
-      format: int32
+      type: string
+      format: uuid
     category:
       $ref: "#/SakeCategory"
     name:
       type: string
-    imagePreview:
+      maxLength: 50
+    phonetic:
       type: string
+      nullable: true
+      maxLength: 100
+    firstImageKey:
+      type: string
+      nullable: true
+      description: 先頭画像のキー（存在する場合）
 
 ListSakesResponse:
   type: object
+  description: お酒一覧取得APIのレスポンス
   required:
     - data
     - meta
@@ -40,126 +74,82 @@ ListSakesResponse:
       items:
         $ref: "#/Sake"
     meta:
-      $ref: "./common.yaml#/SakeListMeta"
+      allOf:
+        - $ref: "./common.yaml#/SakeListMeta"
 
-SakeKind:
+SakeTag:
   type: object
   required:
     - id
-    - name
+    - tag
   properties:
     id:
-      type: integer
-      format: int32
-    name:
       type: string
-
-Brewery:
-  type: object
-  required:
-    - id
-    - name
-    - originCountry
-  properties:
-    id:
-      type: integer
-      format: int32
-    name:
+      format: uuid
+    tag:
       type: string
-    originCountry:
-      type: string
-    originRegion:
-      type: string
-      nullable: true
-    latitude:
-      type: number
-      format: double
-      nullable: true
-    longitude:
-      type: number
-      format: double
-      nullable: true
-
-SakeName:
-  type: object
-  required:
-    - name
-    - phonetic
-  properties:
-    name:
-      type: string
-    phonetic:
-      type: string
-
-DrinkStyle:
-  type: object
-  required:
-    - id
-    - name
-  properties:
-    id:
-      type: integer
-      format: int32
-    name:
-      type: string
-    description:
-      type: string
-      nullable: true
+      maxLength: 50
 
 SakeDetail:
   type: object
+  description: お酒の詳細情報
   required:
     - id
-    - category
-    - kind
-    - brewery
     - name
-    - abv
-    - purchaseVolume
-    - remainingVolume
-    - drinkStyles
-    - price
+    - category
     - createdAt
     - updatedAt
   properties:
     id:
-      type: integer
-      format: int32
+      type: string
+      format: uuid
+    name:
+      type: string
+      maxLength: 50
+    phonetic:
+      type: string
+      nullable: true
+      maxLength: 100
     category:
       $ref: "#/SakeCategory"
-    kind:
-      $ref: "#/SakeKind"
-    brewery:
-      $ref: "#/Brewery"
-    name:
-      $ref: "#/SakeName"
-    abv:
+    alcoholPercentage:
       type: number
       format: float
+      nullable: true
       minimum: 0
       maximum: 100
-    purchaseVolume:
-      type: number
-      format: float
+    volumeMax:
+      type: integer
+      format: int32
+      nullable: true
+      minimum: 1
+    volumeRemain:
+      type: integer
+      format: int32
+      nullable: true
       minimum: 0
-    remainingVolume:
-      type: number
-      format: float
+      maximum: 100
+    region:
+      type: string
+      nullable: true
+      maxLength: 100
+    price:
+      type: integer
+      format: int32
+      nullable: true
       minimum: 0
     memo:
       type: string
       nullable: true
-    drinkStyles:
+      maxLength: 500
+    tags:
       type: array
       items:
-        $ref: "#/DrinkStyle"
-    price:
-      type: integer
-      format: int32
-      minimum: 0
-    imageUrl:
-      type: string
-      nullable: true
+        $ref: "#/SakeTag"
+    images:
+      type: array
+      items:
+        $ref: "#/SakeImage"
     createdAt:
       type: string
       format: date-time
@@ -169,52 +159,60 @@ SakeDetail:
 
 CreateSakeRequest:
   type: object
+  description: 在庫登録時に送信するお酒情報
   required:
-    - category
-    - kind
-    - brewery
     - name
-    - abv
-    - purchaseVolume
-    - remainingVolume
-    - price
-    - drinkStyles
+    - category
   properties:
+    name:
+      type: string
+      maxLength: 50
+    phonetic:
+      type: string
+      nullable: true
+      maxLength: 100
     category:
       $ref: "#/SakeCategory"
-    kind:
-      $ref: "#/SakeKind"
-    brewery:
-      $ref: "#/Brewery"
-    name:
-      $ref: "#/SakeName"
-    abv:
+    alcoholPercentage:
       type: number
       format: float
+      nullable: true
       minimum: 0
       maximum: 100
-    purchaseVolume:
-      type: number
-      format: float
+    volumeMax:
+      type: integer
+      format: int32
+      nullable: true
+      minimum: 1
+    volumeRemain:
+      type: integer
+      format: int32
+      nullable: true
       minimum: 0
-    remainingVolume:
-      type: number
-      format: float
+      maximum: 100
+    region:
+      type: string
+      nullable: true
+      maxLength: 100
+    price:
+      type: integer
+      format: int32
+      nullable: true
       minimum: 0
     memo:
       type: string
       nullable: true
-    drinkStyles:
+      maxLength: 500
+    tags:
       type: array
       items:
-        $ref: "#/DrinkStyle"
-    price:
-      type: integer
-      format: int32
-      minimum: 0
-    imageUrl:
-      type: string
-      nullable: true
+        type: string
+        maxLength: 50
+    imageKeys:
+      type: array
+      description: 表示順で指定する画像キー配列
+      items:
+        type: string
 
 UpdateSakeRequest:
   allOf:
@@ -222,8 +220,10 @@ UpdateSakeRequest:
 
 CreateSakeResponse:
   type: object
+  description: 在庫登録APIのレスポンス
   required:
     - data
   properties:
     data:
-      $ref: "#/Sake"
+      allOf:
+        - $ref: "#/Sake"

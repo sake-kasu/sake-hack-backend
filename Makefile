@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status openapi-generate openapi-gendoc openapi-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status openapi-generate openapi-gendoc openapi-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-reset migrate-force migrate-version migrate-status sqlc-generate
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -208,9 +208,10 @@ migrate-down: ## 1つ前にロールバック
 	@echo "⬇️  マイグレーションをロールバックしています(down)..."
 	@migrate -path db/migrations -database "$(DB_URL)" down 1
 
-migrate-down-all: ## 全ロールバック(注意: データ損失)
-	@echo "⬇️  マイグレーションをロールバックしています(down-all)..."
+migrate-reset: ## 全リセット(down -all -> up)
+	@echo "♻️  マイグレーションを全リセットしています..."
 	@migrate -path db/migrations -database "$(DB_URL)" down -all
+	@migrate -path db/migrations -database "$(DB_URL)" up
 
 migrate-force: ## バージョン強制設定 (VERSION=xxx) ※障害復旧用
 	@if [ -z "$(VERSION)" ]; then echo "Error: VERSION is required. Usage: make migrate-force VERSION=xxx"; exit 1; fi

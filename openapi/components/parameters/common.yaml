@@ -19,35 +19,14 @@ Limit:
     minimum: 1
     maximum: 100
 
-TypeId:
-  name: typeId
-  in: query
-  required: true
-  description: 酒の種類ID
-  schema:
-    type: integer
-    format: int32
-    minimum: 1
-
-BreweryId:
-  name: breweryId
-  in: query
-  required: true
-  description: 酒造ID
-  schema:
-    type: integer
-    format: int32
-    minimum: 1
-
 SakeId:
   name: id
   in: path
   required: true
   description: 酒ID
   schema:
-    type: integer
-    format: int32
-    minimum: 1
+    type: string
+    format: uuid
 
 StockId:
   name: id
@@ -55,6 +34,5 @@ StockId:
   required: true
   description: 在庫ID
   schema:
-    type: integer
-    format: int32
-    minimum: 1
+    type: string
+    format: uuid

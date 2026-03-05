@@ -6,8 +6,6 @@ get:
   parameters:
     - $ref: "../components/parameters/common.yaml#/Offset"
     - $ref: "../components/parameters/common.yaml#/Limit"
-    - $ref: "../components/parameters/common.yaml#/TypeId"
-    - $ref: "../components/parameters/common.yaml#/BreweryId"
   responses:
     '200':
       description: 酒一覧取得成功
