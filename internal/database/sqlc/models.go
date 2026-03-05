@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// マッチングリクエストのステータスを定義するENUM
+// マッチングリクエスト状態: PENDING/ACCEPTED/REJECTED
 type MatchStatus string
 
 const (
@@ -73,18 +73,18 @@ func AllMatchStatusValues() []MatchStatus {
 	}
 }
 
-// 大分類(酒のカテゴリを定義するENUM)
+// お酒カテゴリ: JAPANESE_SAKE/SHOCHU/AWAMORI/BEER/WINE/FRUIT_WINE/LIQUEUR/NON_ALCOHOL/OTHER
 type SakeCategory string
 
 const (
 	SakeCategoryJAPANESESAKE SakeCategory = "JAPANESE_SAKE"
-	SakeCategoryWHISKY       SakeCategory = "WHISKY"
-	SakeCategoryWINE         SakeCategory = "WINE"
-	SakeCategoryBEER         SakeCategory = "BEER"
 	SakeCategorySHOCHU       SakeCategory = "SHOCHU"
 	SakeCategoryAWAMORI      SakeCategory = "AWAMORI"
-	SakeCategoryRIQUEUR      SakeCategory = "RIQUEUR"
-	SakeCategorySPIRITS      SakeCategory = "SPIRITS"
+	SakeCategoryBEER         SakeCategory = "BEER"
+	SakeCategoryWINE         SakeCategory = "WINE"
+	SakeCategoryFRUITWINE    SakeCategory = "FRUIT_WINE"
+	SakeCategoryLIQUEUR      SakeCategory = "LIQUEUR"
+	SakeCategoryNONALCOHOL   SakeCategory = "NON_ALCOHOL"
 	SakeCategoryOTHER        SakeCategory = "OTHER"
 )
 
@@ -126,13 +126,13 @@ func (ns NullSakeCategory) Value() (driver.Value, error) {
 func (e SakeCategory) Valid() bool {
 	switch e {
 	case SakeCategoryJAPANESESAKE,
-		SakeCategoryWHISKY,
-		SakeCategoryWINE,
-		SakeCategoryBEER,
 		SakeCategorySHOCHU,
 		SakeCategoryAWAMORI,
-		SakeCategoryRIQUEUR,
-		SakeCategorySPIRITS,
+		SakeCategoryBEER,
+		SakeCategoryWINE,
+		SakeCategoryFRUITWINE,
+		SakeCategoryLIQUEUR,
+		SakeCategoryNONALCOHOL,
 		SakeCategoryOTHER:
 		return true
 	}
@@ -142,18 +142,18 @@ func (e SakeCategory) Valid() bool {
 func AllSakeCategoryValues() []SakeCategory {
 	return []SakeCategory{
 		SakeCategoryJAPANESESAKE,
-		SakeCategoryWHISKY,
-		SakeCategoryWINE,
-		SakeCategoryBEER,
 		SakeCategorySHOCHU,
 		SakeCategoryAWAMORI,
-		SakeCategoryRIQUEUR,
-		SakeCategorySPIRITS,
+		SakeCategoryBEER,
+		SakeCategoryWINE,
+		SakeCategoryFRUITWINE,
+		SakeCategoryLIQUEUR,
+		SakeCategoryNONALCOHOL,
 		SakeCategoryOTHER,
 	}
 }
 
-// ユーザーロールを定義するENUM
+// ユーザーロール: SHOP(主催者)/USER(参加者)
 type UserRole string
 
 const (
@@ -212,137 +212,132 @@ func AllUserRoleValues() []UserRole {
 	}
 }
 
-// ユーザーのブックマークを管理するテーブル
+// ブックマーク
 type Bookmark struct {
-	ID        int32              `db:"id" json:"id"`
-	UserID    int32              `db:"user_id" json:"user_id"`
-	SakeID    int32              `db:"sake_id" json:"sake_id"`
+	// 一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// ユーザーID
+	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	// お酒ID
+	SakeID pgtype.UUID `db:"sake_id" json:"sake_id"`
+	// 作成日時
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
-// 酒造マスターテーブル
-type Brewery struct {
-	// 酒造の一意識別子
-	ID int32 `db:"id" json:"id"`
-	// 酒造名
-	Name string `db:"name" json:"name"`
-	// 所在国
-	OriginCountry string `db:"origin_country" json:"origin_country"`
-	// 所在地域
-	OriginRegion *string `db:"origin_region" json:"origin_region"`
-	// 緯度
-	Latitude *float64 `db:"latitude" json:"latitude"`
-	// 経度
-	Longitude *float64           `db:"longitude" json:"longitude"`
-	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
-}
-
-// ユーザーの飲酒記録を管理するテーブル
+// 飲酒記録
 type DrinkLog struct {
-	ID        int32              `db:"id" json:"id"`
-	UserID    int32              `db:"user_id" json:"user_id"`
-	SakeID    int32              `db:"sake_id" json:"sake_id"`
-	DrankAt   pgtype.Timestamptz `db:"drank_at" json:"drank_at"`
+	// 一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// ユーザーID
+	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	// お酒ID
+	SakeID pgtype.UUID `db:"sake_id" json:"sake_id"`
+	// 飲んだ日時
+	DrankAt pgtype.Timestamptz `db:"drank_at" json:"drank_at"`
+	// 作成日時
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
-// 飲み方マスターテーブル
-type DrinkStyle struct {
-	// 飲み方ID
-	ID int32 `db:"id" json:"id"`
-	// 飲み方の名前
-	Name string `db:"name" json:"name"`
-	// 詳細説明
-	Description *string            `db:"description" json:"description"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
-}
-
-// 酒へのいいねを管理するテーブル
+// お酒へのいいね
 type Like struct {
-	ID        int32              `db:"id" json:"id"`
-	SakeID    int32              `db:"sake_id" json:"sake_id"`
-	Token     string             `db:"token" json:"token"`
+	// 一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// お酒ID
+	SakeID pgtype.UUID `db:"sake_id" json:"sake_id"`
+	// 一時トークン（匿名識別用, 必須）
+	Token string `db:"token" json:"token"`
+	// 作成日時
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
-// ユーザー間のマッチングリクエストを管理するテーブル
+// マッチングリクエスト
 type MatchRequest struct {
-	ID         int32              `db:"id" json:"id"`
-	FromUserID int32              `db:"from_user_id" json:"from_user_id"`
-	ToUserID   int32              `db:"to_user_id" json:"to_user_id"`
-	Status     MatchStatus        `db:"status" json:"status"`
-	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt  pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	// 一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// リクエスト送信者ID
+	FromUserID pgtype.UUID `db:"from_user_id" json:"from_user_id"`
+	// リクエスト受信者ID
+	ToUserID pgtype.UUID `db:"to_user_id" json:"to_user_id"`
+	// ステータス（PENDING/ACCEPTED/REJECTED）
+	Status MatchStatus `db:"status" json:"status"`
+	// 作成日時
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	// 更新日時
+	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
-// 酒の基本情報を管理するテーブル
+// お酒マスタ
 type Sake struct {
-	// 酒の一意識別子
-	ID int32 `db:"id" json:"id"`
-	// 大分類(酒のカテゴリ)
-	Category SakeCategory `db:"category" json:"category"`
-	// 酒の小分類ID(sake_kinds.id)
-	KindID int32 `db:"kind_id" json:"kind_id"`
-	// 酒造ID(breweries.id)
-	BreweryID int32 `db:"brewery_id" json:"brewery_id"`
-	// 酒の商品名
+	// 酒ID
+	ID pgtype.UUID `db:"id" json:"id"`
+	// 酒名（最大50文字, 必須）
 	Name string `db:"name" json:"name"`
-	// ふりがな
-	Phonetic string `db:"phonetic" json:"phonetic"`
-	// アルコール度数(%)
-	Abv float32 `db:"abv" json:"abv"`
-	// 購入時容量(mL)
-	PurchaseVolume float32 `db:"purchase_volume" json:"purchase_volume"`
-	// 残容量(mL)
-	RemainingVolume float32 `db:"remaining_volume" json:"remaining_volume"`
-	// メモ
+	// ふりがな（最大100文字）
+	Phonetic *string `db:"phonetic" json:"phonetic"`
+	// 酒カテゴリ（必須）
+	Category SakeCategory `db:"category" json:"category"`
+	// アルコール度数（0.0-100.0）
+	AlcoholPercentage pgtype.Numeric `db:"alcohol_percentage" json:"alcohol_percentage"`
+	// 最大容量（ml）
+	VolumeMax *int32 `db:"volume_max" json:"volume_max"`
+	// 残り容量（%: 0-100）
+	VolumeRemain *int32 `db:"volume_remain" json:"volume_remain"`
+	// 産地
+	Region *string `db:"region" json:"region"`
+	// 価格（円）
+	Price *int32 `db:"price" json:"price"`
+	// メモ（最大500文字）
 	Memo *string `db:"memo" json:"memo"`
-	// 購入時価格(円)
-	Price int32 `db:"price" json:"price"`
-	// 表示用の画像URL
-	ImageUrl  *string            `db:"image_url" json:"image_url"`
+	// 作成日時
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	// 更新日時
 	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
-// 酒と飲み方の中間テーブル
-type SakeDrinkStyle struct {
-	SakeID       int32 `db:"sake_id" json:"sake_id"`
-	DrinkStyleID int32 `db:"drink_style_id" json:"drink_style_id"`
-}
-
-// 酒の画像を管理するテーブル
+// お酒画像
 type SakeImage struct {
-	// 画像の一意識別子
-	ID int32 `db:"id" json:"id"`
-	// 画像のオブジェクトキー
-	ObjectKey string             `db:"object_key" json:"object_key"`
+	// 一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// お酒ID
+	SakeID pgtype.UUID `db:"sake_id" json:"sake_id"`
+	// 画像オブジェクトキー
+	ImageKey string `db:"image_key" json:"image_key"`
+	// 表示順（0始まり）
+	SortOrder int32 `db:"sort_order" json:"sort_order"`
+	// 作成日時
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
-// 酒の種類(小分類)マスターテーブル
-type SakeKind struct {
-	// 酒の小分類ID
-	ID int32 `db:"id" json:"id"`
-	// 酒の小分類の名前
-	Name      string             `db:"name" json:"name"`
-	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+// お酒タグマスタ
+type SakeTag struct {
+	// タグID
+	ID pgtype.UUID `db:"id" json:"id"`
+	// タグ文字列（最大50文字, 必須）
+	Tag string `db:"tag" json:"tag"`
 }
 
-// ユーザー情報を管理するテーブル
+// お酒とタグの関連
+type SakeTagLink struct {
+	// 一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// お酒ID
+	SakeID pgtype.UUID `db:"sake_id" json:"sake_id"`
+	// タグID
+	SakeTagID pgtype.UUID `db:"sake_tag_id" json:"sake_tag_id"`
+}
+
+// ユーザー
 type User struct {
-	// ユーザーの一意識別子
-	ID int32 `db:"id" json:"id"`
-	// メールアドレス
+	// 一意識別子
+	ID pgtype.UUID `db:"id" json:"id"`
+	// メールアドレス（必須, 一意）
 	Email string `db:"email" json:"email"`
-	// ハッシュ化されたパスワード
+	// パスワードハッシュ（必須）
 	PasswordHash string `db:"password_hash" json:"password_hash"`
-	// 表示名
+	// 表示名（任意）
 	DisplayName *string `db:"display_name" json:"display_name"`
-	// ユーザーロール(SHOP: 店舗, USER: 一般ユーザー)
-	Role      UserRole           `db:"role" json:"role"`
+	// ロール（SHOP/USER）
+	Role UserRole `db:"role" json:"role"`
+	// 作成日時
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
