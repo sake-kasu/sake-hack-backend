@@ -62,6 +62,45 @@ func toStockResponse(item entity.SakeListItem) generated.Stock {
 	}
 }
 
+// toSakeDetailResponse はドメインの詳細モデルを酒詳細レスポンスに変換する。
+func toSakeDetailResponse(detail *entity.SakeDetail) generated.SakeDetail {
+	return generated.SakeDetail{
+		SakeId:            generated.SakeID(detail.ID),
+		Name:              generated.SakeName(detail.Name.Name),
+		Phonetic:          emptyToSakePhoneticPtr(detail.Name.Phonetic),
+		Category:          toGeneratedCategory(detail.Category),
+		AlcoholPercentage: float32ToAlcoholPercentagePtr(detail.Abv),
+		Region:            stringToSakeRegionPtr(detail.Brewery.OriginRegion),
+		Memo:              stringToSakeMemoPtr(detail.Memo),
+		Tags:              []generated.SakeTag{},
+		Images:            []generated.SakeImage{},
+		LikeCount:         generated.LikeCount(0),
+		CreatedAt:         detail.CreatedAt,
+		UpdatedAt:         detail.UpdatedAt,
+	}
+}
+
+// toStockDetailResponse はドメインの詳細モデルを在庫詳細レスポンスに変換する。
+func toStockDetailResponse(detail *entity.SakeDetail) generated.StockDetail {
+	return generated.StockDetail{
+		SakeId:            generated.SakeID(detail.ID),
+		Name:              generated.SakeName(detail.Name.Name),
+		Phonetic:          emptyToSakePhoneticPtr(detail.Name.Phonetic),
+		Category:          toGeneratedCategory(detail.Category),
+		AlcoholPercentage: float32ToAlcoholPercentagePtr(detail.Abv),
+		VolumeMax:         int32ToVolumeMaxPtr(detail.PurchaseVolume),
+		VolumeRemain:      int32ToVolumeRemainPtr(detail.RemainingVolume),
+		Region:            stringToSakeRegionPtr(detail.Brewery.OriginRegion),
+		Price:             int32ToPricePtr(detail.Price),
+		Memo:              stringToSakeMemoPtr(detail.Memo),
+		Tags:              []generated.SakeTag{},
+		Images:            []generated.SakeImage{},
+		LikeCount:         generated.LikeCount(0),
+		CreatedAt:         detail.CreatedAt,
+		UpdatedAt:         detail.UpdatedAt,
+	}
+}
+
 func toGeneratedCategory(c entity.SakeCategory) generated.SakeCategory {
 	switch c {
 	case entity.SakeCategoryJapaneseSake:
@@ -84,4 +123,67 @@ func emptyToStringPtr(v string) *string {
 		return nil
 	}
 	return &v
+}
+
+// emptyToSakePhoneticPtr は空文字を nil に正規化する。
+func emptyToSakePhoneticPtr(v string) *generated.SakePhonetic {
+	if v == "" {
+		return nil
+	}
+	result := generated.SakePhonetic(v)
+	return &result
+}
+
+// float32ToAlcoholPercentagePtr は *float32 を OpenAPI 型に変換する。
+func float32ToAlcoholPercentagePtr(v *float32) *generated.SakeAlcoholPercentage {
+	if v == nil {
+		return nil
+	}
+	result := generated.SakeAlcoholPercentage(*v)
+	return &result
+}
+
+// stringToSakeRegionPtr は *string を OpenAPI 型に変換する。
+func stringToSakeRegionPtr(v *string) *generated.SakeRegion {
+	if v == nil {
+		return nil
+	}
+	result := generated.SakeRegion(*v)
+	return &result
+}
+
+// stringToSakeMemoPtr は *string を OpenAPI 型に変換する。
+func stringToSakeMemoPtr(v *string) *generated.SakeMemo {
+	if v == nil {
+		return nil
+	}
+	result := generated.SakeMemo(*v)
+	return &result
+}
+
+// int32ToVolumeMaxPtr は *int32 を OpenAPI 型に変換する。
+func int32ToVolumeMaxPtr(v *int32) *generated.SakeVolumeMax {
+	if v == nil {
+		return nil
+	}
+	result := generated.SakeVolumeMax(*v)
+	return &result
+}
+
+// int32ToVolumeRemainPtr は *int32 を OpenAPI 型に変換する。
+func int32ToVolumeRemainPtr(v *int32) *generated.SakeVolumeRemain {
+	if v == nil {
+		return nil
+	}
+	result := generated.SakeVolumeRemain(*v)
+	return &result
+}
+
+// int32ToPricePtr は *int32 を OpenAPI 型に変換する。
+func int32ToPricePtr(v *int32) *generated.SakePrice {
+	if v == nil {
+		return nil
+	}
+	result := generated.SakePrice(*v)
+	return &result
 }

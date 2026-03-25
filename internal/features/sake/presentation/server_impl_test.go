@@ -31,7 +31,7 @@ func (m *mockListSakesUsecase) Execute(ctx context.Context, input usecase.ListSa
 
 type mockGetSakeDetailUsecase struct{}
 
-func (m *mockGetSakeDetailUsecase) Execute(ctx context.Context, id int32) (*usecase.GetSakeDetailOutput, error) {
+func (m *mockGetSakeDetailUsecase) Execute(ctx context.Context, id uuid.UUID) (*usecase.GetSakeDetailOutput, error) {
 	return nil, nil
 }
 
@@ -147,4 +147,60 @@ func TestCreateStock_NotImplemented(t *testing.T) {
 	newRouter(server).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotImplemented, w.Code)
+}
+
+func TestGetStockDetail_Success(t *testing.T) {
+	id := uuid.MustParse("33333333-3333-3333-3333-333333333333")
+	server := NewSakeServerImpl(
+		new(mockListSakesUsecase),
+		&mockGetSakeDetailUsecaseWithResult{
+			output: &usecase.GetSakeDetailOutput{
+				Detail: &entity.SakeDetail{
+					ID:       id,
+					Category: entity.SakeCategoryBeer,
+					Name: entity.SakeName{
+						Name:     "Yona Yona Ale",
+						Phonetic: "",
+					},
+					Brewery: entity.Brewery{
+						OriginRegion: strPtr("Nagano"),
+					},
+					Abv:             float32Ptr(5.5),
+					PurchaseVolume:  int32Ptr(350),
+					RemainingVolume: int32Ptr(80),
+					Price:           int32Ptr(320),
+					Memo:            strPtr("test"),
+				},
+			},
+		},
+		&mockCreateStockUsecase{},
+		&mockUpdateStockUsecase{},
+		&mockDeleteStockUsecase{},
+	)
+
+	req := httptest.NewRequest(http.MethodGet, "/stocks/"+id.String(), nil)
+	w := httptest.NewRecorder()
+	newRouter(server).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+type mockGetSakeDetailUsecaseWithResult struct {
+	output *usecase.GetSakeDetailOutput
+}
+
+func (m *mockGetSakeDetailUsecaseWithResult) Execute(ctx context.Context, id uuid.UUID) (*usecase.GetSakeDetailOutput, error) {
+	return m.output, nil
+}
+
+func strPtr(v string) *string {
+	return &v
+}
+
+func int32Ptr(v int32) *int32 {
+	return &v
+}
+
+func float32Ptr(v float32) *float32 {
+	return &v
 }

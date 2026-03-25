@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
 )
 
@@ -17,5 +18,5 @@ type ListSakesFilter struct {
 // SakeQuery 酒クエリのインターフェース(読み取り操作)
 type SakeQuery interface {
 	List(ctx context.Context, filter ListSakesFilter) ([]entity.SakeListItem, entity.Pagination, error)
-	GetDetail(ctx context.Context, id int32) (*entity.SakeDetail, error)
+	GetDetail(ctx context.Context, id uuid.UUID) (*entity.SakeDetail, error)
 }

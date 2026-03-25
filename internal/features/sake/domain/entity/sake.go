@@ -71,17 +71,17 @@ type SakeListItem struct {
 
 // SakeDetail 酒の詳細情報
 type SakeDetail struct {
-	ID              int32
+	ID              uuid.UUID
 	Category        SakeCategory
 	Kind            SakeKind
 	Brewery         Brewery
 	Name            SakeName
-	Abv             float32
-	PurchaseVolume  float32
-	RemainingVolume float32
+	Abv             *float32
+	PurchaseVolume  *int32
+	RemainingVolume *int32
 	Memo            *string
 	DrinkStyles     []DrinkStyle
-	Price           int32
+	Price           *int32
 	ImageUrl        *string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time

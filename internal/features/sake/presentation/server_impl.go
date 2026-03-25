@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
 	"github.com/sake-kasu/sake-hack-backend/internal/apperror"
@@ -78,7 +79,16 @@ func (s *SakeServerImpl) ListSakes(c *gin.Context, params generated.ListSakesPar
 // GetSakeDetail 酒詳細取得
 // (GET /sakes/{sakeId})
 func (s *SakeServerImpl) GetSakeDetail(c *gin.Context, sakeId generated.SakeId) {
-	c.JSON(http.StatusNotImplemented, notImplementedResponse("sake detail API is temporarily disabled"))
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, sakeId)()
+
+	output, err := s.getSakeDetailUC.Execute(ctx, uuid.UUID(sakeId))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toSakeDetailResponse(output.Detail))
 }
 
 // ListStocks 在庫一覧取得
@@ -116,7 +126,16 @@ func (s *SakeServerImpl) DeleteStock(c *gin.Context, sakeId generated.SakeId) {
 // GetStockDetail 在庫詳細取得
 // (GET /stocks/{sakeId})
 func (s *SakeServerImpl) GetStockDetail(c *gin.Context, sakeId generated.SakeId) {
-	c.JSON(http.StatusNotImplemented, notImplementedResponse("stock detail API is temporarily disabled"))
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, sakeId)()
+
+	output, err := s.getSakeDetailUC.Execute(ctx, uuid.UUID(sakeId))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toStockDetailResponse(output.Detail))
 }
 
 // UpdateStock 在庫更新

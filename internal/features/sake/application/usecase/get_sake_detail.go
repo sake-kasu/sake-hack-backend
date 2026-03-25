@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/query"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
 	"github.com/sake-kasu/sake-hack-backend/internal/logger"
@@ -15,7 +16,7 @@ type GetSakeDetailOutput struct {
 
 // GetSakeDetailUsecaseInterface 酒詳細取得ユースケースのインターフェイス
 type GetSakeDetailUsecaseInterface interface {
-	Execute(ctx context.Context, id int32) (*GetSakeDetailOutput, error)
+	Execute(ctx context.Context, id uuid.UUID) (*GetSakeDetailOutput, error)
 }
 
 // GetSakeDetailUsecase 酒詳細取得ユースケース
@@ -29,7 +30,7 @@ func NewGetSakeDetailUsecase(sakeQuery query.SakeQuery) *GetSakeDetailUsecase {
 }
 
 // Execute 酒の詳細を取得する
-func (u *GetSakeDetailUsecase) Execute(ctx context.Context, id int32) (*GetSakeDetailOutput, error) {
+func (u *GetSakeDetailUsecase) Execute(ctx context.Context, id uuid.UUID) (*GetSakeDetailOutput, error) {
 	defer logger.TraceMethodAuto(ctx, id)()
 
 	detail, err := u.sakeQuery.GetDetail(ctx, id)

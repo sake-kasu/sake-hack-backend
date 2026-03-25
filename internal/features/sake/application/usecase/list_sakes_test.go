@@ -26,7 +26,7 @@ func (m *MockSakeQuery) List(ctx context.Context, filter query.ListSakesFilter) 
 	return args.Get(0).([]entity.SakeListItem), args.Get(1).(entity.Pagination), args.Error(2)
 }
 
-func (m *MockSakeQuery) GetDetail(ctx context.Context, id int32) (*entity.SakeDetail, error) {
+func (m *MockSakeQuery) GetDetail(ctx context.Context, id uuid.UUID) (*entity.SakeDetail, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
