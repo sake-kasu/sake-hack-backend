@@ -22,8 +22,10 @@ type UpdateStockInput struct {
 	RemainingVolume *int32
 	Memo            *string
 	DrinkStyles     []entity.DrinkStyle
+	TagNames        []string
 	Price           *int32
 	ImageUrl        *string
+	ImageKeys       []string
 }
 
 // UpdateStockOutput 在庫更新の出力
@@ -65,8 +67,10 @@ func (u *UpdateStockUsecase) Execute(ctx context.Context, input UpdateStockInput
 		RemainingVolume: input.RemainingVolume,
 		Memo:            input.Memo,
 		DrinkStyles:     input.DrinkStyles,
+		TagNames:        input.TagNames,
 		Price:           input.Price,
 		ImageUrl:        input.ImageUrl,
+		ImageKeys:       input.ImageKeys,
 	})
 	if err != nil {
 		return nil, err

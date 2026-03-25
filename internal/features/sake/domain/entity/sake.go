@@ -55,6 +55,19 @@ type DrinkStyle struct {
 	Description *string
 }
 
+// SakeTag 酒タグ
+type SakeTag struct {
+	ID   uuid.UUID
+	Name string
+}
+
+// SakeImage 酒画像
+type SakeImage struct {
+	ID        uuid.UUID
+	ImageKey  string
+	SortOrder int32
+}
+
 // SakeName 酒名(名前 + 読み)
 type SakeName struct {
 	Name     string
@@ -81,8 +94,10 @@ type SakeDetail struct {
 	RemainingVolume *int32
 	Memo            *string
 	DrinkStyles     []DrinkStyle
+	Tags            []SakeTag
 	Price           *int32
 	ImageUrl        *string
+	Images          []SakeImage
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

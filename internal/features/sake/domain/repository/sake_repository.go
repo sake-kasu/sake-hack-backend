@@ -18,8 +18,10 @@ type CreateSakeInput struct {
 	RemainingVolume *int32
 	Memo            *string
 	DrinkStyles     []entity.DrinkStyle
+	TagNames        []string
 	Price           *int32
 	ImageUrl        *string
+	ImageKeys       []string
 }
 
 // UpdateSakeInput 酒の更新に必要な入力
@@ -34,8 +36,10 @@ type UpdateSakeInput struct {
 	RemainingVolume *int32
 	Memo            *string
 	DrinkStyles     []entity.DrinkStyle
+	TagNames        []string
 	Price           *int32
 	ImageUrl        *string
+	ImageKeys       []string
 }
 
 // SakeRepository 酒リポジトリのインターフェース(書き込み操作)

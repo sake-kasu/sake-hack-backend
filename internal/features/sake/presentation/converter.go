@@ -65,6 +65,21 @@ func toStockResponse(item entity.SakeListItem) generated.Stock {
 
 // toSakeDetailResponse はドメインの詳細モデルを酒詳細レスポンスに変換する。
 func toSakeDetailResponse(detail *entity.SakeDetail) generated.SakeDetail {
+	tags := make([]generated.SakeTag, 0, len(detail.Tags))
+	for _, tag := range detail.Tags {
+		tags = append(tags, generated.SakeTag{
+			TagId:   generated.SakeTagID(tag.ID),
+			TagName: generated.SakeTagName(tag.Name),
+		})
+	}
+	images := make([]generated.SakeImage, 0, len(detail.Images))
+	for _, image := range detail.Images {
+		images = append(images, generated.SakeImage{
+			ImageId:   image.ID,
+			ImageKey:  generated.SakeImageKey(image.ImageKey),
+			SortOrder: generated.SakeSortOrder(image.SortOrder),
+		})
+	}
 	return generated.SakeDetail{
 		SakeId:            generated.SakeID(detail.ID),
 		Name:              generated.SakeName(detail.Name.Name),
@@ -73,8 +88,8 @@ func toSakeDetailResponse(detail *entity.SakeDetail) generated.SakeDetail {
 		AlcoholPercentage: float32ToAlcoholPercentagePtr(detail.Abv),
 		Region:            stringToSakeRegionPtr(detail.Brewery.OriginRegion),
 		Memo:              stringToSakeMemoPtr(detail.Memo),
-		Tags:              []generated.SakeTag{},
-		Images:            []generated.SakeImage{},
+		Tags:              tags,
+		Images:            images,
 		LikeCount:         generated.LikeCount(0),
 		CreatedAt:         detail.CreatedAt,
 		UpdatedAt:         detail.UpdatedAt,
@@ -83,6 +98,21 @@ func toSakeDetailResponse(detail *entity.SakeDetail) generated.SakeDetail {
 
 // toStockDetailResponse はドメインの詳細モデルを在庫詳細レスポンスに変換する。
 func toStockDetailResponse(detail *entity.SakeDetail) generated.StockDetail {
+	tags := make([]generated.SakeTag, 0, len(detail.Tags))
+	for _, tag := range detail.Tags {
+		tags = append(tags, generated.SakeTag{
+			TagId:   generated.SakeTagID(tag.ID),
+			TagName: generated.SakeTagName(tag.Name),
+		})
+	}
+	images := make([]generated.SakeImage, 0, len(detail.Images))
+	for _, image := range detail.Images {
+		images = append(images, generated.SakeImage{
+			ImageId:   image.ID,
+			ImageKey:  generated.SakeImageKey(image.ImageKey),
+			SortOrder: generated.SakeSortOrder(image.SortOrder),
+		})
+	}
 	return generated.StockDetail{
 		SakeId:            generated.SakeID(detail.ID),
 		Name:              generated.SakeName(detail.Name.Name),
@@ -94,8 +124,8 @@ func toStockDetailResponse(detail *entity.SakeDetail) generated.StockDetail {
 		Region:            stringToSakeRegionPtr(detail.Brewery.OriginRegion),
 		Price:             int32ToPricePtr(detail.Price),
 		Memo:              stringToSakeMemoPtr(detail.Memo),
-		Tags:              []generated.SakeTag{},
-		Images:            []generated.SakeImage{},
+		Tags:              tags,
+		Images:            images,
 		LikeCount:         generated.LikeCount(0),
 		CreatedAt:         detail.CreatedAt,
 		UpdatedAt:         detail.UpdatedAt,
@@ -119,8 +149,10 @@ func toCreateStockInput(req generated.CreateStockRequest) usecase.CreateStockInp
 		RemainingVolume: volumeRemainToInt32Ptr(req.VolumeRemain),
 		Memo:            sakeMemoToStringPtr(req.Memo),
 		DrinkStyles:     []entity.DrinkStyle{},
+		TagNames:        toStringSlice(req.TagNames),
 		Price:           priceToInt32Ptr(req.Price),
 		ImageUrl:        firstImageKeyToStringPtr(req.ImageKeys),
+		ImageKeys:       toImageKeyStrings(req.ImageKeys),
 	}
 }
 
@@ -142,8 +174,10 @@ func toUpdateStockInput(id uuid.UUID, req generated.CreateStockRequest) usecase.
 		RemainingVolume: volumeRemainToInt32Ptr(req.VolumeRemain),
 		Memo:            sakeMemoToStringPtr(req.Memo),
 		DrinkStyles:     []entity.DrinkStyle{},
+		TagNames:        toStringSlice(req.TagNames),
 		Price:           priceToInt32Ptr(req.Price),
 		ImageUrl:        firstImageKeyToStringPtr(req.ImageKeys),
+		ImageKeys:       toImageKeyStrings(req.ImageKeys),
 	}
 }
 
@@ -303,4 +337,18 @@ func firstImageKeyToStringPtr(v []generated.SakeImageKey) *string {
 	}
 	result := string(v[0])
 	return &result
+}
+
+// toStringSlice は generated の文字列配列を通常の文字列配列に変換する。
+func toStringSlice[T ~string](values []T) []string {
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		result = append(result, string(value))
+	}
+	return result
+}
+
+// toImageKeyStrings は image key 配列を保存用の文字列配列に変換する。
+func toImageKeyStrings(values []generated.SakeImageKey) []string {
+	return toStringSlice(values)
 }

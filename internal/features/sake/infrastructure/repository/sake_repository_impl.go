@@ -19,12 +19,14 @@ import (
 
 // sakeRepositoryImpl 酒リポジトリの実装
 type sakeRepositoryImpl struct {
+	db      *pgxpool.Pool
 	queries *sqlc.Queries
 }
 
 // NewSakeRepository コンストラクタ
 func NewSakeRepository(db *pgxpool.Pool) repository.SakeRepository {
 	return &sakeRepositoryImpl{
+		db:      db,
 		queries: sqlc.New(db),
 	}
 }
@@ -33,7 +35,16 @@ func NewSakeRepository(db *pgxpool.Pool) repository.SakeRepository {
 func (r *sakeRepositoryImpl) Create(ctx context.Context, input repository.CreateSakeInput) (*entity.SakeListItem, error) {
 	defer logger.TraceMethodAuto(ctx, input)()
 
-	row, err := r.queries.CreateSake(ctx, sqlc.CreateSakeParams{
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		logger.LogDatabaseError(ctx, "BEGIN", "sakes", err, nil)
+		return nil, apperror.DatabaseError("トランザクション開始に失敗しました", err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	qtx := r.queries.WithTx(tx)
+
+	row, err := qtx.CreateSake(ctx, sqlc.CreateSakeParams{
 		Category:          sqlc.SakeCategory(input.Category),
 		Name:              input.Name.Name,
 		Phonetic:          emptyStringToNil(input.Name.Phonetic),
@@ -49,11 +60,23 @@ func (r *sakeRepositoryImpl) Create(ctx context.Context, input repository.Create
 		return nil, apperror.DatabaseError("酒の登録に失敗しました", err)
 	}
 
+	sakeID := uuid.UUID(row.ID.Bytes)
+	if err := r.syncTags(ctx, tx, sakeID, input.TagNames); err != nil {
+		return nil, err
+	}
+	if err := r.syncImages(ctx, tx, sakeID, input.ImageKeys); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		logger.LogDatabaseError(ctx, "COMMIT", "sakes", err, nil)
+		return nil, apperror.DatabaseError("トランザクションのコミットに失敗しました", err)
+	}
+
 	return &entity.SakeListItem{
-		ID:           uuid.UUID(row.ID.Bytes),
+		ID:           sakeID,
 		Category:     entity.SakeCategory(row.Category),
 		Name:         row.Name,
-		ImagePreview: "",
+		ImagePreview: firstImageKey(input.ImageKeys),
 	}, nil
 }
 
@@ -61,7 +84,16 @@ func (r *sakeRepositoryImpl) Create(ctx context.Context, input repository.Create
 func (r *sakeRepositoryImpl) Update(ctx context.Context, input repository.UpdateSakeInput) (*entity.SakeListItem, error) {
 	defer logger.TraceMethodAuto(ctx, input)()
 
-	row, err := r.queries.UpdateSake(ctx, sqlc.UpdateSakeParams{
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		logger.LogDatabaseError(ctx, "BEGIN", "sakes", err, nil)
+		return nil, apperror.DatabaseError("トランザクション開始に失敗しました", err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	qtx := r.queries.WithTx(tx)
+
+	row, err := qtx.UpdateSake(ctx, sqlc.UpdateSakeParams{
 		ID:                pgtype.UUID{Bytes: [16]byte(input.ID), Valid: true},
 		Category:          sqlc.SakeCategory(input.Category),
 		Name:              input.Name.Name,
@@ -82,11 +114,22 @@ func (r *sakeRepositoryImpl) Update(ctx context.Context, input repository.Update
 		return nil, apperror.DatabaseError("酒の更新に失敗しました", err)
 	}
 
+	if err := r.syncTags(ctx, tx, input.ID, input.TagNames); err != nil {
+		return nil, err
+	}
+	if err := r.syncImages(ctx, tx, input.ID, input.ImageKeys); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		logger.LogDatabaseError(ctx, "COMMIT", "sakes", err, nil)
+		return nil, apperror.DatabaseError("トランザクションのコミットに失敗しました", err)
+	}
+
 	return &entity.SakeListItem{
 		ID:           uuid.UUID(row.ID.Bytes),
 		Category:     entity.SakeCategory(row.Category),
 		Name:         row.Name,
-		ImagePreview: "",
+		ImagePreview: firstImageKey(input.ImageKeys),
 	}, nil
 }
 
@@ -123,4 +166,70 @@ func numericFromFloat32Ptr(v *float32) pgtype.Numeric {
 	var numeric pgtype.Numeric
 	_ = numeric.ScanScientific(strconv.FormatFloat(float64(*v), 'f', -1, 32))
 	return numeric
+}
+
+// syncTags はお酒のタグ関連を現在の入力で置き換える。
+func (r *sakeRepositoryImpl) syncTags(ctx context.Context, tx pgx.Tx, sakeID uuid.UUID, tagNames []string) error {
+	if _, err := tx.Exec(ctx, `DELETE FROM sake_tag_links WHERE sake_id = $1`, sakeID); err != nil {
+		logger.LogDatabaseError(ctx, "DELETE", "sake_tag_links", err, map[string]interface{}{"sake_id": sakeID.String()})
+		return apperror.DatabaseError("タグの削除に失敗しました", err)
+	}
+
+	for _, tagName := range tagNames {
+		var tagID uuid.UUID
+		if err := tx.QueryRow(ctx, `
+			INSERT INTO sake_tags (tag)
+			VALUES ($1)
+			ON CONFLICT (tag) DO UPDATE SET tag = EXCLUDED.tag
+			RETURNING id
+		`, tagName).Scan(&tagID); err != nil {
+			logger.LogDatabaseError(ctx, "UPSERT", "sake_tags", err, map[string]interface{}{"tag": tagName})
+			return apperror.DatabaseError("タグの登録に失敗しました", err)
+		}
+
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO sake_tag_links (sake_id, sake_tag_id)
+			VALUES ($1, $2)
+		`, sakeID, tagID); err != nil {
+			logger.LogDatabaseError(ctx, "INSERT", "sake_tag_links", err, map[string]interface{}{
+				"sake_id": sakeID.String(),
+				"tag_id":  tagID.String(),
+			})
+			return apperror.DatabaseError("タグの紐付けに失敗しました", err)
+		}
+	}
+
+	return nil
+}
+
+// syncImages はお酒画像を現在の入力で置き換える。
+func (r *sakeRepositoryImpl) syncImages(ctx context.Context, tx pgx.Tx, sakeID uuid.UUID, imageKeys []string) error {
+	if _, err := tx.Exec(ctx, `DELETE FROM sake_images WHERE sake_id = $1`, sakeID); err != nil {
+		logger.LogDatabaseError(ctx, "DELETE", "sake_images", err, map[string]interface{}{"sake_id": sakeID.String()})
+		return apperror.DatabaseError("画像の削除に失敗しました", err)
+	}
+
+	for idx, imageKey := range imageKeys {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO sake_images (sake_id, image_key, sort_order)
+			VALUES ($1, $2, $3)
+		`, sakeID, imageKey, idx); err != nil {
+			logger.LogDatabaseError(ctx, "INSERT", "sake_images", err, map[string]interface{}{
+				"sake_id":    sakeID.String(),
+				"image_key":  imageKey,
+				"sort_order": idx,
+			})
+			return apperror.DatabaseError("画像の登録に失敗しました", err)
+		}
+	}
+
+	return nil
+}
+
+// firstImageKey は先頭画像キーを一覧表示用に返す。
+func firstImageKey(imageKeys []string) string {
+	if len(imageKeys) == 0 {
+		return ""
+	}
+	return imageKeys[0]
 }

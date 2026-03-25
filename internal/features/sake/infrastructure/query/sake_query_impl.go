@@ -17,12 +17,14 @@ import (
 )
 
 type sakeQueryImpl struct {
+	db      *pgxpool.Pool
 	queries *sqlc.Queries
 }
 
 // NewSakeQuery SakeQueryの実装を作成
 func NewSakeQuery(db *pgxpool.Pool) appQuery.SakeQuery {
 	return &sakeQueryImpl{
+		db:      db,
 		queries: sqlc.New(db),
 	}
 }
@@ -92,6 +94,14 @@ func (q *sakeQueryImpl) GetDetail(ctx context.Context, id uuid.UUID) (*entity.Sa
 	if err != nil {
 		return nil, apperror.DatabaseError("アルコール度数の変換に失敗しました", err)
 	}
+	tags, err := q.loadTags(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	images, err := q.loadImages(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 
 	return &entity.SakeDetail{
 		ID:       id,
@@ -108,8 +118,10 @@ func (q *sakeQueryImpl) GetDetail(ctx context.Context, id uuid.UUID) (*entity.Sa
 		},
 		Memo:        row.Memo,
 		DrinkStyles: []entity.DrinkStyle{},
+		Tags:        tags,
 		Price:       row.Price,
-		ImageUrl:    nil,
+		ImageUrl:    firstDetailImage(images),
+		Images:      images,
 		CreatedAt:   row.CreatedAt.Time,
 		UpdatedAt:   row.UpdatedAt.Time,
 	}, nil
@@ -135,4 +147,71 @@ func stringValue(v *string) string {
 		return ""
 	}
 	return *v
+}
+
+// loadTags は酒に紐づくタグを読み込む。
+func (q *sakeQueryImpl) loadTags(ctx context.Context, sakeID uuid.UUID) ([]entity.SakeTag, error) {
+	rows, err := q.db.Query(ctx, `
+		SELECT st.id, st.tag
+		FROM sake_tags st
+		INNER JOIN sake_tag_links stl ON stl.sake_tag_id = st.id
+		WHERE stl.sake_id = $1
+		ORDER BY st.tag ASC
+	`, sakeID)
+	if err != nil {
+		logger.LogDatabaseError(ctx, "SELECT", "sake_tags", err, map[string]interface{}{"sake_id": sakeID.String()})
+		return nil, apperror.DatabaseError("タグの取得に失敗しました", err)
+	}
+	defer rows.Close()
+
+	tags := []entity.SakeTag{}
+	for rows.Next() {
+		var id uuid.UUID
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return nil, apperror.DatabaseError("タグの取得に失敗しました", err)
+		}
+		tags = append(tags, entity.SakeTag{ID: id, Name: name})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, apperror.DatabaseError("タグの取得に失敗しました", err)
+	}
+	return tags, nil
+}
+
+// loadImages は酒に紐づく画像を表示順で読み込む。
+func (q *sakeQueryImpl) loadImages(ctx context.Context, sakeID uuid.UUID) ([]entity.SakeImage, error) {
+	rows, err := q.db.Query(ctx, `
+		SELECT id, image_key, sort_order
+		FROM sake_images
+		WHERE sake_id = $1
+		ORDER BY sort_order ASC
+	`, sakeID)
+	if err != nil {
+		logger.LogDatabaseError(ctx, "SELECT", "sake_images", err, map[string]interface{}{"sake_id": sakeID.String()})
+		return nil, apperror.DatabaseError("画像の取得に失敗しました", err)
+	}
+	defer rows.Close()
+
+	images := []entity.SakeImage{}
+	for rows.Next() {
+		var image entity.SakeImage
+		if err := rows.Scan(&image.ID, &image.ImageKey, &image.SortOrder); err != nil {
+			return nil, apperror.DatabaseError("画像の取得に失敗しました", err)
+		}
+		images = append(images, image)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, apperror.DatabaseError("画像の取得に失敗しました", err)
+	}
+	return images, nil
+}
+
+// firstDetailImage は先頭画像を detail の後方互換フィールドに入れる。
+func firstDetailImage(images []entity.SakeImage) *string {
+	if len(images) == 0 {
+		return nil
+	}
+	result := images[0].ImageKey
+	return &result
 }
