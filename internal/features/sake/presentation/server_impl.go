@@ -146,7 +146,15 @@ func (s *SakeServerImpl) CreateStock(c *gin.Context) {
 // DeleteStock 在庫削除
 // (DELETE /stocks/{sakeId})
 func (s *SakeServerImpl) DeleteStock(c *gin.Context, sakeId generated.SakeId) {
-	c.JSON(http.StatusNotImplemented, notImplementedResponse("stock delete API is temporarily disabled"))
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, sakeId)()
+
+	if err := s.deleteStockUC.Execute(ctx, uuid.UUID(sakeId)); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 // GetStockDetail 在庫詳細取得

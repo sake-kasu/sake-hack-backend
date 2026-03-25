@@ -90,11 +90,20 @@ func (r *sakeRepositoryImpl) Update(ctx context.Context, input repository.Update
 	}, nil
 }
 
-// Delete はDB/OASの再設計に伴う再実装まで一時的に未提供。
+// Delete はUUIDで指定された在庫データを削除する。
 func (r *sakeRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
 	defer logger.TraceMethodAuto(ctx, id)()
 
-	return apperror.InternalServerError("sake repository delete is temporarily disabled")
+	rowsAffected, err := r.queries.DeleteSake(ctx, pgtype.UUID{Bytes: [16]byte(id), Valid: true})
+	if err != nil {
+		logger.LogDatabaseError(ctx, "DELETE", "sakes", err, map[string]interface{}{"sake_id": id.String()})
+		return apperror.DatabaseError("酒の削除に失敗しました", err)
+	}
+	if rowsAffected == 0 {
+		return apperror.NotFoundError("酒が見つかりません").WithDetails("sake_id", id.String())
+	}
+
+	return nil
 }
 
 // emptyStringToNil は空文字を nil に正規化する。

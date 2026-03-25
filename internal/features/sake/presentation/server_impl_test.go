@@ -70,6 +70,14 @@ func (m *mockDeleteStockUsecase) Execute(ctx context.Context, id uuid.UUID) erro
 	return nil
 }
 
+type mockDeleteStockUsecaseWithResult struct {
+	err error
+}
+
+func (m *mockDeleteStockUsecaseWithResult) Execute(ctx context.Context, id uuid.UUID) error {
+	return m.err
+}
+
 func newTestServer(listUC *mockListSakesUsecase) *SakeServerImpl {
 	return NewSakeServerImpl(
 		listUC,
@@ -308,6 +316,23 @@ func TestUpdateStock_Success(t *testing.T) {
 	newRouter(server).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestDeleteStock_Success(t *testing.T) {
+	id := uuid.MustParse("66666666-6666-6666-6666-666666666666")
+	server := NewSakeServerImpl(
+		new(mockListSakesUsecase),
+		&mockGetSakeDetailUsecase{},
+		&mockCreateStockUsecase{},
+		&mockUpdateStockUsecase{},
+		&mockDeleteStockUsecaseWithResult{},
+	)
+
+	req := httptest.NewRequest(http.MethodDelete, "/stocks/"+id.String(), nil)
+	w := httptest.NewRecorder()
+	newRouter(server).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
 }
 
 type mockGetSakeDetailUsecaseWithResult struct {
