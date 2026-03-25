@@ -45,12 +45,12 @@ SakeTag:
   type: object
   required:
     - tagId
-    - tag
+    - tagName
   properties:
     tagId:
-      $ref: "#/SakeTagID"
-    tag:
-      $ref: "#/SakeTagName"
+      $ref: "./stock.yaml#/SakeTagID"
+    tagName:
+      $ref: "./stock.yaml#/SakeTagName"
 
 SakeDetail:
   type: object

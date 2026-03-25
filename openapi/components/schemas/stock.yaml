@@ -217,13 +217,6 @@ CreateStockRequest:
   required:
     - name
     - category
-    - phonetic
-    - alcoholPercentage
-    - volumeMax
-    - volumeRemain
-    - region
-    - price
-    - memo
     - tagNames
     - imageKeys
   properties:

@@ -113,9 +113,9 @@ CREATE TABLE sake_images (
 CREATE INDEX idx_sake_images_sake_id ON sake_images(sake_id);
 CREATE INDEX idx_sake_images_sake_sort_order ON sake_images(sake_id, sort_order);
 
-COMMENT ON TYPE sake_category IS 'お酒カテゴリ: JAPANESE_SAKE/SHOCHU/AWAMORI/BEER/WINE/FRUIT_WINE/LIQUEUR/NON_ALCOHOL/OTHER';
-COMMENT ON TYPE user_role IS 'ユーザーロール: SHOP(主催者)/USER(参加者)';
-COMMENT ON TYPE match_status IS 'マッチングリクエスト状態: PENDING/ACCEPTED/REJECTED';
+COMMENT ON TYPE sake_category_type IS 'お酒カテゴリ: JAPANESE_SAKE/SHOCHU/AWAMORI/BEER/WINE/FRUIT_WINE/LIQUEUR/NON_ALCOHOL/OTHER';
+COMMENT ON TYPE role_type IS 'ユーザーロール: SHOP(主催者)/USER(参加者)';
+COMMENT ON TYPE match_status_type IS 'マッチングリクエスト状態: PENDING/ACCEPTED/REJECTED';
 
 COMMENT ON TABLE sakes IS 'お酒マスタ';
 COMMENT ON COLUMN sakes.id IS '酒ID';

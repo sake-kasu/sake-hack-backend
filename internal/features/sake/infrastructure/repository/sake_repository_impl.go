@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/sake-kasu/sake-hack-backend/internal/apperror"
 	"github.com/sake-kasu/sake-hack-backend/internal/database/sqlc"
@@ -51,7 +51,7 @@ func (r *sakeRepositoryImpl) Create(ctx context.Context, input repository.Create
 		AlcoholPercentage: numericFromFloat32Ptr(input.Abv),
 		VolumeMax:         input.PurchaseVolume,
 		VolumeRemain:      input.RemainingVolume,
-		Region:            input.Brewery.OriginRegion,
+		Region:            emptyStringPtrToNil(input.Brewery.OriginRegion),
 		Price:             input.Price,
 		Memo:              input.Memo,
 	})
@@ -101,7 +101,7 @@ func (r *sakeRepositoryImpl) Update(ctx context.Context, input repository.Update
 		AlcoholPercentage: numericFromFloat32Ptr(input.Abv),
 		VolumeMax:         input.PurchaseVolume,
 		VolumeRemain:      input.RemainingVolume,
-		Region:            input.Brewery.OriginRegion,
+		Region:            emptyStringPtrToNil(input.Brewery.OriginRegion),
 		Price:             input.Price,
 		Memo:              input.Memo,
 	})
@@ -155,6 +155,17 @@ func emptyStringToNil(v string) *string {
 		return nil
 	}
 	return &v
+}
+
+// emptyStringPtrToNil は空文字ポインタを nil に正規化する。
+func emptyStringPtrToNil(v *string) *string {
+	if v == nil {
+		return nil
+	}
+	if *v == "" {
+		return nil
+	}
+	return v
 }
 
 // numericFromFloat32Ptr は nullable な float を pgtype.Numeric に変換する。
