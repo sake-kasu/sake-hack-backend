@@ -37,18 +37,36 @@ func NewSakeServerImpl(
 	}
 }
 
+// HealthCheck ヘルスチェック
+// (GET /health)
+func (s *SakeServerImpl) HealthCheck(c *gin.Context) {
+	c.String(http.StatusOK, "ok")
+}
+
+// CreateSakeLike いいね登録
+// (POST /sakes/{sakeId}/likes)
+func (s *SakeServerImpl) CreateSakeLike(c *gin.Context, sakeId generated.SakeId, params generated.CreateSakeLikeParams) {
+	c.JSON(http.StatusNotImplemented, notImplementedResponse("like API is temporarily disabled"))
+}
+
+// DeleteSakeLike いいね解除
+// (DELETE /sakes/{sakeId}/likes)
+func (s *SakeServerImpl) DeleteSakeLike(c *gin.Context, sakeId generated.SakeId, params generated.DeleteSakeLikeParams) {
+	c.JSON(http.StatusNotImplemented, notImplementedResponse("like API is temporarily disabled"))
+}
+
 // ListSakes 酒一覧取得
 // (GET /sakes)
 func (s *SakeServerImpl) ListSakes(c *gin.Context, params generated.ListSakesParams) {
 	ctx := c.Request.Context()
 	defer logger.TraceMethodAuto(ctx, params)()
 
-	if err := validateListParams(params.Offset, params.Limit, params.TypeId, params.BreweryId); err != nil {
+	if err := validateListParams(int32(params.Offset), int32(params.Limit)); err != nil {
 		handleError(c, err)
 		return
 	}
 
-	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(params.Offset, params.Limit, params.TypeId, params.BreweryId))
+	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(int32(params.Offset), int32(params.Limit)))
 	if err != nil {
 		handleError(c, err)
 		return
@@ -58,18 +76,9 @@ func (s *SakeServerImpl) ListSakes(c *gin.Context, params generated.ListSakesPar
 }
 
 // GetSakeDetail 酒詳細取得
-// (GET /sakes/{id})
-func (s *SakeServerImpl) GetSakeDetail(c *gin.Context, id int32) {
-	ctx := c.Request.Context()
-	defer logger.TraceMethodAuto(ctx, id)()
-
-	output, err := s.getSakeDetailUC.Execute(ctx, id)
-	if err != nil {
-		handleError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, toSakeDetailResponse(output.Detail))
+// (GET /sakes/{sakeId})
+func (s *SakeServerImpl) GetSakeDetail(c *gin.Context, sakeId generated.SakeId) {
+	c.JSON(http.StatusNotImplemented, notImplementedResponse("sake detail API is temporarily disabled"))
 }
 
 // ListStocks 在庫一覧取得
@@ -78,125 +87,62 @@ func (s *SakeServerImpl) ListStocks(c *gin.Context, params generated.ListStocksP
 	ctx := c.Request.Context()
 	defer logger.TraceMethodAuto(ctx, params)()
 
-	if err := validateListParams(params.Offset, params.Limit, params.TypeId, params.BreweryId); err != nil {
+	if err := validateListParams(int32(params.Offset), int32(params.Limit)); err != nil {
 		handleError(c, err)
 		return
 	}
 
-	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(params.Offset, params.Limit, params.TypeId, params.BreweryId))
+	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(int32(params.Offset), int32(params.Limit)))
 	if err != nil {
 		handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, toListSakesResponse(output))
+	c.JSON(http.StatusOK, toStockListResponse(output))
 }
 
 // CreateStock 在庫登録
 // (POST /stocks)
 func (s *SakeServerImpl) CreateStock(c *gin.Context) {
-	ctx := c.Request.Context()
-	defer logger.TraceMethodAuto(ctx, nil)()
-
-	var req generated.CreateSakeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		handleError(c, apperror.BadRequestError("リクエストボディの解析に失敗しました"))
-		return
-	}
-
-	if err := validateCreateSakeRequest(req); err != nil {
-		handleError(c, err)
-		return
-	}
-
-	input := toCreateStockInput(req)
-	output, err := s.createStockUC.Execute(ctx, input)
-	if err != nil {
-		handleError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusCreated, toCreateSakeResponse(output.Sake))
-}
-
-// GetStockDetail 在庫詳細取得
-// (GET /stocks/{id})
-func (s *SakeServerImpl) GetStockDetail(c *gin.Context, id int32) {
-	ctx := c.Request.Context()
-	defer logger.TraceMethodAuto(ctx, id)()
-
-	output, err := s.getSakeDetailUC.Execute(ctx, id)
-	if err != nil {
-		handleError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, toSakeDetailResponse(output.Detail))
-}
-
-// UpdateStock 在庫更新
-// (PUT /stocks/{id})
-func (s *SakeServerImpl) UpdateStock(c *gin.Context, id int32) {
-	ctx := c.Request.Context()
-	defer logger.TraceMethodAuto(ctx, id)()
-
-	var req generated.UpdateSakeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		handleError(c, apperror.BadRequestError("リクエストボディの解析に失敗しました"))
-		return
-	}
-
-	if err := validateUpdateSakeRequest(req); err != nil {
-		handleError(c, err)
-		return
-	}
-
-	input := toUpdateStockInput(id, req)
-	if _, err := s.updateStockUC.Execute(ctx, input); err != nil {
-		handleError(c, err)
-		return
-	}
-
-	detailOutput, err := s.getSakeDetailUC.Execute(ctx, id)
-	if err != nil {
-		handleError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, toSakeDetailResponse(detailOutput.Detail))
+	c.JSON(http.StatusNotImplemented, notImplementedResponse("stock write API is temporarily disabled"))
 }
 
 // DeleteStock 在庫削除
-// (DELETE /stocks/{id})
-func (s *SakeServerImpl) DeleteStock(c *gin.Context, id int32) {
-	ctx := c.Request.Context()
-	defer logger.TraceMethodAuto(ctx, id)()
-
-	if err := s.deleteStockUC.Execute(ctx, id); err != nil {
-		handleError(c, err)
-		return
-	}
-
-	c.Status(http.StatusNoContent)
+// (DELETE /stocks/{sakeId})
+func (s *SakeServerImpl) DeleteStock(c *gin.Context, sakeId generated.SakeId) {
+	c.JSON(http.StatusNotImplemented, notImplementedResponse("stock delete API is temporarily disabled"))
 }
 
-// toListSakesInput パラメータをListSakesInputに変換する
-func toListSakesInput(offset, limit, typeID, breweryID *int32) usecase.ListSakesInput {
-	o := int32(0)
-	if offset != nil {
-		o = *offset
-	}
+// GetStockDetail 在庫詳細取得
+// (GET /stocks/{sakeId})
+func (s *SakeServerImpl) GetStockDetail(c *gin.Context, sakeId generated.SakeId) {
+	c.JSON(http.StatusNotImplemented, notImplementedResponse("stock detail API is temporarily disabled"))
+}
 
-	l := int32(20)
-	if limit != nil {
-		l = *limit
-	}
+// UpdateStock 在庫更新
+// (PUT /stocks/{sakeId})
+func (s *SakeServerImpl) UpdateStock(c *gin.Context, sakeId generated.SakeId) {
+	c.JSON(http.StatusNotImplemented, notImplementedResponse("stock update API is temporarily disabled"))
+}
 
+func toListSakesInput(offset, limit int32) usecase.ListSakesInput {
 	return usecase.ListSakesInput{
-		KindID:    typeID,
-		BreweryID: breweryID,
-		Offset:    o,
-		Limit:     l,
+		KindID:    nil,
+		BreweryID: nil,
+		Offset:    offset,
+		Limit:     limit,
+	}
+}
+
+func notImplementedResponse(message string) generated.ErrorResponse {
+	return generated.ErrorResponse{
+		Data: nil,
+		Errors: []generated.APIError{
+			{
+				Code:    "NOT_IMPLEMENTED",
+				Message: message,
+			},
+		},
 	}
 }
 
@@ -212,7 +158,7 @@ func handleError(c *gin.Context, err error) {
 		}
 		c.JSON(valErr.Status, generated.ErrorResponse{
 			Data:   nil,
-			Errors: &errors,
+			Errors: errors,
 		})
 		return
 	}
@@ -227,7 +173,7 @@ func handleError(c *gin.Context, err error) {
 		}
 		c.JSON(appErr.Status, generated.ErrorResponse{
 			Data:   nil,
-			Errors: &errors,
+			Errors: errors,
 		})
 		return
 	}
@@ -240,6 +186,6 @@ func handleError(c *gin.Context, err error) {
 	}
 	c.JSON(http.StatusInternalServerError, generated.ErrorResponse{
 		Data:   nil,
-		Errors: &errors,
+		Errors: errors,
 	})
 }
