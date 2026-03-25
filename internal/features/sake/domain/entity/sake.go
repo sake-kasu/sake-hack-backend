@@ -1,6 +1,10 @@
 package entity
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // SakeCategory 酒のカテゴリ(Value Object)
 type SakeCategory string
@@ -59,7 +63,7 @@ type SakeName struct {
 
 // SakeListItem リスト表示用の酒情報(軽量)
 type SakeListItem struct {
-	ID           int32
+	ID           uuid.UUID
 	Category     SakeCategory
 	Name         string
 	ImagePreview string

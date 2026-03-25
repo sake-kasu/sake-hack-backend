@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -76,7 +77,7 @@ func TestListSakes_Success(t *testing.T) {
 	expectedOutput := &usecase.ListSakesOutput{
 		Sakes: []entity.SakeListItem{
 			{
-				ID:           1,
+				ID:           uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 				Category:     entity.SakeCategoryJapaneseSake,
 				Name:         "獺祭 純米大吟醸50",
 				ImagePreview: "preview.jpg",
@@ -110,7 +111,7 @@ func TestListStocks_Success(t *testing.T) {
 	expectedOutput := &usecase.ListSakesOutput{
 		Sakes: []entity.SakeListItem{
 			{
-				ID:           1,
+				ID:           uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 				Category:     entity.SakeCategoryBeer,
 				Name:         "Yona Yona Ale",
 				ImagePreview: "preview.jpg",

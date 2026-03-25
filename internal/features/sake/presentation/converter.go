@@ -1,9 +1,6 @@
 package presentation
 
 import (
-	"encoding/binary"
-
-	"github.com/google/uuid"
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
@@ -45,7 +42,7 @@ func toStockListResponse(output *usecase.ListSakesOutput) generated.ListStockRes
 
 func toSakeResponse(item entity.SakeListItem) generated.Sake {
 	return generated.Sake{
-		SakeId:        int32ToSakeID(item.ID),
+		SakeId:        generated.SakeID(item.ID),
 		Category:      toGeneratedCategory(item.Category),
 		Name:          generated.SakeName(item.Name),
 		Phonetic:      nil,
@@ -56,19 +53,13 @@ func toSakeResponse(item entity.SakeListItem) generated.Sake {
 
 func toStockResponse(item entity.SakeListItem) generated.Stock {
 	return generated.Stock{
-		SakeId:        int32ToSakeID(item.ID),
+		SakeId:        generated.SakeID(item.ID),
 		Category:      toGeneratedCategory(item.Category),
 		Name:          generated.SakeName(item.Name),
 		Phonetic:      nil,
 		FirstImageKey: emptyToStringPtr(item.ImagePreview),
 		LikeCount:     generated.LikeCount(0),
 	}
-}
-
-func int32ToSakeID(id int32) generated.SakeID {
-	var raw uuid.UUID
-	binary.BigEndian.PutUint32(raw[12:], uint32(id))
-	return generated.SakeID(raw)
 }
 
 func toGeneratedCategory(c entity.SakeCategory) generated.SakeCategory {
