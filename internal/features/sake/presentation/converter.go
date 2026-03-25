@@ -101,6 +101,28 @@ func toStockDetailResponse(detail *entity.SakeDetail) generated.StockDetail {
 	}
 }
 
+// toCreateStockInput は在庫登録リクエストをユースケース入力に変換する。
+func toCreateStockInput(req generated.CreateStockRequest) usecase.CreateStockInput {
+	return usecase.CreateStockInput{
+		Category: entity.SakeCategory(req.Category),
+		Kind:     entity.SakeKind{},
+		Brewery: entity.Brewery{
+			OriginRegion: sakeRegionToStringPtr(req.Region),
+		},
+		Name: entity.SakeName{
+			Name:     string(req.Name),
+			Phonetic: sakePhoneticToString(req.Phonetic),
+		},
+		Abv:             alcoholPercentageToFloat32Ptr(req.AlcoholPercentage),
+		PurchaseVolume:  volumeMaxToInt32Ptr(req.VolumeMax),
+		RemainingVolume: volumeRemainToInt32Ptr(req.VolumeRemain),
+		Memo:            sakeMemoToStringPtr(req.Memo),
+		DrinkStyles:     []entity.DrinkStyle{},
+		Price:           priceToInt32Ptr(req.Price),
+		ImageUrl:        firstImageKeyToStringPtr(req.ImageKeys),
+	}
+}
+
 func toGeneratedCategory(c entity.SakeCategory) generated.SakeCategory {
 	switch c {
 	case entity.SakeCategoryJapaneseSake:
@@ -134,6 +156,14 @@ func emptyToSakePhoneticPtr(v string) *generated.SakePhonetic {
 	return &result
 }
 
+// sakePhoneticToString は OpenAPI の nullable phonetic を文字列に変換する。
+func sakePhoneticToString(v *generated.SakePhonetic) string {
+	if v == nil {
+		return ""
+	}
+	return string(*v)
+}
+
 // float32ToAlcoholPercentagePtr は *float32 を OpenAPI 型に変換する。
 func float32ToAlcoholPercentagePtr(v *float32) *generated.SakeAlcoholPercentage {
 	if v == nil {
@@ -161,6 +191,15 @@ func stringToSakeMemoPtr(v *string) *generated.SakeMemo {
 	return &result
 }
 
+// sakeMemoToStringPtr は OpenAPI の nullable memo を *string に変換する。
+func sakeMemoToStringPtr(v *generated.SakeMemo) *string {
+	if v == nil {
+		return nil
+	}
+	result := string(*v)
+	return &result
+}
+
 // int32ToVolumeMaxPtr は *int32 を OpenAPI 型に変換する。
 func int32ToVolumeMaxPtr(v *int32) *generated.SakeVolumeMax {
 	if v == nil {
@@ -185,5 +224,59 @@ func int32ToPricePtr(v *int32) *generated.SakePrice {
 		return nil
 	}
 	result := generated.SakePrice(*v)
+	return &result
+}
+
+// alcoholPercentageToFloat32Ptr は OpenAPI 型を *float32 に変換する。
+func alcoholPercentageToFloat32Ptr(v *generated.SakeAlcoholPercentage) *float32 {
+	if v == nil {
+		return nil
+	}
+	result := float32(*v)
+	return &result
+}
+
+// volumeMaxToInt32Ptr は OpenAPI 型を *int32 に変換する。
+func volumeMaxToInt32Ptr(v *generated.SakeVolumeMax) *int32 {
+	if v == nil {
+		return nil
+	}
+	result := int32(*v)
+	return &result
+}
+
+// volumeRemainToInt32Ptr は OpenAPI 型を *int32 に変換する。
+func volumeRemainToInt32Ptr(v *generated.SakeVolumeRemain) *int32 {
+	if v == nil {
+		return nil
+	}
+	result := int32(*v)
+	return &result
+}
+
+// priceToInt32Ptr は OpenAPI 型を *int32 に変換する。
+func priceToInt32Ptr(v *generated.SakePrice) *int32 {
+	if v == nil {
+		return nil
+	}
+	result := int32(*v)
+	return &result
+}
+
+// sakeRegionToStringPtr は OpenAPI の nullable region を *string に変換する。
+func sakeRegionToStringPtr(v *generated.SakeRegion) *string {
+	if v == nil {
+		return nil
+	}
+	result := string(*v)
+	return &result
+}
+
+// firstImageKeyToStringPtr は先頭画像キーのみを保存用に取り出す。
+func firstImageKeyToStringPtr(v []generated.SakeImageKey) *string {
+	if len(v) == 0 {
+		return nil
+	}
+	result := string(v[0])
 	return &result
 }

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
 )
 
@@ -12,28 +13,28 @@ type CreateSakeInput struct {
 	Kind            entity.SakeKind
 	Brewery         entity.Brewery
 	Name            entity.SakeName
-	Abv             float32
-	PurchaseVolume  float32
-	RemainingVolume float32
+	Abv             *float32
+	PurchaseVolume  *int32
+	RemainingVolume *int32
 	Memo            *string
 	DrinkStyles     []entity.DrinkStyle
-	Price           int32
+	Price           *int32
 	ImageUrl        *string
 }
 
 // UpdateSakeInput 酒の更新に必要な入力
 type UpdateSakeInput struct {
-	ID              int32
+	ID              uuid.UUID
 	Category        entity.SakeCategory
 	Kind            entity.SakeKind
 	Brewery         entity.Brewery
 	Name            entity.SakeName
-	Abv             float32
-	PurchaseVolume  float32
-	RemainingVolume float32
+	Abv             *float32
+	PurchaseVolume  *int32
+	RemainingVolume *int32
 	Memo            *string
 	DrinkStyles     []entity.DrinkStyle
-	Price           int32
+	Price           *int32
 	ImageUrl        *string
 }
 
@@ -41,5 +42,5 @@ type UpdateSakeInput struct {
 type SakeRepository interface {
 	Create(ctx context.Context, input CreateSakeInput) (*entity.SakeListItem, error)
 	Update(ctx context.Context, input UpdateSakeInput) (*entity.SakeListItem, error)
-	Delete(ctx context.Context, id int32) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }

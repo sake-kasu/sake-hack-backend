@@ -114,7 +114,33 @@ func (s *SakeServerImpl) ListStocks(c *gin.Context, params generated.ListStocksP
 // CreateStock 在庫登録
 // (POST /stocks)
 func (s *SakeServerImpl) CreateStock(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, notImplementedResponse("stock write API is temporarily disabled"))
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, nil)()
+
+	var req generated.CreateStockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		handleError(c, apperror.BadRequestError("リクエストボディの解析に失敗しました"))
+		return
+	}
+
+	if err := validateCreateStockRequest(req); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	output, err := s.createStockUC.Execute(ctx, toCreateStockInput(req))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	detailOutput, err := s.getSakeDetailUC.Execute(ctx, output.Sake.ID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, toStockDetailResponse(detailOutput.Detail))
 }
 
 // DeleteStock 在庫削除

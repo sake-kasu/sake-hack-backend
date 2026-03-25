@@ -15,12 +15,12 @@ type CreateStockInput struct {
 	Kind            entity.SakeKind
 	Brewery         entity.Brewery
 	Name            entity.SakeName
-	Abv             float32
-	PurchaseVolume  float32
-	RemainingVolume float32
+	Abv             *float32
+	PurchaseVolume  *int32
+	RemainingVolume *int32
 	Memo            *string
 	DrinkStyles     []entity.DrinkStyle
-	Price           int32
+	Price           *int32
 	ImageUrl        *string
 }
 

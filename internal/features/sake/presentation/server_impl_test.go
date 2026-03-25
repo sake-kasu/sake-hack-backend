@@ -1,6 +1,7 @@
 package presentation
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -41,6 +42,14 @@ func (m *mockCreateStockUsecase) Execute(ctx context.Context, input usecase.Crea
 	return nil, nil
 }
 
+type mockCreateStockUsecaseWithResult struct {
+	output *usecase.CreateStockOutput
+}
+
+func (m *mockCreateStockUsecaseWithResult) Execute(ctx context.Context, input usecase.CreateStockInput) (*usecase.CreateStockOutput, error) {
+	return m.output, nil
+}
+
 type mockUpdateStockUsecase struct{}
 
 func (m *mockUpdateStockUsecase) Execute(ctx context.Context, input usecase.UpdateStockInput) (*usecase.UpdateStockOutput, error) {
@@ -49,7 +58,7 @@ func (m *mockUpdateStockUsecase) Execute(ctx context.Context, input usecase.Upda
 
 type mockDeleteStockUsecase struct{}
 
-func (m *mockDeleteStockUsecase) Execute(ctx context.Context, id int32) error {
+func (m *mockDeleteStockUsecase) Execute(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
@@ -138,7 +147,7 @@ func TestListStocks_Success(t *testing.T) {
 	assert.Equal(t, generated.BEER, response.Data[0].Category)
 }
 
-func TestCreateStock_NotImplemented(t *testing.T) {
+func TestCreateStock_InvalidRequest(t *testing.T) {
 	listUC := new(mockListSakesUsecase)
 	server := newTestServer(listUC)
 
@@ -146,7 +155,61 @@ func TestCreateStock_NotImplemented(t *testing.T) {
 	w := httptest.NewRecorder()
 	newRouter(server).ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusNotImplemented, w.Code)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestCreateStock_Success(t *testing.T) {
+	id := uuid.MustParse("44444444-4444-4444-4444-444444444444")
+	server := NewSakeServerImpl(
+		new(mockListSakesUsecase),
+		&mockGetSakeDetailUsecaseWithResult{
+			output: &usecase.GetSakeDetailOutput{
+				Detail: &entity.SakeDetail{
+					ID:       id,
+					Category: entity.SakeCategoryJapaneseSake,
+					Name:     entity.SakeName{Name: "獺祭", Phonetic: "だっさい"},
+					Brewery: entity.Brewery{
+						OriginRegion: strPtr("Yamaguchi"),
+					},
+					Abv:             float32Ptr(16),
+					PurchaseVolume:  int32Ptr(720),
+					RemainingVolume: int32Ptr(100),
+					Price:           int32Ptr(3000),
+					Memo:            strPtr("memo"),
+				},
+			},
+		},
+		&mockCreateStockUsecaseWithResult{
+			output: &usecase.CreateStockOutput{
+				Sake: &entity.SakeListItem{
+					ID:       id,
+					Category: entity.SakeCategoryJapaneseSake,
+					Name:     "獺祭",
+				},
+			},
+		},
+		&mockUpdateStockUsecase{},
+		&mockDeleteStockUsecase{},
+	)
+
+	req := httptest.NewRequest(http.MethodPost, "/stocks", bytes.NewBufferString(`{
+		"name":"獺祭",
+		"category":"JAPANESE_SAKE",
+		"phonetic":"だっさい",
+		"alcoholPercentage":16,
+		"volumeMax":720,
+		"volumeRemain":100,
+		"region":"Yamaguchi",
+		"price":3000,
+		"memo":"memo",
+		"tagNames":["fruity"],
+		"imageKeys":["img-1"]
+	}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	newRouter(server).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
 }
 
 func TestGetStockDetail_Success(t *testing.T) {
