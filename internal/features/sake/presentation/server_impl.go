@@ -167,9 +167,35 @@ func (s *SakeServerImpl) GetStockDetail(c *gin.Context, sakeId generated.SakeId)
 // UpdateStock 在庫更新
 // (PUT /stocks/{sakeId})
 func (s *SakeServerImpl) UpdateStock(c *gin.Context, sakeId generated.SakeId) {
-	c.JSON(http.StatusNotImplemented, notImplementedResponse("stock update API is temporarily disabled"))
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, sakeId)()
+
+	var req generated.CreateStockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		handleError(c, apperror.BadRequestError("リクエストボディの解析に失敗しました"))
+		return
+	}
+
+	if err := validateCreateStockRequest(req); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	if _, err := s.updateStockUC.Execute(ctx, toUpdateStockInput(uuid.UUID(sakeId), req)); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	detailOutput, err := s.getSakeDetailUC.Execute(ctx, uuid.UUID(sakeId))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toStockDetailResponse(detailOutput.Detail))
 }
 
+// toListSakesInput は一覧APIの入力をユースケース入力に変換する。
 func toListSakesInput(offset, limit int32) usecase.ListSakesInput {
 	return usecase.ListSakesInput{
 		KindID:    nil,
@@ -179,6 +205,7 @@ func toListSakesInput(offset, limit int32) usecase.ListSakesInput {
 	}
 }
 
+// notImplementedResponse は未実装API向けの共通エラーレスポンスを返す。
 func notImplementedResponse(message string) generated.ErrorResponse {
 	return generated.ErrorResponse{
 		Data: nil,

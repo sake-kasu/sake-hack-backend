@@ -1,6 +1,7 @@
 package presentation
 
 import (
+	"github.com/google/uuid"
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
@@ -104,6 +105,29 @@ func toStockDetailResponse(detail *entity.SakeDetail) generated.StockDetail {
 // toCreateStockInput は在庫登録リクエストをユースケース入力に変換する。
 func toCreateStockInput(req generated.CreateStockRequest) usecase.CreateStockInput {
 	return usecase.CreateStockInput{
+		Category: entity.SakeCategory(req.Category),
+		Kind:     entity.SakeKind{},
+		Brewery: entity.Brewery{
+			OriginRegion: sakeRegionToStringPtr(req.Region),
+		},
+		Name: entity.SakeName{
+			Name:     string(req.Name),
+			Phonetic: sakePhoneticToString(req.Phonetic),
+		},
+		Abv:             alcoholPercentageToFloat32Ptr(req.AlcoholPercentage),
+		PurchaseVolume:  volumeMaxToInt32Ptr(req.VolumeMax),
+		RemainingVolume: volumeRemainToInt32Ptr(req.VolumeRemain),
+		Memo:            sakeMemoToStringPtr(req.Memo),
+		DrinkStyles:     []entity.DrinkStyle{},
+		Price:           priceToInt32Ptr(req.Price),
+		ImageUrl:        firstImageKeyToStringPtr(req.ImageKeys),
+	}
+}
+
+// toUpdateStockInput は在庫更新リクエストをユースケース入力に変換する。
+func toUpdateStockInput(id uuid.UUID, req generated.CreateStockRequest) usecase.UpdateStockInput {
+	return usecase.UpdateStockInput{
+		ID:       id,
 		Category: entity.SakeCategory(req.Category),
 		Kind:     entity.SakeKind{},
 		Brewery: entity.Brewery{

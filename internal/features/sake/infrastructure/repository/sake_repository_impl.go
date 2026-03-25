@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -55,11 +57,37 @@ func (r *sakeRepositoryImpl) Create(ctx context.Context, input repository.Create
 	}, nil
 }
 
-// Update はDB/OASの再設計に伴う再実装まで一時的に未提供。
+// Update は現行DB schemaに在庫データを更新する。
 func (r *sakeRepositoryImpl) Update(ctx context.Context, input repository.UpdateSakeInput) (*entity.SakeListItem, error) {
 	defer logger.TraceMethodAuto(ctx, input)()
 
-	return nil, apperror.InternalServerError("sake repository update is temporarily disabled")
+	row, err := r.queries.UpdateSake(ctx, sqlc.UpdateSakeParams{
+		ID:                pgtype.UUID{Bytes: [16]byte(input.ID), Valid: true},
+		Category:          sqlc.SakeCategory(input.Category),
+		Name:              input.Name.Name,
+		Phonetic:          emptyStringToNil(input.Name.Phonetic),
+		AlcoholPercentage: numericFromFloat32Ptr(input.Abv),
+		VolumeMax:         input.PurchaseVolume,
+		VolumeRemain:      input.RemainingVolume,
+		Region:            input.Brewery.OriginRegion,
+		Price:             input.Price,
+		Memo:              input.Memo,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperror.NotFoundError("酒が見つかりません").WithDetails("sake_id", input.ID.String())
+		}
+
+		logger.LogDatabaseError(ctx, "UPDATE", "sakes", err, map[string]interface{}{"input": input})
+		return nil, apperror.DatabaseError("酒の更新に失敗しました", err)
+	}
+
+	return &entity.SakeListItem{
+		ID:           uuid.UUID(row.ID.Bytes),
+		Category:     entity.SakeCategory(row.Category),
+		Name:         row.Name,
+		ImagePreview: "",
+	}, nil
 }
 
 // Delete はDB/OASの再設計に伴う再実装まで一時的に未提供。

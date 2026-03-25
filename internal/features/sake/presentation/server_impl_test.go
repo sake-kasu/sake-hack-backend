@@ -56,6 +56,14 @@ func (m *mockUpdateStockUsecase) Execute(ctx context.Context, input usecase.Upda
 	return nil, nil
 }
 
+type mockUpdateStockUsecaseWithResult struct {
+	output *usecase.UpdateStockOutput
+}
+
+func (m *mockUpdateStockUsecaseWithResult) Execute(ctx context.Context, input usecase.UpdateStockInput) (*usecase.UpdateStockOutput, error) {
+	return m.output, nil
+}
+
 type mockDeleteStockUsecase struct{}
 
 func (m *mockDeleteStockUsecase) Execute(ctx context.Context, id uuid.UUID) error {
@@ -242,6 +250,60 @@ func TestGetStockDetail_Success(t *testing.T) {
 	)
 
 	req := httptest.NewRequest(http.MethodGet, "/stocks/"+id.String(), nil)
+	w := httptest.NewRecorder()
+	newRouter(server).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestUpdateStock_Success(t *testing.T) {
+	id := uuid.MustParse("55555555-5555-5555-5555-555555555555")
+	server := NewSakeServerImpl(
+		new(mockListSakesUsecase),
+		&mockGetSakeDetailUsecaseWithResult{
+			output: &usecase.GetSakeDetailOutput{
+				Detail: &entity.SakeDetail{
+					ID:       id,
+					Category: entity.SakeCategoryJapaneseSake,
+					Name:     entity.SakeName{Name: "新しい獺祭", Phonetic: "あたらしいだっさい"},
+					Brewery: entity.Brewery{
+						OriginRegion: strPtr("Yamaguchi"),
+					},
+					Abv:             float32Ptr(15),
+					PurchaseVolume:  int32Ptr(720),
+					RemainingVolume: int32Ptr(90),
+					Price:           int32Ptr(3200),
+					Memo:            strPtr("updated"),
+				},
+			},
+		},
+		&mockCreateStockUsecase{},
+		&mockUpdateStockUsecaseWithResult{
+			output: &usecase.UpdateStockOutput{
+				Sake: &entity.SakeListItem{
+					ID:       id,
+					Category: entity.SakeCategoryJapaneseSake,
+					Name:     "新しい獺祭",
+				},
+			},
+		},
+		&mockDeleteStockUsecase{},
+	)
+
+	req := httptest.NewRequest(http.MethodPut, "/stocks/"+id.String(), bytes.NewBufferString(`{
+		"name":"新しい獺祭",
+		"category":"JAPANESE_SAKE",
+		"phonetic":"あたらしいだっさい",
+		"alcoholPercentage":15,
+		"volumeMax":720,
+		"volumeRemain":90,
+		"region":"Yamaguchi",
+		"price":3200,
+		"memo":"updated",
+		"tagNames":["fruity"],
+		"imageKeys":["img-1"]
+	}`))
+	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	newRouter(server).ServeHTTP(w, req)
 
