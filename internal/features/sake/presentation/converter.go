@@ -5,6 +5,7 @@ import (
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
+	"github.com/sake-kasu/sake-hack-backend/internal/utils"
 )
 
 // toListSakesResponse ListSakesOutputをAPIレスポンスに変換
@@ -299,7 +300,10 @@ func volumeMaxToInt32Ptr(v *generated.SakeVolumeMax) *int32 {
 	if v == nil {
 		return nil
 	}
-	result := int32(*v)
+	result, err := utils.IntToInt32(int(*v))
+	if err != nil {
+		return nil
+	}
 	return &result
 }
 
@@ -308,7 +312,10 @@ func volumeRemainToInt32Ptr(v *generated.SakeVolumeRemain) *int32 {
 	if v == nil {
 		return nil
 	}
-	result := int32(*v)
+	result, err := utils.IntToInt32(int(*v))
+	if err != nil {
+		return nil
+	}
 	return &result
 }
 
@@ -317,7 +324,10 @@ func priceToInt32Ptr(v *generated.SakePrice) *int32 {
 	if v == nil {
 		return nil
 	}
-	result := int32(*v)
+	result, err := utils.IntToInt32(int(*v))
+	if err != nil {
+		return nil
+	}
 	return &result
 }
 

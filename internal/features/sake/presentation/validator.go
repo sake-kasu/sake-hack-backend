@@ -1,6 +1,8 @@
 package presentation
 
 import (
+	"math"
+
 	"github.com/go-playground/validator/v10"
 
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
@@ -51,6 +53,9 @@ func validateCreateStockRequest(req generated.CreateStockRequest) error {
 	}
 	if req.Price != nil && *req.Price < 0 {
 		verr = verr.AddField("price", "価格は0以上である必要があります")
+	}
+	if req.Price != nil && *req.Price > generated.SakePrice(math.MaxInt32) {
+		verr = verr.AddField("price", "価格はint32の範囲内で指定してください")
 	}
 
 	if verr.HasErrors() {

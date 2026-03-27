@@ -10,6 +10,7 @@ import (
 	"github.com/sake-kasu/sake-hack-backend/internal/apperror"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
 	"github.com/sake-kasu/sake-hack-backend/internal/logger"
+	"github.com/sake-kasu/sake-hack-backend/internal/utils"
 )
 
 // SakeServerImpl 酒関連のServerInterface実装
@@ -62,12 +63,18 @@ func (s *SakeServerImpl) ListSakes(c *gin.Context, params generated.ListSakesPar
 	ctx := c.Request.Context()
 	defer logger.TraceMethodAuto(ctx, params)()
 
-	if err := validateListParams(int32(params.Offset), int32(params.Limit)); err != nil {
+	offset, limit, err := toListParams(params.Offset, params.Limit)
+	if err != nil {
 		handleError(c, err)
 		return
 	}
 
-	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(int32(params.Offset), int32(params.Limit)))
+	if err := validateListParams(offset, limit); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(offset, limit))
 	if err != nil {
 		handleError(c, err)
 		return
@@ -97,12 +104,18 @@ func (s *SakeServerImpl) ListStocks(c *gin.Context, params generated.ListStocksP
 	ctx := c.Request.Context()
 	defer logger.TraceMethodAuto(ctx, params)()
 
-	if err := validateListParams(int32(params.Offset), int32(params.Limit)); err != nil {
+	offset, limit, err := toListParams(params.Offset, params.Limit)
+	if err != nil {
 		handleError(c, err)
 		return
 	}
 
-	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(int32(params.Offset), int32(params.Limit)))
+	if err := validateListParams(offset, limit); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(offset, limit))
 	if err != nil {
 		handleError(c, err)
 		return
@@ -201,6 +214,21 @@ func (s *SakeServerImpl) UpdateStock(c *gin.Context, sakeId generated.SakeId) {
 	}
 
 	c.JSON(http.StatusOK, toStockDetailResponse(detailOutput.Detail))
+}
+
+// toListParams は一覧 API の offset/limit を安全に int32 へ変換する。
+func toListParams(offset generated.Offset, limit generated.Limit) (int32, int32, error) {
+	convertedOffset, err := utils.IntToInt32(int(offset))
+	if err != nil {
+		return 0, 0, apperror.BadRequestError("offset の値が不正です")
+	}
+
+	convertedLimit, err := utils.IntToInt32(int(limit))
+	if err != nil {
+		return 0, 0, apperror.BadRequestError("limit の値が不正です")
+	}
+
+	return convertedOffset, convertedLimit, nil
 }
 
 // toListSakesInput は一覧APIの入力をユースケース入力に変換する。
