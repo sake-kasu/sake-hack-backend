@@ -254,10 +254,10 @@ sake-hack-backend/
 ### 新機能追加
 
 1. **API 仕様定義**:
-   - エンドポイント: `api/paths/<endpoint_name>.yaml` に追加
-   - スキーマ: `api/components/schemas/<schema_name>.yaml` に追加
-   - レスポンス: `api/components/responses/` で共通レスポンスを再利用
-   - メインファイル: `api/openapi.yaml` に `$ref` で参照を追加
+   - エンドポイント: `openapi/paths/<endpoint_name>.yaml` に追加
+   - スキーマ: `openapi/components/schemas/<schema_name>.yaml` に追加
+   - レスポンス: `openapi/components/responses/` で共通レスポンスを再利用
+   - メインファイル: `openapi/openapi.yaml` に `$ref` で参照を追加
 2. **コード生成**: `make openapi-generate` (自動的にバンドル → 生成)
 3. **パッケージ作成**: `internal/features/<feature_name>/`
 4. **実装**: Domain → Application → Infrastructure → Presentation
@@ -270,12 +270,12 @@ sake-hack-backend/
 
 OpenAPI 仕様はモジュール化されており、以下のように分割されています：
 
-- **`api/openapi.yaml`**: メインファイル(各ファイルへの参照のみ)
-- **`api/paths/`**: エンドポイントごとの定義
-- **`api/components/schemas/`**: データモデル定義(Sake, common等)
-- **`api/components/responses/`**: 共通レスポンス定義
-- **`api/components/parameters/`**: 共通パラメータ定義
-- **`api/components/securitySchemes/`**: 認証スキーム定義
+- **`openapi/openapi.yaml`**: メインファイル(各ファイルへの参照のみ)
+- **`openapi/paths/`**: エンドポイントごとの定義
+- **`openapi/components/schemas/`**: データモデル定義(Sake, common等)
+- **`openapi/components/responses/`**: 共通レスポンス定義
+- **`openapi/components/parameters/`**: 共通パラメータ定義
+- **`openapi/components/securitySchemes/`**: 認証スキーム定義
 
 新しいエンドポイントを追加する際は、`paths/` に新しいファイルを作成し、
 `openapi.yaml` から `$ref` で参照してください。

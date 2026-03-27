@@ -29,8 +29,8 @@ jobs:
         with:
           filters: |
             api:
-              - 'api/**'
-              - 'api/oapi-codegen*.yaml'
+              - 'openapi/**'
+              - 'api/generated/**'
             docker:
               - 'docker/**'
               - 'Makefile'
@@ -60,7 +60,7 @@ jobs:
 
       - name: Validate OpenAPI spec
         run: |
-          redocly lint api/openapi.yaml
+          redocly lint openapi/openapi.yaml
           echo "✅ OpenAPI仕様が正常です"
 
   validate-go-modules:
