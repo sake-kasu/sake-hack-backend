@@ -15,10 +15,10 @@ const countSakes = `-- name: CountSakes :one
 SELECT COUNT(*) AS total
 FROM sakes s
 WHERE
-    ($1::sake_category IS NULL OR s.category = $1)
+    ($1::sake_category_type IS NULL OR s.category = $1)
 `
 
-func (q *Queries) CountSakes(ctx context.Context, category NullSakeCategory) (int64, error) {
+func (q *Queries) CountSakes(ctx context.Context, category NullSakeCategoryType) (int64, error) {
 	row := q.db.QueryRow(ctx, countSakes, category)
 	var total int64
 	err := row.Scan(&total)
@@ -32,20 +32,20 @@ RETURNING id, category, name, created_at, updated_at
 `
 
 type CreateSakeParams struct {
-	Category          SakeCategory   `db:"category" json:"category"`
-	Name              string         `db:"name" json:"name"`
-	Phonetic          *string        `db:"phonetic" json:"phonetic"`
-	AlcoholPercentage pgtype.Numeric `db:"alcohol_percentage" json:"alcohol_percentage"`
-	VolumeMax         *int32         `db:"volume_max" json:"volume_max"`
-	VolumeRemain      *int32         `db:"volume_remain" json:"volume_remain"`
-	Region            *string        `db:"region" json:"region"`
-	Price             *int32         `db:"price" json:"price"`
-	Memo              *string        `db:"memo" json:"memo"`
+	Category          SakeCategoryType `db:"category" json:"category"`
+	Name              string           `db:"name" json:"name"`
+	Phonetic          *string          `db:"phonetic" json:"phonetic"`
+	AlcoholPercentage pgtype.Numeric   `db:"alcohol_percentage" json:"alcohol_percentage"`
+	VolumeMax         *int32           `db:"volume_max" json:"volume_max"`
+	VolumeRemain      *int32           `db:"volume_remain" json:"volume_remain"`
+	Region            *string          `db:"region" json:"region"`
+	Price             *int32           `db:"price" json:"price"`
+	Memo              *string          `db:"memo" json:"memo"`
 }
 
 type CreateSakeRow struct {
 	ID        pgtype.UUID        `db:"id" json:"id"`
-	Category  SakeCategory       `db:"category" json:"category"`
+	Category  SakeCategoryType   `db:"category" json:"category"`
 	Name      string             `db:"name" json:"name"`
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
@@ -106,7 +106,7 @@ WHERE s.id = $1
 
 type GetSakeDetailByIDRow struct {
 	ID                pgtype.UUID        `db:"id" json:"id"`
-	Category          SakeCategory       `db:"category" json:"category"`
+	Category          SakeCategoryType   `db:"category" json:"category"`
 	Name              string             `db:"name" json:"name"`
 	Phonetic          *string            `db:"phonetic" json:"phonetic"`
 	AlcoholPercentage pgtype.Numeric     `db:"alcohol_percentage" json:"alcohol_percentage"`
@@ -148,22 +148,22 @@ SELECT
 FROM sakes s
 LEFT JOIN sake_images si ON si.sake_id = s.id AND si.sort_order = 0
 WHERE
-    ($3::sake_category IS NULL OR s.category = $3)
+    ($3::sake_category_type IS NULL OR s.category = $3)
 ORDER BY s.created_at DESC
 LIMIT $1 OFFSET $2
 `
 
 type ListSakesParams struct {
-	Limit    int32            `db:"limit" json:"limit"`
-	Offset   int32            `db:"offset" json:"offset"`
-	Category NullSakeCategory `db:"category" json:"category"`
+	Limit    int32                `db:"limit" json:"limit"`
+	Offset   int32                `db:"offset" json:"offset"`
+	Category NullSakeCategoryType `db:"category" json:"category"`
 }
 
 type ListSakesRow struct {
-	ID       pgtype.UUID  `db:"id" json:"id"`
-	Category SakeCategory `db:"category" json:"category"`
-	Name     string       `db:"name" json:"name"`
-	ImageKey *string      `db:"image_key" json:"image_key"`
+	ID       pgtype.UUID      `db:"id" json:"id"`
+	Category SakeCategoryType `db:"category" json:"category"`
+	Name     string           `db:"name" json:"name"`
+	ImageKey *string          `db:"image_key" json:"image_key"`
 }
 
 func (q *Queries) ListSakes(ctx context.Context, arg ListSakesParams) ([]ListSakesRow, error) {
@@ -208,21 +208,21 @@ RETURNING id, category, name, created_at, updated_at
 `
 
 type UpdateSakeParams struct {
-	ID                pgtype.UUID    `db:"id" json:"id"`
-	Category          SakeCategory   `db:"category" json:"category"`
-	Name              string         `db:"name" json:"name"`
-	Phonetic          *string        `db:"phonetic" json:"phonetic"`
-	AlcoholPercentage pgtype.Numeric `db:"alcohol_percentage" json:"alcohol_percentage"`
-	VolumeMax         *int32         `db:"volume_max" json:"volume_max"`
-	VolumeRemain      *int32         `db:"volume_remain" json:"volume_remain"`
-	Region            *string        `db:"region" json:"region"`
-	Price             *int32         `db:"price" json:"price"`
-	Memo              *string        `db:"memo" json:"memo"`
+	ID                pgtype.UUID      `db:"id" json:"id"`
+	Category          SakeCategoryType `db:"category" json:"category"`
+	Name              string           `db:"name" json:"name"`
+	Phonetic          *string          `db:"phonetic" json:"phonetic"`
+	AlcoholPercentage pgtype.Numeric   `db:"alcohol_percentage" json:"alcohol_percentage"`
+	VolumeMax         *int32           `db:"volume_max" json:"volume_max"`
+	VolumeRemain      *int32           `db:"volume_remain" json:"volume_remain"`
+	Region            *string          `db:"region" json:"region"`
+	Price             *int32           `db:"price" json:"price"`
+	Memo              *string          `db:"memo" json:"memo"`
 }
 
 type UpdateSakeRow struct {
 	ID        pgtype.UUID        `db:"id" json:"id"`
-	Category  SakeCategory       `db:"category" json:"category"`
+	Category  SakeCategoryType   `db:"category" json:"category"`
 	Name      string             `db:"name" json:"name"`
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`

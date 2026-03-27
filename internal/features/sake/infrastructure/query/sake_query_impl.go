@@ -33,7 +33,7 @@ func NewSakeQuery(db *pgxpool.Pool) appQuery.SakeQuery {
 func (q *sakeQueryImpl) List(ctx context.Context, filter appQuery.ListSakesFilter) ([]entity.SakeListItem, entity.Pagination, error) {
 	defer logger.TraceMethodAuto(ctx, filter)()
 
-	total, err := q.queries.CountSakes(ctx, sqlc.NullSakeCategory{})
+	total, err := q.queries.CountSakes(ctx, sqlc.NullSakeCategoryType{})
 	if err != nil {
 		logger.LogDatabaseError(ctx, "SELECT", "sakes", err, map[string]interface{}{"filter": filter})
 		return nil, entity.Pagination{}, apperror.DatabaseError("酒の件数取得に失敗しました", err)
@@ -42,7 +42,7 @@ func (q *sakeQueryImpl) List(ctx context.Context, filter appQuery.ListSakesFilte
 	rows, err := q.queries.ListSakes(ctx, sqlc.ListSakesParams{
 		Limit:    filter.Limit,
 		Offset:   filter.Offset,
-		Category: sqlc.NullSakeCategory{},
+		Category: sqlc.NullSakeCategoryType{},
 	})
 	if err != nil {
 		logger.LogDatabaseError(ctx, "SELECT", "sakes", err, map[string]interface{}{"filter": filter})

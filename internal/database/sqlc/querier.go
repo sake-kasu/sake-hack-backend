@@ -11,7 +11,7 @@ import (
 )
 
 type Querier interface {
-	CountSakes(ctx context.Context, category NullSakeCategory) (int64, error)
+	CountSakes(ctx context.Context, category NullSakeCategoryType) (int64, error)
 	CreateSake(ctx context.Context, arg CreateSakeParams) (CreateSakeRow, error)
 	DeleteSake(ctx context.Context, id pgtype.UUID) (int64, error)
 	GetSakeDetailByID(ctx context.Context, id pgtype.UUID) (GetSakeDetailByIDRow, error)

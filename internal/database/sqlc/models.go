@@ -12,203 +12,203 @@ import (
 )
 
 // マッチングリクエスト状態: PENDING/ACCEPTED/REJECTED
-type MatchStatus string
+type MatchStatusType string
 
 const (
-	MatchStatusPENDING  MatchStatus = "PENDING"
-	MatchStatusACCEPTED MatchStatus = "ACCEPTED"
-	MatchStatusREJECTED MatchStatus = "REJECTED"
+	MatchStatusTypePENDING  MatchStatusType = "PENDING"
+	MatchStatusTypeACCEPTED MatchStatusType = "ACCEPTED"
+	MatchStatusTypeREJECTED MatchStatusType = "REJECTED"
 )
 
-func (e *MatchStatus) Scan(src interface{}) error {
+func (e *MatchStatusType) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = MatchStatus(s)
+		*e = MatchStatusType(s)
 	case string:
-		*e = MatchStatus(s)
+		*e = MatchStatusType(s)
 	default:
-		return fmt.Errorf("unsupported scan type for MatchStatus: %T", src)
+		return fmt.Errorf("unsupported scan type for MatchStatusType: %T", src)
 	}
 	return nil
 }
 
-type NullMatchStatus struct {
-	MatchStatus MatchStatus `json:"match_status"`
-	Valid       bool        `json:"valid"` // Valid is true if MatchStatus is not NULL
+type NullMatchStatusType struct {
+	MatchStatusType MatchStatusType `json:"match_status_type"`
+	Valid           bool            `json:"valid"` // Valid is true if MatchStatusType is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullMatchStatus) Scan(value interface{}) error {
+func (ns *NullMatchStatusType) Scan(value interface{}) error {
 	if value == nil {
-		ns.MatchStatus, ns.Valid = "", false
+		ns.MatchStatusType, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.MatchStatus.Scan(value)
+	return ns.MatchStatusType.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullMatchStatus) Value() (driver.Value, error) {
+func (ns NullMatchStatusType) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.MatchStatus), nil
+	return string(ns.MatchStatusType), nil
 }
 
-func (e MatchStatus) Valid() bool {
+func (e MatchStatusType) Valid() bool {
 	switch e {
-	case MatchStatusPENDING,
-		MatchStatusACCEPTED,
-		MatchStatusREJECTED:
+	case MatchStatusTypePENDING,
+		MatchStatusTypeACCEPTED,
+		MatchStatusTypeREJECTED:
 		return true
 	}
 	return false
 }
 
-func AllMatchStatusValues() []MatchStatus {
-	return []MatchStatus{
-		MatchStatusPENDING,
-		MatchStatusACCEPTED,
-		MatchStatusREJECTED,
-	}
-}
-
-// お酒カテゴリ: JAPANESE_SAKE/SHOCHU/AWAMORI/BEER/WINE/FRUIT_WINE/LIQUEUR/NON_ALCOHOL/OTHER
-type SakeCategory string
-
-const (
-	SakeCategoryJAPANESESAKE SakeCategory = "JAPANESE_SAKE"
-	SakeCategorySHOCHU       SakeCategory = "SHOCHU"
-	SakeCategoryAWAMORI      SakeCategory = "AWAMORI"
-	SakeCategoryBEER         SakeCategory = "BEER"
-	SakeCategoryWINE         SakeCategory = "WINE"
-	SakeCategoryFRUITWINE    SakeCategory = "FRUIT_WINE"
-	SakeCategoryLIQUEUR      SakeCategory = "LIQUEUR"
-	SakeCategoryNONALCOHOL   SakeCategory = "NON_ALCOHOL"
-	SakeCategoryOTHER        SakeCategory = "OTHER"
-)
-
-func (e *SakeCategory) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = SakeCategory(s)
-	case string:
-		*e = SakeCategory(s)
-	default:
-		return fmt.Errorf("unsupported scan type for SakeCategory: %T", src)
-	}
-	return nil
-}
-
-type NullSakeCategory struct {
-	SakeCategory SakeCategory `json:"sake_category"`
-	Valid        bool         `json:"valid"` // Valid is true if SakeCategory is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullSakeCategory) Scan(value interface{}) error {
-	if value == nil {
-		ns.SakeCategory, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.SakeCategory.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullSakeCategory) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.SakeCategory), nil
-}
-
-func (e SakeCategory) Valid() bool {
-	switch e {
-	case SakeCategoryJAPANESESAKE,
-		SakeCategorySHOCHU,
-		SakeCategoryAWAMORI,
-		SakeCategoryBEER,
-		SakeCategoryWINE,
-		SakeCategoryFRUITWINE,
-		SakeCategoryLIQUEUR,
-		SakeCategoryNONALCOHOL,
-		SakeCategoryOTHER:
-		return true
-	}
-	return false
-}
-
-func AllSakeCategoryValues() []SakeCategory {
-	return []SakeCategory{
-		SakeCategoryJAPANESESAKE,
-		SakeCategorySHOCHU,
-		SakeCategoryAWAMORI,
-		SakeCategoryBEER,
-		SakeCategoryWINE,
-		SakeCategoryFRUITWINE,
-		SakeCategoryLIQUEUR,
-		SakeCategoryNONALCOHOL,
-		SakeCategoryOTHER,
+func AllMatchStatusTypeValues() []MatchStatusType {
+	return []MatchStatusType{
+		MatchStatusTypePENDING,
+		MatchStatusTypeACCEPTED,
+		MatchStatusTypeREJECTED,
 	}
 }
 
 // ユーザーロール: SHOP(主催者)/USER(参加者)
-type UserRole string
+type RoleType string
 
 const (
-	UserRoleSHOP UserRole = "SHOP"
-	UserRoleUSER UserRole = "USER"
+	RoleTypeSHOP RoleType = "SHOP"
+	RoleTypeUSER RoleType = "USER"
 )
 
-func (e *UserRole) Scan(src interface{}) error {
+func (e *RoleType) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = UserRole(s)
+		*e = RoleType(s)
 	case string:
-		*e = UserRole(s)
+		*e = RoleType(s)
 	default:
-		return fmt.Errorf("unsupported scan type for UserRole: %T", src)
+		return fmt.Errorf("unsupported scan type for RoleType: %T", src)
 	}
 	return nil
 }
 
-type NullUserRole struct {
-	UserRole UserRole `json:"user_role"`
-	Valid    bool     `json:"valid"` // Valid is true if UserRole is not NULL
+type NullRoleType struct {
+	RoleType RoleType `json:"role_type"`
+	Valid    bool     `json:"valid"` // Valid is true if RoleType is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullUserRole) Scan(value interface{}) error {
+func (ns *NullRoleType) Scan(value interface{}) error {
 	if value == nil {
-		ns.UserRole, ns.Valid = "", false
+		ns.RoleType, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.UserRole.Scan(value)
+	return ns.RoleType.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullUserRole) Value() (driver.Value, error) {
+func (ns NullRoleType) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.UserRole), nil
+	return string(ns.RoleType), nil
 }
 
-func (e UserRole) Valid() bool {
+func (e RoleType) Valid() bool {
 	switch e {
-	case UserRoleSHOP,
-		UserRoleUSER:
+	case RoleTypeSHOP,
+		RoleTypeUSER:
 		return true
 	}
 	return false
 }
 
-func AllUserRoleValues() []UserRole {
-	return []UserRole{
-		UserRoleSHOP,
-		UserRoleUSER,
+func AllRoleTypeValues() []RoleType {
+	return []RoleType{
+		RoleTypeSHOP,
+		RoleTypeUSER,
+	}
+}
+
+// お酒カテゴリ: JAPANESE_SAKE/SHOCHU/AWAMORI/BEER/WINE/FRUIT_WINE/LIQUEUR/NON_ALCOHOL/OTHER
+type SakeCategoryType string
+
+const (
+	SakeCategoryTypeJAPANESESAKE SakeCategoryType = "JAPANESE_SAKE"
+	SakeCategoryTypeSHOCHU       SakeCategoryType = "SHOCHU"
+	SakeCategoryTypeAWAMORI      SakeCategoryType = "AWAMORI"
+	SakeCategoryTypeBEER         SakeCategoryType = "BEER"
+	SakeCategoryTypeWINE         SakeCategoryType = "WINE"
+	SakeCategoryTypeFRUITWINE    SakeCategoryType = "FRUIT_WINE"
+	SakeCategoryTypeLIQUEUR      SakeCategoryType = "LIQUEUR"
+	SakeCategoryTypeNONALCOHOL   SakeCategoryType = "NON_ALCOHOL"
+	SakeCategoryTypeOTHER        SakeCategoryType = "OTHER"
+)
+
+func (e *SakeCategoryType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = SakeCategoryType(s)
+	case string:
+		*e = SakeCategoryType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for SakeCategoryType: %T", src)
+	}
+	return nil
+}
+
+type NullSakeCategoryType struct {
+	SakeCategoryType SakeCategoryType `json:"sake_category_type"`
+	Valid            bool             `json:"valid"` // Valid is true if SakeCategoryType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullSakeCategoryType) Scan(value interface{}) error {
+	if value == nil {
+		ns.SakeCategoryType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.SakeCategoryType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullSakeCategoryType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.SakeCategoryType), nil
+}
+
+func (e SakeCategoryType) Valid() bool {
+	switch e {
+	case SakeCategoryTypeJAPANESESAKE,
+		SakeCategoryTypeSHOCHU,
+		SakeCategoryTypeAWAMORI,
+		SakeCategoryTypeBEER,
+		SakeCategoryTypeWINE,
+		SakeCategoryTypeFRUITWINE,
+		SakeCategoryTypeLIQUEUR,
+		SakeCategoryTypeNONALCOHOL,
+		SakeCategoryTypeOTHER:
+		return true
+	}
+	return false
+}
+
+func AllSakeCategoryTypeValues() []SakeCategoryType {
+	return []SakeCategoryType{
+		SakeCategoryTypeJAPANESESAKE,
+		SakeCategoryTypeSHOCHU,
+		SakeCategoryTypeAWAMORI,
+		SakeCategoryTypeBEER,
+		SakeCategoryTypeWINE,
+		SakeCategoryTypeFRUITWINE,
+		SakeCategoryTypeLIQUEUR,
+		SakeCategoryTypeNONALCOHOL,
+		SakeCategoryTypeOTHER,
 	}
 }
 
@@ -259,7 +259,7 @@ type MatchRequest struct {
 	// リクエスト受信者ID
 	ToUserID pgtype.UUID `db:"to_user_id" json:"to_user_id"`
 	// ステータス（PENDING/ACCEPTED/REJECTED）
-	Status MatchStatus `db:"status" json:"status"`
+	Status MatchStatusType `db:"status" json:"status"`
 	// 作成日時
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	// 更新日時
@@ -275,7 +275,7 @@ type Sake struct {
 	// ふりがな（最大100文字）
 	Phonetic *string `db:"phonetic" json:"phonetic"`
 	// 酒カテゴリ（必須）
-	Category SakeCategory `db:"category" json:"category"`
+	Category SakeCategoryType `db:"category" json:"category"`
 	// アルコール度数（0.0-100.0）
 	AlcoholPercentage pgtype.Numeric `db:"alcohol_percentage" json:"alcohol_percentage"`
 	// 最大容量（ml）
@@ -337,7 +337,7 @@ type User struct {
 	// 表示名（任意）
 	DisplayName *string `db:"display_name" json:"display_name"`
 	// ロール（SHOP/USER）
-	Role UserRole `db:"role" json:"role"`
+	Role RoleType `db:"role" json:"role"`
 	// 作成日時
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }

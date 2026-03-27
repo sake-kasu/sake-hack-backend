@@ -7,7 +7,7 @@ SELECT
 FROM sakes s
 LEFT JOIN sake_images si ON si.sake_id = s.id AND si.sort_order = 0
 WHERE
-    (sqlc.narg('category')::sake_category IS NULL OR s.category = sqlc.narg('category'))
+    (sqlc.narg('category')::sake_category_type IS NULL OR s.category = sqlc.narg('category'))
 ORDER BY s.created_at DESC
 LIMIT $1 OFFSET $2;
 
@@ -15,7 +15,7 @@ LIMIT $1 OFFSET $2;
 SELECT COUNT(*) AS total
 FROM sakes s
 WHERE
-    (sqlc.narg('category')::sake_category IS NULL OR s.category = sqlc.narg('category'));
+    (sqlc.narg('category')::sake_category_type IS NULL OR s.category = sqlc.narg('category'));
 
 -- name: GetSakeDetailByID :one
 SELECT

@@ -45,7 +45,7 @@ func (r *sakeRepositoryImpl) Create(ctx context.Context, input repository.Create
 	qtx := r.queries.WithTx(tx)
 
 	row, err := qtx.CreateSake(ctx, sqlc.CreateSakeParams{
-		Category:          sqlc.SakeCategory(input.Category),
+		Category:          sqlc.SakeCategoryType(input.Category),
 		Name:              input.Name.Name,
 		Phonetic:          emptyStringToNil(input.Name.Phonetic),
 		AlcoholPercentage: numericFromFloat32Ptr(input.Abv),
@@ -95,7 +95,7 @@ func (r *sakeRepositoryImpl) Update(ctx context.Context, input repository.Update
 
 	row, err := qtx.UpdateSake(ctx, sqlc.UpdateSakeParams{
 		ID:                pgtype.UUID{Bytes: [16]byte(input.ID), Valid: true},
-		Category:          sqlc.SakeCategory(input.Category),
+		Category:          sqlc.SakeCategoryType(input.Category),
 		Name:              input.Name.Name,
 		Phonetic:          emptyStringToNil(input.Name.Phonetic),
 		AlcoholPercentage: numericFromFloat32Ptr(input.Abv),
