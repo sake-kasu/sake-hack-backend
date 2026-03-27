@@ -100,7 +100,7 @@ type APIError struct {
 // CreateStockRequest 在庫登録時に送信するお酒情報
 type CreateStockRequest struct {
 	// AlcoholPercentage アルコール度数
-	AlcoholPercentage *SakeAlcoholPercentage `json:"alcoholPercentage"`
+	AlcoholPercentage *SakeAlcoholPercentage `json:"alcoholPercentage,omitempty"`
 
 	// Category 酒カテゴリ
 	Category SakeCategory `json:"category"`
@@ -109,28 +109,28 @@ type CreateStockRequest struct {
 	ImageKeys []SakeImageKey `json:"imageKeys"`
 
 	// Memo メモ
-	Memo *SakeMemo `json:"memo"`
+	Memo *SakeMemo `json:"memo,omitempty"`
 
 	// Name 酒名
 	Name SakeName `json:"name"`
 
 	// Phonetic ふりがな
-	Phonetic *SakePhonetic `json:"phonetic"`
+	Phonetic *SakePhonetic `json:"phonetic,omitempty"`
 
 	// Price 価格（円）
-	Price *SakePrice `json:"price"`
+	Price *SakePrice `json:"price,omitempty"`
 
 	// Region 産地
-	Region *SakeRegion `json:"region"`
+	Region *SakeRegion `json:"region,omitempty"`
 
 	// TagNames タグ名前一覧
 	TagNames []SakeTagName `json:"tagNames"`
 
 	// VolumeMax 最大容量（ml）
-	VolumeMax *SakeVolumeMax `json:"volumeMax"`
+	VolumeMax *SakeVolumeMax `json:"volumeMax,omitempty"`
 
 	// VolumeRemain 残量（%）
-	VolumeRemain *SakeVolumeRemain `json:"volumeRemain"`
+	VolumeRemain *SakeVolumeRemain `json:"volumeRemain,omitempty"`
 }
 
 // DateTime 日時
