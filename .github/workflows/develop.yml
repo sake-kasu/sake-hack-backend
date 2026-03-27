@@ -6,7 +6,7 @@ on:
       - develop
 
 env:
-  GO_VERSION: "1.26.0"
+  GO_VERSION: "1.25.8"
   COVERAGE_THRESHOLD: "80"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/app
@@ -147,7 +147,7 @@ jobs:
           echo "✅ developブランチの統合テストとカバレッジ測定が成功しました"
 
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-reports-develop
           path: |
@@ -179,7 +179,7 @@ jobs:
           echo "✅ APIドキュメントを生成しました"
 
       - name: Upload API docs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: api-docs
           path: api-output/

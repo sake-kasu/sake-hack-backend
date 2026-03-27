@@ -9,6 +9,7 @@ BINARY_NAME=sake-hack-server
 MIGRATE_VERSION=v4.18.1
 MAIN_PATH=./cmd/server
 BUILD_DIR=./bin
+OAPI_CODEGEN_VERSION=v2.6.0
 
 # DB_URLを環境変数から動的生成
 DB_HOST ?= localhost
@@ -173,7 +174,7 @@ openapi-generate: ## OpenAPI仕様からコードを自動生成
 	@npx @redocly/cli bundle openapi/openapi.yaml -o openapi/openapi.bundled.yaml
 	@echo "⚙️  Step 2: Goコードを生成しています..."
 	@mkdir -p api/generated
-	@go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest \
+	@go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) \
 		-config openapi/oapi-codegen.yaml openapi/openapi.bundled.yaml
 
 openapi-gendoc: ## APIドキュメントを生成

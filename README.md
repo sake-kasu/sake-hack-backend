@@ -4,7 +4,7 @@ Go + クリーンアーキテクチャ + Package by Feature + OpenAPI-First 開�
 
 ## 技術スタック
 
-- **言語**: Go 1.25.4
+- **言語**: Go 1.25.8
 - **Web フレームワーク**: Gin
 - **データベース**:
   - PostgreSQL 18 + PostGIS 3.6
@@ -41,7 +41,7 @@ internal/
 
 ### 前提条件
 
-- Go 1.25.4+
+- Go 1.25.8+
 - Docker & Docker Compose
 - make
 
