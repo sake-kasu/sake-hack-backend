@@ -10,6 +10,7 @@ MIGRATE_VERSION=v4.18.1
 MAIN_PATH=./cmd/server
 BUILD_DIR=./bin
 OAPI_CODEGEN_VERSION=v2.6.0
+REDOCLY_CLI_VERSION=2.25.1
 
 # DB_URLを環境変数から動的生成
 DB_HOST ?= localhost
@@ -171,7 +172,7 @@ submodule-status: ## サブモジュールの状態を確認
 openapi-generate: ## OpenAPI仕様からコードを自動生成
 	@echo "🤖 OpenAPI仕様からコードを生成しています..."
 	@echo "📦 Step 1: OpenAPI仕様をバンドルしています..."
-	@npx @redocly/cli bundle openapi/openapi.yaml -o openapi/openapi.bundled.yaml
+	@npx @redocly/cli@$(REDOCLY_CLI_VERSION) bundle openapi/openapi.yaml -o openapi/openapi.bundled.yaml
 	@echo "⚙️  Step 2: Goコードを生成しています..."
 	@mkdir -p api/generated
 	@go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) \
@@ -179,7 +180,7 @@ openapi-generate: ## OpenAPI仕様からコードを自動生成
 
 openapi-gendoc: ## APIドキュメントを生成
 	@echo "📚 APIドキュメントを生成しています..."
-	@npx @redocly/cli build-docs openapi/openapi.yaml -o openapi/docs/index.html
+	@npx @redocly/cli@$(REDOCLY_CLI_VERSION) build-docs openapi/openapi.yaml -o openapi/docs/index.html
 openapi-watch: ## APIドキュメントを監視して自動更新
 	@echo "👀 APIファイルを監視しています..."
 	@echo "📝 変更を検知すると自動的にドキュメントを再生成します"
