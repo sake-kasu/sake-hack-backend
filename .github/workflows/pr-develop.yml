@@ -353,7 +353,9 @@ jobs:
       - name: Install Gitleaks
         run: |
           mkdir -p "$HOME/.local/bin"
-          curl -sSfL https://raw.githubusercontent.com/gitleaks/gitleaks/master/install.sh | sh -s -- -b "$HOME/.local/bin" v8.24.2
+          GITLEAKS_VERSION="v8.24.2"
+          curl -sSfL "https://raw.githubusercontent.com/gitleaks/gitleaks/${GITLEAKS_VERSION}/install.sh" \
+            | sh -s -- -b "$HOME/.local/bin" "$GITLEAKS_VERSION"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/gitleaks" version
 
