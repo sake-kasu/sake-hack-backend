@@ -4,11 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"github.com/sake-kasu/sake-hack-backend/api/generated"
 	"github.com/sake-kasu/sake-hack-backend/internal/apperror"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/application/usecase"
 	"github.com/sake-kasu/sake-hack-backend/internal/logger"
+	"github.com/sake-kasu/sake-hack-backend/internal/utils"
 )
 
 // SakeServerImpl 酒関連のServerInterface実装
@@ -37,18 +39,42 @@ func NewSakeServerImpl(
 	}
 }
 
+// HealthCheck ヘルスチェック
+// (GET /health)
+func (s *SakeServerImpl) HealthCheck(c *gin.Context) {
+	c.String(http.StatusOK, "ok")
+}
+
+// CreateSakeLike いいね登録
+// (POST /sakes/{sakeId}/likes)
+func (s *SakeServerImpl) CreateSakeLike(c *gin.Context, sakeId generated.SakeId, params generated.CreateSakeLikeParams) {
+	c.JSON(http.StatusNotImplemented, notImplementedResponse("like API is temporarily disabled"))
+}
+
+// DeleteSakeLike いいね解除
+// (DELETE /sakes/{sakeId}/likes)
+func (s *SakeServerImpl) DeleteSakeLike(c *gin.Context, sakeId generated.SakeId, params generated.DeleteSakeLikeParams) {
+	c.JSON(http.StatusNotImplemented, notImplementedResponse("like API is temporarily disabled"))
+}
+
 // ListSakes 酒一覧取得
 // (GET /sakes)
 func (s *SakeServerImpl) ListSakes(c *gin.Context, params generated.ListSakesParams) {
 	ctx := c.Request.Context()
 	defer logger.TraceMethodAuto(ctx, params)()
 
-	if err := validateListParams(params.Offset, params.Limit, params.TypeId, params.BreweryId); err != nil {
+	offset, limit, err := toListParams(params.Offset, params.Limit)
+	if err != nil {
 		handleError(c, err)
 		return
 	}
 
-	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(params.Offset, params.Limit, params.TypeId, params.BreweryId))
+	if err := validateListParams(offset, limit); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(offset, limit))
 	if err != nil {
 		handleError(c, err)
 		return
@@ -58,12 +84,12 @@ func (s *SakeServerImpl) ListSakes(c *gin.Context, params generated.ListSakesPar
 }
 
 // GetSakeDetail 酒詳細取得
-// (GET /sakes/{id})
-func (s *SakeServerImpl) GetSakeDetail(c *gin.Context, id int32) {
+// (GET /sakes/{sakeId})
+func (s *SakeServerImpl) GetSakeDetail(c *gin.Context, sakeId generated.SakeId) {
 	ctx := c.Request.Context()
-	defer logger.TraceMethodAuto(ctx, id)()
+	defer logger.TraceMethodAuto(ctx, sakeId)()
 
-	output, err := s.getSakeDetailUC.Execute(ctx, id)
+	output, err := s.getSakeDetailUC.Execute(ctx, uuid.UUID(sakeId))
 	if err != nil {
 		handleError(c, err)
 		return
@@ -78,18 +104,24 @@ func (s *SakeServerImpl) ListStocks(c *gin.Context, params generated.ListStocksP
 	ctx := c.Request.Context()
 	defer logger.TraceMethodAuto(ctx, params)()
 
-	if err := validateListParams(params.Offset, params.Limit, params.TypeId, params.BreweryId); err != nil {
-		handleError(c, err)
-		return
-	}
-
-	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(params.Offset, params.Limit, params.TypeId, params.BreweryId))
+	offset, limit, err := toListParams(params.Offset, params.Limit)
 	if err != nil {
 		handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, toListSakesResponse(output))
+	if err := validateListParams(offset, limit); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	output, err := s.listSakesUC.Execute(ctx, toListSakesInput(offset, limit))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toStockListResponse(output))
 }
 
 // CreateStock 在庫登録
@@ -98,81 +130,39 @@ func (s *SakeServerImpl) CreateStock(c *gin.Context) {
 	ctx := c.Request.Context()
 	defer logger.TraceMethodAuto(ctx, nil)()
 
-	var req generated.CreateSakeRequest
+	var req generated.CreateStockRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		handleError(c, apperror.BadRequestError("リクエストボディの解析に失敗しました"))
 		return
 	}
 
-	if err := validateCreateSakeRequest(req); err != nil {
+	if err := validateCreateStockRequest(req); err != nil {
 		handleError(c, err)
 		return
 	}
 
-	input := toCreateStockInput(req)
-	output, err := s.createStockUC.Execute(ctx, input)
+	output, err := s.createStockUC.Execute(ctx, toCreateStockInput(req))
 	if err != nil {
 		handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, toCreateSakeResponse(output.Sake))
-}
-
-// GetStockDetail 在庫詳細取得
-// (GET /stocks/{id})
-func (s *SakeServerImpl) GetStockDetail(c *gin.Context, id int32) {
-	ctx := c.Request.Context()
-	defer logger.TraceMethodAuto(ctx, id)()
-
-	output, err := s.getSakeDetailUC.Execute(ctx, id)
+	detailOutput, err := s.getSakeDetailUC.Execute(ctx, output.Sake.ID)
 	if err != nil {
 		handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, toSakeDetailResponse(output.Detail))
-}
-
-// UpdateStock 在庫更新
-// (PUT /stocks/{id})
-func (s *SakeServerImpl) UpdateStock(c *gin.Context, id int32) {
-	ctx := c.Request.Context()
-	defer logger.TraceMethodAuto(ctx, id)()
-
-	var req generated.UpdateSakeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		handleError(c, apperror.BadRequestError("リクエストボディの解析に失敗しました"))
-		return
-	}
-
-	if err := validateUpdateSakeRequest(req); err != nil {
-		handleError(c, err)
-		return
-	}
-
-	input := toUpdateStockInput(id, req)
-	if _, err := s.updateStockUC.Execute(ctx, input); err != nil {
-		handleError(c, err)
-		return
-	}
-
-	detailOutput, err := s.getSakeDetailUC.Execute(ctx, id)
-	if err != nil {
-		handleError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, toSakeDetailResponse(detailOutput.Detail))
+	c.JSON(http.StatusCreated, toStockDetailResponse(detailOutput.Detail))
 }
 
 // DeleteStock 在庫削除
-// (DELETE /stocks/{id})
-func (s *SakeServerImpl) DeleteStock(c *gin.Context, id int32) {
+// (DELETE /stocks/{sakeId})
+func (s *SakeServerImpl) DeleteStock(c *gin.Context, sakeId generated.SakeId) {
 	ctx := c.Request.Context()
-	defer logger.TraceMethodAuto(ctx, id)()
+	defer logger.TraceMethodAuto(ctx, sakeId)()
 
-	if err := s.deleteStockUC.Execute(ctx, id); err != nil {
+	if err := s.deleteStockUC.Execute(ctx, uuid.UUID(sakeId)); err != nil {
 		handleError(c, err)
 		return
 	}
@@ -180,23 +170,87 @@ func (s *SakeServerImpl) DeleteStock(c *gin.Context, id int32) {
 	c.Status(http.StatusNoContent)
 }
 
-// toListSakesInput パラメータをListSakesInputに変換する
-func toListSakesInput(offset, limit, typeID, breweryID *int32) usecase.ListSakesInput {
-	o := int32(0)
-	if offset != nil {
-		o = *offset
+// GetStockDetail 在庫詳細取得
+// (GET /stocks/{sakeId})
+func (s *SakeServerImpl) GetStockDetail(c *gin.Context, sakeId generated.SakeId) {
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, sakeId)()
+
+	output, err := s.getSakeDetailUC.Execute(ctx, uuid.UUID(sakeId))
+	if err != nil {
+		handleError(c, err)
+		return
 	}
 
-	l := int32(20)
-	if limit != nil {
-		l = *limit
+	c.JSON(http.StatusOK, toStockDetailResponse(output.Detail))
+}
+
+// UpdateStock 在庫更新
+// (PUT /stocks/{sakeId})
+func (s *SakeServerImpl) UpdateStock(c *gin.Context, sakeId generated.SakeId) {
+	ctx := c.Request.Context()
+	defer logger.TraceMethodAuto(ctx, sakeId)()
+
+	var req generated.CreateStockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		handleError(c, apperror.BadRequestError("リクエストボディの解析に失敗しました"))
+		return
 	}
 
+	if err := validateCreateStockRequest(req); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	if _, err := s.updateStockUC.Execute(ctx, toUpdateStockInput(uuid.UUID(sakeId), req)); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	detailOutput, err := s.getSakeDetailUC.Execute(ctx, uuid.UUID(sakeId))
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toStockDetailResponse(detailOutput.Detail))
+}
+
+// toListParams は一覧 API の offset/limit を安全に int32 へ変換する。
+func toListParams(offset generated.Offset, limit generated.Limit) (int32, int32, error) {
+	convertedOffset, err := utils.IntToInt32(int(offset))
+	if err != nil {
+		return 0, 0, apperror.BadRequestError("offset の値が不正です")
+	}
+
+	convertedLimit, err := utils.IntToInt32(int(limit))
+	if err != nil {
+		return 0, 0, apperror.BadRequestError("limit の値が不正です")
+	}
+
+	return convertedOffset, convertedLimit, nil
+}
+
+// toListSakesInput は一覧APIの入力をユースケース入力に変換する。
+func toListSakesInput(offset, limit int32) usecase.ListSakesInput {
 	return usecase.ListSakesInput{
-		KindID:    typeID,
-		BreweryID: breweryID,
-		Offset:    o,
-		Limit:     l,
+		KindID:    nil,
+		BreweryID: nil,
+		Offset:    offset,
+		Limit:     limit,
+	}
+}
+
+// notImplementedResponse は未実装API向けの共通エラーレスポンスを返す。
+func notImplementedResponse(message string) generated.ErrorResponse {
+	return generated.ErrorResponse{
+		Data: nil,
+		Errors: []generated.APIError{
+			{
+				Code:    "NOT_IMPLEMENTED",
+				Message: message,
+			},
+		},
 	}
 }
 
@@ -212,7 +266,7 @@ func handleError(c *gin.Context, err error) {
 		}
 		c.JSON(valErr.Status, generated.ErrorResponse{
 			Data:   nil,
-			Errors: &errors,
+			Errors: errors,
 		})
 		return
 	}
@@ -227,7 +281,7 @@ func handleError(c *gin.Context, err error) {
 		}
 		c.JSON(appErr.Status, generated.ErrorResponse{
 			Data:   nil,
-			Errors: &errors,
+			Errors: errors,
 		})
 		return
 	}
@@ -240,6 +294,6 @@ func handleError(c *gin.Context, err error) {
 	}
 	c.JSON(http.StatusInternalServerError, generated.ErrorResponse{
 		Data:   nil,
-		Errors: &errors,
+		Errors: errors,
 	})
 }

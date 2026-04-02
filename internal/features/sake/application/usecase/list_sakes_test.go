@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -25,7 +26,7 @@ func (m *MockSakeQuery) List(ctx context.Context, filter query.ListSakesFilter) 
 	return args.Get(0).([]entity.SakeListItem), args.Get(1).(entity.Pagination), args.Error(2)
 }
 
-func (m *MockSakeQuery) GetDetail(ctx context.Context, id int32) (*entity.SakeDetail, error) {
+func (m *MockSakeQuery) GetDetail(ctx context.Context, id uuid.UUID) (*entity.SakeDetail, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -41,7 +42,7 @@ func TestListSakesUsecase_Execute_Success(t *testing.T) {
 	breweryID := int32(2)
 	expectedSakes := []entity.SakeListItem{
 		{
-			ID:       1,
+			ID:       uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 			Category: entity.SakeCategoryJapaneseSake,
 			Name:     "獺祭",
 		},
@@ -70,7 +71,7 @@ func TestListSakesUsecase_Execute_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, output)
 	assert.Len(t, output.Sakes, 1)
-	assert.Equal(t, int32(1), output.Sakes[0].ID)
+	assert.Equal(t, uuid.MustParse("11111111-1111-1111-1111-111111111111"), output.Sakes[0].ID)
 	assert.Equal(t, entity.SakeCategoryJapaneseSake, output.Sakes[0].Category)
 	assert.Equal(t, int64(100), output.Pagination.Total)
 	mockQuery.AssertExpectations(t)

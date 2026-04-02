@@ -6,8 +6,10 @@ on:
       - develop
 
 env:
-  GO_VERSION: "1.26.0"
+  GO_VERSION: "1.25.8"
   GOLANGCI_LINT_VERSION: "v2.10.1"
+  OAPI_CODEGEN_VERSION: "v2.6.0"
+  REDOCLY_CLI_VERSION: "2.25.1"
   COVERAGE_THRESHOLD: "80"
 
 jobs:
@@ -29,8 +31,8 @@ jobs:
         with:
           filters: |
             api:
-              - 'api/**'
-              - 'api/oapi-codegen*.yaml'
+              - 'openapi/**'
+              - 'api/generated/**'
             docker:
               - 'docker/**'
               - 'Makefile'
@@ -56,11 +58,11 @@ jobs:
           node-version: "22"
 
       - name: Install Redocly CLI
-        run: npm install -g @redocly/cli
+        run: npm install -g @redocly/cli@${{ env.REDOCLY_CLI_VERSION }}
 
       - name: Validate OpenAPI spec
         run: |
-          redocly lint api/openapi.yaml
+          redocly lint openapi/openapi.yaml
           echo "✅ OpenAPI仕様が正常です"
 
   validate-go-modules:
@@ -105,15 +107,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install -g @redocly/cli
-          go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+          npm install -g @redocly/cli@${{ env.REDOCLY_CLI_VERSION }}
+          go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@${{ env.OAPI_CODEGEN_VERSION }}
 
       - name: Generate code
-        run: make api-generate
+        run: make openapi-generate
 
       - name: Check generated code is up-to-date
         run: |
-          git diff --exit-code api/generated/ || (echo "❌ 生成コードが最新ではありません。make api-generateを実行してください" && exit 1)
+          git diff --exit-code api/generated/ || (echo "❌ 生成コードが最新ではありません。make openapi-generateを実行してください" && exit 1)
           echo "✅ 生成コードが最新です"
 
   # ===== BUILD JOBS =====
@@ -138,7 +140,7 @@ jobs:
           ls -la bin/
 
       - name: Upload binary artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: sake-hack-server-binary
           path: bin/
@@ -151,7 +153,7 @@ jobs:
     if: needs.changes.outputs.docker == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -193,6 +195,10 @@ jobs:
     name: Integration Tests & Coverage
     runs-on: ubuntu-latest
     needs: [validate-go-modules]
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     services:
       postgres:
         image: postgis/postgis:16-3.4
@@ -255,7 +261,7 @@ jobs:
           fi
 
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-reports
           path: |
@@ -266,7 +272,8 @@ jobs:
 
       - name: Comment coverage on PR
         uses: actions/github-script@v8
-        if: always()
+        if: ${{ always() && github.event.pull_request.head.repo.full_name == github.repository }}
+        continue-on-error: true
         with:
           script: |
             const fs = require('fs');
@@ -327,7 +334,7 @@ jobs:
         run: make gosec-scan
 
       - name: Upload Gosec report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: gosec-report
@@ -343,11 +350,38 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Gitleaks
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          GITLEAKS_VERSION="v8.24.2"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION#v}_linux_x64.tar.gz" \
+            | tar -xz -C "$HOME/.local/bin" gitleaks
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/gitleaks" version
+
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_COMMENTS: false
+        run: |
+          if [ -f .gitleaks.toml ]; then
+            CONFIG_FLAG="--config .gitleaks.toml"
+          else
+            CONFIG_FLAG=""
+          fi
+
+          gitleaks detect \
+            --source . \
+            --report-format json \
+            --report-path gitleaks-report.json \
+            --redact \
+            --exit-code 1 \
+            $CONFIG_FLAG
+
+      - name: Upload Gitleaks report
+        uses: actions/upload-artifact@v6
+        if: always() && hashFiles('gitleaks-report.json') != ''
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
+          retention-days: 7
 
   govulncheck:
     name: Vulnerability Scan (govulncheck)
@@ -406,7 +440,7 @@ jobs:
           fi
 
       - name: Upload license report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: licenses-report
@@ -430,7 +464,7 @@ jobs:
           no-fail: true
 
       - name: Upload Hadolint report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: hadolint-report

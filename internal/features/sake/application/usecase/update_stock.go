@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/sake-kasu/sake-hack-backend/internal/apperror"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/entity"
 	"github.com/sake-kasu/sake-hack-backend/internal/features/sake/domain/repository"
@@ -11,18 +12,20 @@ import (
 
 // UpdateStockInput 在庫更新の入力パラメータ
 type UpdateStockInput struct {
-	ID              int32
+	ID              uuid.UUID
 	Category        entity.SakeCategory
 	Kind            entity.SakeKind
 	Brewery         entity.Brewery
 	Name            entity.SakeName
-	Abv             float32
-	PurchaseVolume  float32
-	RemainingVolume float32
+	Abv             *float32
+	PurchaseVolume  *int32
+	RemainingVolume *int32
 	Memo            *string
 	DrinkStyles     []entity.DrinkStyle
-	Price           int32
+	TagNames        []string
+	Price           *int32
 	ImageUrl        *string
+	ImageKeys       []string
 }
 
 // UpdateStockOutput 在庫更新の出力
@@ -64,8 +67,10 @@ func (u *UpdateStockUsecase) Execute(ctx context.Context, input UpdateStockInput
 		RemainingVolume: input.RemainingVolume,
 		Memo:            input.Memo,
 		DrinkStyles:     input.DrinkStyles,
+		TagNames:        input.TagNames,
 		Price:           input.Price,
 		ImageUrl:        input.ImageUrl,
+		ImageKeys:       input.ImageKeys,
 	})
 	if err != nil {
 		return nil, err

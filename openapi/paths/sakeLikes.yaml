@@ -1,0 +1,37 @@
+post:
+  tags:
+    - likes
+  summary: いいね登録
+  operationId: createSakeLike
+  parameters:
+    - $ref: "../components/parameters/common.yaml#/SakeId"
+    - $ref: "../components/parameters/common.yaml#/LikeToken"
+  responses:
+    '204':
+      description: いいね登録成功
+    '400':
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    '404':
+      $ref: "../components/responses/common.yaml#/NotFound"
+    '409':
+      $ref: "../components/responses/common.yaml#/Conflict"
+    '500':
+      $ref: "../components/responses/common.yaml#/InternalServerError"
+
+delete:
+  tags:
+    - likes
+  summary: いいね解除
+  operationId: deleteSakeLike
+  parameters:
+    - $ref: "../components/parameters/common.yaml#/SakeId"
+    - $ref: "../components/parameters/common.yaml#/LikeToken"
+  responses:
+    '204':
+      description: いいね解除成功
+    '400':
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    '404':
+      $ref: "../components/responses/common.yaml#/NotFound"
+    '500':
+      $ref: "../components/responses/common.yaml#/InternalServerError"

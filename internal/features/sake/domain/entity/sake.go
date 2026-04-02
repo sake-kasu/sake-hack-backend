@@ -1,6 +1,10 @@
 package entity
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // SakeCategory 酒のカテゴリ(Value Object)
 type SakeCategory string
@@ -51,6 +55,19 @@ type DrinkStyle struct {
 	Description *string
 }
 
+// SakeTag 酒タグ
+type SakeTag struct {
+	ID   uuid.UUID
+	Name string
+}
+
+// SakeImage 酒画像
+type SakeImage struct {
+	ID        uuid.UUID
+	ImageKey  string
+	SortOrder int32
+}
+
 // SakeName 酒名(名前 + 読み)
 type SakeName struct {
 	Name     string
@@ -59,7 +76,7 @@ type SakeName struct {
 
 // SakeListItem リスト表示用の酒情報(軽量)
 type SakeListItem struct {
-	ID           int32
+	ID           uuid.UUID
 	Category     SakeCategory
 	Name         string
 	ImagePreview string
@@ -67,18 +84,20 @@ type SakeListItem struct {
 
 // SakeDetail 酒の詳細情報
 type SakeDetail struct {
-	ID              int32
+	ID              uuid.UUID
 	Category        SakeCategory
 	Kind            SakeKind
 	Brewery         Brewery
 	Name            SakeName
-	Abv             float32
-	PurchaseVolume  float32
-	RemainingVolume float32
+	Abv             *float32
+	PurchaseVolume  *int32
+	RemainingVolume *int32
 	Memo            *string
 	DrinkStyles     []DrinkStyle
-	Price           int32
+	Tags            []SakeTag
+	Price           *int32
 	ImageUrl        *string
+	Images          []SakeImage
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

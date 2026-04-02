@@ -1,0 +1,101 @@
+Sake:
+  type: object
+  description: 酒情報
+  required:
+    - sakeId
+    - category
+    - name
+    - phonetic
+    - firstImageKey
+    - likeCount
+  properties:
+    sakeId:
+      $ref: "./common.yaml#/SakeID"
+    category:
+      $ref: "./stock.yaml#/SakeCategory"
+    name:
+      $ref: "./stock.yaml#/SakeName"
+    phonetic:
+      $ref: "./stock.yaml#/SakePhonetic"
+    firstImageKey:
+      type: string
+      nullable: true
+      description: サムネイル画像のキー（存在する場合）
+    likeCount:
+      $ref: "./like.yaml#/LikeCount"
+
+ListSakesResponse:
+  type: object
+  description: お酒一覧取得APIのレスポンス
+  required:
+    - data
+    - meta
+  properties:
+    data:
+      type: array
+      items:
+        $ref: "#/Sake"
+      description: 酒一覧情報
+    meta:
+      allOf:
+        - $ref: "./common.yaml#/SakeListMeta"
+      description: ページネーション情報
+
+SakeTag:
+  type: object
+  required:
+    - tagId
+    - tagName
+  properties:
+    tagId:
+      $ref: "./stock.yaml#/SakeTagID"
+    tagName:
+      $ref: "./stock.yaml#/SakeTagName"
+
+SakeDetail:
+  type: object
+  description: お酒の詳細情報
+  required:
+    - sakeId
+    - name
+    - phonetic
+    - category
+    - alcoholPercentage
+    - region
+    - memo
+    - tags
+    - images
+    - likeCount
+    - createdAt
+    - updatedAt
+  properties:
+    sakeId:
+      $ref: "./common.yaml#/SakeID"
+    name:
+      $ref: "./stock.yaml#/SakeName"
+    phonetic:
+      $ref: "./stock.yaml#/SakePhonetic"
+    category:
+      $ref: "./stock.yaml#/SakeCategory"
+    alcoholPercentage:
+      $ref: "./stock.yaml#/SakeAlcoholPercentage"
+    region:
+      $ref: "./stock.yaml#/SakeRegion"
+    memo:
+      $ref: "./stock.yaml#/SakeMemo"
+    tags:
+      type: array
+      items:
+        $ref: "./stock.yaml#/SakeTag"
+      description: タグ情報（名前昇順に配列）
+    images:
+      type: array
+      items:
+        $ref: "./stock.yaml#/SakeImage"
+      description: 画像情報（表示順に配列）
+    likeCount:
+      $ref: "./like.yaml#/LikeCount"
+    createdAt:
+      $ref: "./common.yaml#/DateTime"
+    updatedAt:
+      $ref: "./common.yaml#/DateTime"

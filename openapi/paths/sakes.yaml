@@ -1,22 +1,19 @@
 get:
   tags:
     - sakes
-  summary: 酒一覧取得（公開用）
-  description: 酒の一覧を取得します
-  operationId: getSakes
+  summary: 酒一覧取得
+  operationId: listSakes
   parameters:
     - $ref: "../components/parameters/common.yaml#/Offset"
     - $ref: "../components/parameters/common.yaml#/Limit"
-    - $ref: "../components/schemas/sake.yaml#/CategoryQueryParameter"
-    - $ref: "../components/schemas/sake.yaml#/SearchQueryParameter"
   responses:
-    "200":
-      description: 酒一覧の取得に成功
+    '200':
+      description: 酒一覧取得成功
       content:
         application/json:
           schema:
             $ref: "../components/schemas/sake.yaml#/ListSakesResponse"
-    "400":
+    '400':
       $ref: "../components/responses/common.yaml#/BadRequest"
-    "500":
+    '500':
       $ref: "../components/responses/common.yaml#/InternalServerError"

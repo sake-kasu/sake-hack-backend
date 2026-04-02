@@ -1,4 +1,4 @@
-.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status api-validate api-generate api-bundle api-gendoc api-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-down-all migrate-force migrate-version migrate-status sqlc-generate
+.PHONY: help build run air-install dev clean test test-unit test-integration cover lint deps submodule-init submodule-update submodule-status openapi-generate openapi-gendoc openapi-watch migrate-install migrate-create migrate-up migrate-up-one migrate-down migrate-reset migrate-force migrate-version migrate-status sqlc-generate
 
 # .env fileが存在すれば読み込み
 -include .env
@@ -9,6 +9,8 @@ BINARY_NAME=sake-hack-server
 MIGRATE_VERSION=v4.18.1
 MAIN_PATH=./cmd/server
 BUILD_DIR=./bin
+OAPI_CODEGEN_VERSION=v2.6.0
+REDOCLY_CLI_VERSION=2.25.1
 
 # DB_URLを環境変数から動的生成
 DB_HOST ?= localhost
@@ -167,34 +169,25 @@ submodule-status: ## サブモジュールの状態を確認
 	@git submodule status
 
 # API開発(OpenAPI仕様から自動生成)
-api-validate: ## OpenAPI仕様を検証
-	@echo "✅ OpenAPI仕様を検証しています..."
-	@npx @redocly/cli lint api/openapi.yaml --config api/redocly.yaml
-
-api-generate: ## OpenAPI仕様からコードを自動生成
+openapi-generate: ## OpenAPI仕様からコードを自動生成
 	@echo "🤖 OpenAPI仕様からコードを生成しています..."
 	@echo "📦 Step 1: OpenAPI仕様をバンドルしています..."
-	@npx @redocly/cli bundle api/openapi.yaml -o api/openapi.bundled.yaml
+	@npx @redocly/cli@$(REDOCLY_CLI_VERSION) bundle openapi/openapi.yaml -o openapi/openapi.bundled.yaml
 	@echo "⚙️  Step 2: Goコードを生成しています..."
 	@mkdir -p api/generated
-	@go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest \
-		-config api/oapi-codegen.yaml api/openapi.bundled.yaml
+	@go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) \
+		-config openapi/oapi-codegen.yaml openapi/openapi.bundled.yaml
 
-api-bundle: ## OpenAPI仕様をバンドル
-	@echo "📦 OpenAPI仕様をバンドルしています..."
-	@npx @redocly/cli bundle api/openapi.yaml -o api/openapi.bundled.yaml
-
-api-gendoc: ## APIドキュメントを生成
+openapi-gendoc: ## APIドキュメントを生成
 	@echo "📚 APIドキュメントを生成しています..."
-	@npx @redocly/cli build-docs api/openapi.yaml -o api/docs/index.html
-
-api-watch: ## APIドキュメントを監視して自動更新
+	@npx @redocly/cli@$(REDOCLY_CLI_VERSION) build-docs openapi/openapi.yaml -o openapi/docs/index.html
+openapi-watch: ## APIドキュメントを監視して自動更新
 	@echo "👀 APIファイルを監視しています..."
 	@echo "📝 変更を検知すると自動的にドキュメントを再生成します"
 	@echo "🌐 ドキュメント: http://localhost:8080"
 	@npx concurrently -n "watch,serve" -c "blue,green" \
-		"npx nodemon --watch api --ext yaml,json --exec 'make api-gendoc'" \
-		"cd api/docs && python3 -m http.server 8080"
+		"npx nodemon --watch openapi --ext yaml,json --exec 'make openapi-gendoc'" \
+		"cd openapi/docs && python3 -m http.server 8080"
 
 migrate-install: ## golang-migrateのインストール
 	@echo "golang-migrate をインストールしています..."
@@ -217,9 +210,10 @@ migrate-down: ## 1つ前にロールバック
 	@echo "⬇️  マイグレーションをロールバックしています(down)..."
 	@migrate -path db/migrations -database "$(DB_URL)" down 1
 
-migrate-down-all: ## 全ロールバック(注意: データ損失)
-	@echo "⬇️  マイグレーションをロールバックしています(down-all)..."
+migrate-reset: ## 全リセット(down -all -> up)
+	@echo "♻️  マイグレーションを全リセットしています..."
 	@migrate -path db/migrations -database "$(DB_URL)" down -all
+	@migrate -path db/migrations -database "$(DB_URL)" up
 
 migrate-force: ## バージョン強制設定 (VERSION=xxx) ※障害復旧用
 	@if [ -z "$(VERSION)" ]; then echo "Error: VERSION is required. Usage: make migrate-force VERSION=xxx"; exit 1; fi
@@ -238,4 +232,4 @@ sqlc-generate: ## SQLからGoコードを生成
 	@echo "🔧 SQLからGoコードを生成しています..."
 	@sqlc generate
 
-generate: api-generate sqlc-generate ## 全コード生成(OpenAPI + SQLC)
+generate: openapi-generate sqlc-generate ## 全コード生成(OpenAPI + SQLC)

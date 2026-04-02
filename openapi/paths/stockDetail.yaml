@@ -1,0 +1,64 @@
+get:
+  tags:
+    - stocks
+  summary: 在庫詳細取得
+  operationId: getStockDetail
+  parameters:
+    - $ref: "../components/parameters/common.yaml#/SakeId"
+  responses:
+    '200':
+      description: 在庫詳細取得成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/stock.yaml#/StockDetail"
+    '400':
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    '404':
+      $ref: "../components/responses/common.yaml#/NotFound"
+    '500':
+      $ref: "../components/responses/common.yaml#/InternalServerError"
+
+put:
+  tags:
+    - stocks
+  summary: 在庫更新
+  operationId: updateStock
+  parameters:
+    - $ref: "../components/parameters/common.yaml#/SakeId"
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas/stock.yaml#/CreateStockRequest"
+  responses:
+    '200':
+      description: 在庫更新成功
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/stock.yaml#/StockDetail"
+    '400':
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    '404':
+      $ref: "../components/responses/common.yaml#/NotFound"
+    '500':
+      $ref: "../components/responses/common.yaml#/InternalServerError"
+
+delete:
+  tags:
+    - stocks
+  summary: 在庫削除
+  operationId: deleteStock
+  parameters:
+    - $ref: "../components/parameters/common.yaml#/SakeId"
+  responses:
+    '204':
+      description: 在庫削除成功
+    '400':
+      $ref: "../components/responses/common.yaml#/BadRequest"
+    '404':
+      $ref: "../components/responses/common.yaml#/NotFound"
+    '500':
+      $ref: "../components/responses/common.yaml#/InternalServerError"

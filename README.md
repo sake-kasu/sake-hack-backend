@@ -4,7 +4,7 @@ Go + クリーンアーキテクチャ + Package by Feature + OpenAPI-First 開�
 
 ## 技術スタック
 
-- **言語**: Go 1.25.4
+- **言語**: Go 1.25.8
 - **Web フレームワーク**: Gin
 - **データベース**:
   - PostgreSQL 18 + PostGIS 3.6
@@ -41,7 +41,7 @@ internal/
 
 ### 前提条件
 
-- Go 1.25.4+
+- Go 1.25.8+
 - Docker & Docker Compose
 - make
 
@@ -75,14 +75,14 @@ cd ..
 ### 5. マイグレーション実行
 
 ```bash
-make migrate-up
+make migrate-up DB_PORT=5434
 ```
 
 ### 6. コード生成
 
 ```bash
 # OpenAPIからコード生成
-make api-generate
+make openapi-generate
 
 # sqlcからコード生成
 make sqlc-generate
@@ -140,11 +140,9 @@ make submodule-status   # サブモジュールの状態確認
 ### API 開発
 
 ```bash
-make api-validate       # OpenAPI仕様検証
-make api-generate       # コード生成
-make api-bundle         # OpenAPI仕様バンドル
-make api-gendoc         # APIドキュメント生成
-make api-watch          # APIドキュメント生成（リアルタイム反映）
+make openapi-generate       # コード生成
+make openapi-gendoc         # APIドキュメント生成
+make openapi-watch          # APIドキュメント生成（リアルタイム反映）
 ```
 
 ### データベース
@@ -256,32 +254,36 @@ sake-hack-backend/
 ### 新機能追加
 
 1. **API 仕様定義**:
-   - エンドポイント: `api/paths/<endpoint_name>.yaml` に追加
-   - スキーマ: `api/components/schemas/<schema_name>.yaml` に追加
-   - レスポンス: `api/components/responses/` で共通レスポンスを再利用
-   - メインファイル: `api/openapi.yaml` に `$ref` で参照を追加
-2. **バリデーション**: `make api-validate`
-3. **コード生成**: `make api-generate` (自動的にバンドル → 生成)
-4. **パッケージ作成**: `internal/features/<feature_name>/`
-5. **実装**: Domain → Application → Infrastructure → Presentation
-6. **SQL 作成**: `db/queries/` に追加
-7. **sqlc 生成**: `make sqlc-generate`
-8. **テスト作成**: `*_test.go`
-9. **検証**: `make test` → `make lint` → `make build`
+   - エンドポイント: `openapi/paths/<endpoint_name>.yaml` に追加
+   - スキーマ: `openapi/components/schemas/<schema_name>.yaml` に追加
+   - レスポンス: `openapi/components/responses/` で共通レスポンスを再利用
+   - メインファイル: `openapi/openapi.yaml` に `$ref` で参照を追加
+2. **コード生成**: `make openapi-generate` (自動的にバンドル → 生成)
+3. **パッケージ作成**: `internal/features/<feature_name>/`
+4. **実装**: Domain → Application → Infrastructure → Presentation
+5. **SQL 作成**: `db/queries/` に追加
+6. **sqlc 生成**: `make sqlc-generate`
+7. **テスト作成**: `*_test.go`
+8. **検証**: `make test` → `make lint` → `make build`
 
 ### OpenAPI 仕様の構成
 
 OpenAPI 仕様はモジュール化されており、以下のように分割されています：
 
-- **`api/openapi.yaml`**: メインファイル(各ファイルへの参照のみ)
-- **`api/paths/`**: エンドポイントごとの定義
-- **`api/components/schemas/`**: データモデル定義(Sake, common等)
-- **`api/components/responses/`**: 共通レスポンス定義
-- **`api/components/parameters/`**: 共通パラメータ定義
-- **`api/components/securitySchemes/`**: 認証スキーム定義
+- **`openapi/openapi.yaml`**: メインファイル(各ファイルへの参照のみ)
+- **`openapi/paths/`**: エンドポイントごとの定義
+- **`openapi/components/schemas/`**: データモデル定義(Sake, common等)
+- **`openapi/components/responses/`**: 共通レスポンス定義
+- **`openapi/components/parameters/`**: 共通パラメータ定義
+- **`openapi/components/securitySchemes/`**: 認証スキーム定義
 
 新しいエンドポイントを追加する際は、`paths/` に新しいファイルを作成し、
 `openapi.yaml` から `$ref` で参照してください。
+
+### APIの値表現ルール
+
+- GET API: 取得項目は必ず返却し、値は `null` または実値のどちらかにする（`undefined` は使わない）
+- 更新API（PUT/PATCH）: `undefined` は「その項目を更新しない」意味でのみ使う
 
 ## 環境変数
 

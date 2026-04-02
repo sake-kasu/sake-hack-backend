@@ -1,0 +1,37 @@
+Offset:
+  name: offset
+  in: query
+  required: true
+  description: スキップする件数
+  schema:
+    type: integer
+    minimum: 0
+
+Limit:
+  name: limit
+  in: query
+  required: true
+  description: 取得件数
+  schema:
+    type: integer
+    minimum: 1
+    maximum: 100
+
+SakeId:
+  name: sakeId
+  in: path
+  required: true
+  description: 酒ID
+  schema:
+    type: string
+    format: uuid
+
+LikeToken:
+  name: X-Like-Token
+  in: header
+  required: true
+  description: 匿名ユーザー識別用の一時トークン（UUID推奨）
+  schema:
+    type: string
+    minLength: 1
+    maxLength: 255

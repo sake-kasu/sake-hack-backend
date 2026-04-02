@@ -33,7 +33,7 @@ make test / make cover / make lint / make gosec-scan
 make deps  # go mod tidy
 
 # API開発(OpenAPI仕様から自動生成)
-make api-validate / make api-generate / make api-bundle / make api-gendoc
+make openapi-generate / make openapi-gendoc
 
 # データベース開発
 make sqlc-generate                # sqlcコード生成
@@ -93,7 +93,7 @@ db/
 
 **手順**:
 
-1. **API 仕様**: `api/paths/*.yaml`, `api/components/schemas/*.yaml`定義 → `make api-validate` → `make api-generate`
+1. **API 仕様**: `api/paths/*.yaml`, `api/components/schemas/*.yaml`定義 → `make openapi-generate`
 2. **パッケージ作成**: `mkdir -p internal/features/<name>/{application/{query,usecase,port},domain/{entity,repository},infrastructure/{query,repository,external},presentation}`
 3. **DB 設計**:
    - マイグレーション作成: `make db-migrate-create NAME=create_xxx_table`
@@ -113,7 +113,7 @@ db/
 
 **基本ルール**:
 
-- OpenAPI 変更後は`make api-generate`必須(`api/generated/`は手動編集禁止)
+- OpenAPI 変更後は`make openapi-generate`必須(`api/generated/`は手動編集禁止)
 - Request/Response 型は`api/generated/server.gen.go`から使用
 - CQRS 適用(読取=Query / 書込=Repository)
 - データアクセスは sqlc 使用(SQL → Go コード生成)
@@ -134,7 +134,7 @@ db/
 - **設定方式**: 環境変数 + `.env`ファイル (caarlos0/env + godotenv)
 - **設定構造体**: 機能別に分割 (server.go, database.go, cache.go, jwt.go, cors.go, logger.go)
 - Server: SERVER_PORT(8080) / SERVER_MODE(debug) / SERVER_GRACEFUL_SHUTDOWN_TIMEOUT(30s)
-- JWT: JWT_SECRET(必須) / JWT_EXPIRATION(86400) / JWT_COOKIE_*設定 ※将来実装予定
+- JWT: JWT*SECRET(必須) / JWT_EXPIRATION(86400) / JWT_COOKIE*\*設定 ※将来実装予定
 - OAuth: 将来実装予定(CIOS または汎用 OAuth 2.0)
 - Cache(Valkey): CACHE_HOST/PORT/PASSWORD/DATABASE/POOL_SIZE/タイムアウト設定
 - Database(PostgreSQL): DB_HOST/PORT/NAME/USER/PASSWORD(必須) / DB_MAX_OPEN_CONNS / DB_CONN_MAX_LIFETIME
@@ -160,7 +160,7 @@ db/
 
 **実装注意点**:
 
-1. OpenAPI 仕様 →`make api-generate`→ 実装の順序厳守
+1. OpenAPI 仕様 →`make openapi-generate`→ 実装の順序厳守
 2. `api/generated/server.gen.go`に型が生成されていることを確認
 3. SQL 作成 →`make sqlc-generate`→ 生成コード確認
 4. マイグレーション作成 →`make db-migrate-up`→ 適用確認
@@ -499,7 +499,7 @@ unwrapped := errors.Unwrap(appErr)
 
 **新機能追加**:
 
-- OpenAPI 定義 → `make api-validate` → `make api-generate` → マイグレーション作成(`make db-migrate-create`) → SQL クエリ定義 → `make sqlc-generate` → 機能パッケージ作成 → 4 層実装(Domain→Application→Infrastructure→Presentation) → テスト作成 → DI 登録(`cmd/server/main.go` or `internal/server/server.go`) → `make test/cover/lint/gosec-scan/build`
+- OpenAPI 定義 → `make openapi-generate` → マイグレーション作成(`make db-migrate-create`) → SQL クエリ定義 → `make sqlc-generate` → 機能パッケージ作成 → 4 層実装(Domain→Application→Infrastructure→Presentation) → テスト作成 → DI 登録(`cmd/server/main.go` or `internal/server/server.go`) → `make test/cover/lint/gosec-scan/build`
 
 **コーディング**:
 
